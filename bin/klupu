@@ -1,0 +1,105 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+#
+# klupu - scrape meeting minutes of governing bodies of city of Jyväskylä
+# Copyright (C) 2012 Tuomas Jorma Juhani Räsänen <tuomasjjrasanen@tjjr.fi>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+import datetime
+import glob
+import itertools
+import os.path
+import re
+import sys
+
+from bs4 import BeautifulSoup
+
+RE_DATETIME = re.compile(r"^\w+ (\d\d?)\.(\d\d?)\.(\d{4}), kello (\d\d)\.(\d\d)\D+(\d\d)\.(\d\d)$")
+RE_PERSON = re.compile(r"^(\w+(?:-\w+)*(?: \w+(?:-\w+)*)+)")
+RE_PRECENCE_MARK = re.compile(r"^(–.*)?x\xa0 ")
+FILENAME_INFO = "htmtxt0.htm"
+
+def iter_issue_filepaths(minutes_dirpath):
+    pathname = os.path.join(minutes_dirpath, "htmtxt*.htm")
+    for issue_filepath in glob.iglob(pathname):
+        if os.path.basename(issue_filepath) != FILENAME_INFO:
+            yield issue_filepath
+
+def cleanws(text):
+    text = re.sub(r"[ ]+", " ", text)
+    text = re.sub(r"\xa0+", "\xa0", text)
+    return re.sub(r"[\r\n]", "", text)
+
+def warn(msg):
+    print("%s: warning: %s" % (os.path.basename(__file__), msg),
+          file=sys.stderr)
+
+def thresh_meetinginfo(tds):
+    datetimes, place = [cleanws(p.text) for p in tds[0]("p")[1:]]
+
+    # TODO: handle constant timezone + variable DST
+    values = [int(v) for v in RE_DATETIME.match(datetimes).groups()]
+    day, month, year, starthour, startminutes, endhour, endminutes = values
+    starttime = datetime.datetime(year, month, day, starthour, startminutes)
+    endtime = datetime.datetime(year, month, day, endhour, endminutes)
+    if starttime > endtime:
+        # If the end-time is after midnight, add one day to the date
+        # part.
+        endtime += datetime.timedelta(1)
+
+    return place, starttime, endtime
+
+def thresh_decisionmakers(tds):
+    decisionmakers = []
+    for line in [cleanws(p.text) for p in tds[1]("p")]:
+        if not line:
+            continue
+
+        presence_mark_match = RE_PRECENCE_MARK.match(line)
+        if not presence_mark_match:
+            warn("skipping line %r" % line)
+            continue
+
+        person_match = RE_PERSON.match(line[presence_mark_match.end():])
+        decisionmakers.append(person_match.group(1))
+
+    return decisionmakers
+
+def thresh(minutes_dirpath):
+    minutes_dirpath = os.path.normpath(minutes_dirpath)
+    info_filepath = os.path.join(minutes_dirpath, FILENAME_INFO)
+    with open(info_filepath, encoding="windows-1252") as info_file:
+        info_soup = BeautifulSoup(info_file, features=["lxml"])
+
+    tds = info_soup.body("table")[1]("td")[1::2]
+
+    place, starttime, endtime = thresh_meetinginfo(tds)
+    decisionmakers = thresh_decisionmakers(tds)
+
+    minutes = {
+        "place": place,
+        "start-time": starttime,
+        "end-time": endtime,
+        "decision-makers": decisionmakers,
+        }
+
+    return minutes
+
+def _main():
+    for key, value in thresh(sys.argv[1]).items():
+        print(key, ":", value)
+
+if __name__ == "__main__":
+    _main()
