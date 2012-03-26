@@ -28,7 +28,7 @@ from bs4 import BeautifulSoup
 
 RE_DATETIME = re.compile(r"^\w+ (\d\d?)\.(\d\d?)\.(\d{4}), kello (\d\d)\.(\d\d)\D+(\d\d)\.(\d\d)$")
 RE_PERSON = re.compile(r"^(\w+(?:-\w+)*(?: \w+(?:-\w+)*)+)")
-RE_PRECENCE_MARK = re.compile(r"^(–.*)?x\xa0 ")
+RE_PRESENCE_MARK = re.compile(r"^(–.*)?x\xa0 ")
 FILENAME_INFO = "htmtxt0.htm"
 
 def iter_issue_filepaths(minutes_dirpath):
@@ -67,7 +67,7 @@ def thresh_persons(td):
         if not line:
             continue
 
-        presence_mark_match = RE_PRECENCE_MARK.match(line)
+        presence_mark_match = RE_PRESENCE_MARK.match(line)
         if not presence_mark_match:
             warn("skipping line %r" % line)
             continue
