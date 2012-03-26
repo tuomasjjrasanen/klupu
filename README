@@ -8,7 +8,6 @@ is a Finnish word for flail which is a tool used for separating grains
 from husks. Grains of knowledge, in this case.
 
 Author: Tuomas Jorma Juhani Räsänen <tuomasjjrasanen@tjjr.fi>
-Homepage: <http://tjjr.fi/sw/klupu/>
 
 How to install
 ==============
@@ -32,30 +31,15 @@ run::
 
   python setup.py install --prefix=$HOME --record=installedfiles.txt
 
-How to report bugs
-==================
-
-The bug database is hosted in Launchpad. If you have found a bug or
-have an improvement idea you want to share, please report it at
-<https://bugs.launchpad.net/klupu>. However, to avoid duplicate bug
-reports, before reporting, please check if similiar or identical bug
-has already been reported. If the description of the existing bug
-report If so, you can still subscribe to the existing bug to track its
-progress.
-
-If you are unsure whether the problem you have is due to a bug, you
-can ask questions at <https://answers.launchpad.net/klupu>.
-
 How to contribute
 =================
 
 In addition to reporting bugs and improvement suggestions, you are
 encouraged to contribute bug-fixes or features. Source code history is
 controlled with Git. The main repository is hosted in GitHub,
-<https://github.com/tuomasjjrasanen/klupu/> and mirrored in Launchpad
-as a Bazaar repository. The preferred way to contibute code is to
-clone the main Git repository and send a pull-request. Good old
-patches via email are also accepted.
+<https://github.com/tuomasjjrasanen/klupu/>. The preferred way to
+contibute code is to clone the main Git repository and send a
+pull-request. Good old patches via email are also accepted.
 
 How to copy
 ===========
