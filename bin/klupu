@@ -87,12 +87,14 @@ def thresh(minutes_dirpath):
 
     place, starttime, endtime = thresh_meetinginfo(tds)
     decisionmakers = thresh_persons(tds[1])
+    others = thresh_persons(tds[2])
 
     minutes = {
         "place": place,
         "start-time": starttime,
         "end-time": endtime,
         "decision-makers": decisionmakers,
+        "others": others,
         }
 
     return minutes
