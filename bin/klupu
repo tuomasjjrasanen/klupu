@@ -61,9 +61,9 @@ def thresh_meetinginfo(tds):
 
     return place, starttime, endtime
 
-def thresh_decisionmakers(tds):
-    decisionmakers = []
-    for line in [cleanws(p.text) for p in tds[1]("p")]:
+def thresh_persons(td):
+    persons = []
+    for line in [cleanws(p.text) for p in td("p")]:
         if not line:
             continue
 
@@ -73,9 +73,9 @@ def thresh_decisionmakers(tds):
             continue
 
         person_match = RE_PERSON.match(line[presence_mark_match.end():])
-        decisionmakers.append(person_match.group(1))
+        persons.append(person_match.group(1))
 
-    return decisionmakers
+    return persons
 
 def thresh(minutes_dirpath):
     minutes_dirpath = os.path.normpath(minutes_dirpath)
@@ -86,7 +86,7 @@ def thresh(minutes_dirpath):
     tds = info_soup.body("table")[1]("td")[1::2]
 
     place, starttime, endtime = thresh_meetinginfo(tds)
-    decisionmakers = thresh_decisionmakers(tds)
+    decisionmakers = thresh_persons(tds[1])
 
     minutes = {
         "place": place,
