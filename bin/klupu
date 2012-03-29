@@ -28,7 +28,7 @@ from bs4 import BeautifulSoup
 
 RE_DATETIME = re.compile(r"^\w+ (\d\d?)\.(\d\d?)\.(\d{4}), kello (\d\d)\.(\d\d)\D+(\d\d)\.(\d\d)$")
 RE_PERSON = re.compile(r"^(\w+(?:-\w+)*(?: \w+(?:-\w+)*)+)")
-RE_PRESENCE_MARK = re.compile(r"^(–.*)?x\xa0 ")
+RE_PRESENCE_MARK = re.compile(r"^(–.*)?x[\xa0 ]+")
 FILENAME_INFO = "htmtxt0.htm"
 
 def iter_issue_filepaths(minutes_dirpath):
