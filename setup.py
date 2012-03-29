@@ -12,6 +12,7 @@ def _main():
           scripts=["bin/klupu"],
           license="GPLv3+",
           platforms=["Linux"],
+          requires=["bs4"],
           classifiers=[
             "Development Status :: 1 - Planning",
             "Environment :: Console",
