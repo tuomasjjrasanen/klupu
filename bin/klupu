@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 #
 # klupu - scrape meeting minutes of governing bodies of city of Jyväskylä
