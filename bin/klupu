@@ -57,6 +57,8 @@ def thresh_meetinginfo(tds):
     endtimes = []
     for times in RE_TIME.findall(datetimes, date_match.end()):
         starthour, startminutes, endhour, endminutes = [int(v) for v in times]
+        endhour %= 24 # Someone uses stupid format to denote that this
+                      # is part of the yesterday..
         starttime = datetime.datetime(year, month, day, starthour, startminutes)
         endtime = datetime.datetime(year, month, day, endhour, endminutes)
         if starttime > endtime:
