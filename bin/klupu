@@ -47,8 +47,11 @@ def warn(msg):
     print("%s: warning: %s" % (os.path.basename(__file__), msg),
           file=sys.stderr)
 
-def thresh_meetinginfo(tds):
-    datetimes, place = [cleanws(p.text) for p in tds[0]("p")[1:]]
+def thresh_meetinginfo(soup):
+    markerspan = soup(text=re.compile("KOKOUSTIEDOT"))[0].parent
+    ps = markerspan.parent.parent.parent("td")[1]("p")
+
+    datetimes, place = [cleanws(p.text) for p in ps][1:]
 
     # TODO: handle constant timezone + variable DST
     date_match = RE_DATE.match(datetimes)
@@ -94,7 +97,7 @@ def thresh(minutes_dirpath):
 
     tds = info_soup.body("table")[1]("td")[1::2]
 
-    place, starttime, endtime = thresh_meetinginfo(tds)
+    place, starttime, endtime = thresh_meetinginfo(info_soup)
     decisionmakers = thresh_persons(tds[1])
     others = thresh_persons(tds[2])
 
@@ -109,7 +112,8 @@ def thresh(minutes_dirpath):
     return minutes
 
 def _main():
-    for key, value in thresh(sys.argv[1]).items():
+    grains = thresh(sys.argv[1])
+    for key, value in grains.items():
         print(key, ":", value)
 
 if __name__ == "__main__":
