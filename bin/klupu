@@ -52,14 +52,25 @@ def thresh_meetinginfo(soup):
     markerspan = soup(text=re.compile("KOKOUSTIEDOT"))[0].parent
     ps = markerspan.parent.parent.parent("td")[1]("p")
 
-    datetimes, place = [cleanws(p.text) for p in ps][1:]
+    texts = [cleanws(p.text) for p in ps]
+    assert(texts[0] == "\xa0")
+    starttimes = []
+    endtimes = []
+    for text in texts[1:-1]:
+        s, e = thresh_datetime(text)
+        starttimes.extend(s)
+        endtimes.extend(e)
+    place = texts[-1]
 
+    return place, starttimes, endtimes
+
+def thresh_datetime(text):
     # TODO: handle constant timezone + variable DST
-    date_match = RE_DATE.match(datetimes)
+    date_match = RE_DATE.match(text)
     day, month, year = [int(v) for v in date_match.groups()]
     starttimes = []
     endtimes = []
-    for times in RE_TIME.findall(datetimes, date_match.end()):
+    for times in RE_TIME.findall(text, date_match.end()):
         starthour, startminutes, endhour, endminutes = [int(v) for v in times]
         endhour %= 24 # Someone uses stupid format to denote that this
                       # is part of the yesterday..
@@ -72,7 +83,7 @@ def thresh_meetinginfo(soup):
         starttimes.append(starttime)
         endtimes.append(endtime)
     assert(0 < len(starttimes) == len(endtimes))
-    return place, starttimes, endtimes
+    return starttimes, endtimes
 
 def is_almost_empty(line):
     return not line or re.match(r"[\xa0 ]+", line)
