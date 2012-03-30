@@ -70,7 +70,7 @@ def thresh_meetinginfo(soup):
             endtime += datetime.timedelta(1)
         starttimes.append(starttime)
         endtimes.append(endtime)
-
+    assert(0 < len(starttimes) == len(endtimes))
     return place, starttimes, endtimes
 
 def is_almost_empty(line):
