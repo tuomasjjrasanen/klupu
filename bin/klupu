@@ -134,15 +134,15 @@ def thresh(minutes_dirpath):
     with open(info_filepath, encoding="windows-1252") as info_file:
         info_soup = BeautifulSoup(info_file, features=["lxml"])
 
-    place, starttime, endtime = thresh_meetinginfo(info_soup)
+    place, starttimes, endtimes = thresh_meetinginfo(info_soup)
     decisionmakers = thresh_decisionmakers(info_soup)
     others = thresh_others(info_soup)
 
     minutes = {
         "body": body,
         "place": place,
-        "start-time": starttime,
-        "end-time": endtime,
+        "start-times": starttimes,
+        "end-times": endtimes,
         "decision-makers": decisionmakers,
         "others": others,
         }
