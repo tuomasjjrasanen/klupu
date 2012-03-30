@@ -111,7 +111,7 @@ def thresh_persons(td):
     return persons
 
 def thresh_decisionmakers(soup):
-    markerspan = soup(text=re.compile("Päätöksentekijät"))[0].parent
+    markerspan = soup(text=re.compile("Päätöksentekijä"))[0].parent
     td = markerspan.parent.parent.parent("td")[1]
     return thresh_persons(td)
 
