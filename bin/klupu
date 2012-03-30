@@ -73,10 +73,13 @@ def thresh_meetinginfo(soup):
 
     return place, starttimes, endtimes
 
+def is_almost_empty(line):
+    return not line or re.match(r"[\xa0 ]+", line)
+
 def thresh_persons(td):
     persons = []
     for line in [cleanws(p.text) for p in td("p")]:
-        if not line:
+        if is_almost_empty(line):
             continue
 
         presence_mark_match = RE_PRESENCE_MARK.match(line)
