@@ -27,7 +27,7 @@ import sys
 from bs4 import BeautifulSoup
 
 RE_DATE = re.compile(r"^\D*(\d\d?)\.(\d\d?)\.(\d{4})\D+")
-RE_TIME = re.compile(r"(\d\d?)\.(\d\d)\D+(\d\d?)\.(\d\d)")
+RE_TIME = re.compile(r"(\d\d?)\D(\d\d)\D+(\d\d?)\D(\d\d)")
 RE_PERSON = re.compile(r"^([A-ZÖÄÅ][a-zöäå]*(?:-[A-ZÖÄÅ][a-zöäå]*)*(?: [A-ZÖÄÅ][a-zöäå]*(?:-[A-ZÖÄÅ][a-zöäå]*)*)+)")
 RE_PRESENCE_MARK = re.compile(r"^([–-].*)?[xX][\xa0 ]+")
 FILENAME_INFO = "htmtxt0.htm"
