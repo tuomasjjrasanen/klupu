@@ -26,7 +26,8 @@ import sys
 
 from bs4 import BeautifulSoup
 
-RE_DATETIME = re.compile(r"^\D*(\d\d?)\.(\d\d?)\.(\d{4}), kello (\d\d)\.(\d\d)\D+(\d\d)\.(\d\d)$")
+RE_DATE = re.compile(r"^\D*(\d\d?)\.(\d\d?)\.(\d{4})\D+")
+RE_TIME = re.compile(r"(\d\d)\.(\d\d)\D+(\d\d)\.(\d\d)")
 RE_PERSON = re.compile(r"^(\w+(?:-\w+)*(?: \w+(?:-\w+)*)+)")
 RE_PRESENCE_MARK = re.compile(r"^(–.*)?x[\xa0 ]+")
 FILENAME_INFO = "htmtxt0.htm"
@@ -50,16 +51,22 @@ def thresh_meetinginfo(tds):
     datetimes, place = [cleanws(p.text) for p in tds[0]("p")[1:]]
 
     # TODO: handle constant timezone + variable DST
-    values = [int(v) for v in RE_DATETIME.match(datetimes).groups()]
-    day, month, year, starthour, startminutes, endhour, endminutes = values
-    starttime = datetime.datetime(year, month, day, starthour, startminutes)
-    endtime = datetime.datetime(year, month, day, endhour, endminutes)
-    if starttime > endtime:
-        # If the end-time is after midnight, add one day to the date
-        # part.
-        endtime += datetime.timedelta(1)
+    date_match = RE_DATE.match(datetimes)
+    day, month, year = [int(v) for v in date_match.groups()]
+    starttimes = []
+    endtimes = []
+    for times in RE_TIME.findall(datetimes, date_match.end()):
+        starthour, startminutes, endhour, endminutes = [int(v) for v in times]
+        starttime = datetime.datetime(year, month, day, starthour, startminutes)
+        endtime = datetime.datetime(year, month, day, endhour, endminutes)
+        if starttime > endtime:
+            # If the end-time is after midnight, add one day to the
+            # date part.
+            endtime += datetime.timedelta(1)
+        starttimes.append(starttime)
+        endtimes.append(endtime)
 
-    return place, starttime, endtime
+    return place, starttimes, endtimes
 
 def thresh_persons(td):
     persons = []
