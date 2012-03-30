@@ -1,11 +1,11 @@
-===========
- Klupu 0.1
-===========
+=======
+ Klupu
+=======
 
-Klupu is a report mining tool designed for extracting interesting data
-from meeting minutes of Jyväskylä city council and government. Klupu
-is a Finnish word for flail which is a tool used for separating grains
-from husks. Grains of knowledge, in this case.
+Klupu is a report mining tool designed to extract and visualize data
+from meeting minutes of various governing bodies of city of
+Jyväskylä_. Klupu is a Finnish word for flail which is a tool used for
+separating grains from husks. Grains of knowledge, in this case.
 
 Author: Tuomas Jorma Juhani Räsänen <tuomasjjrasanen@tjjr.fi>
 
@@ -15,8 +15,8 @@ How to install
 Requirements
 ------------
 
-- Python 3
-- Beautiful Soup 4
+- `Python 3`_
+- `Beautiful Soup 4`_
 
 To install system-wide, run::
 
@@ -36,16 +36,21 @@ How to contribute
 
 In addition to reporting bugs and improvement suggestions, you are
 encouraged to contribute bug-fixes or features. Source code history is
-controlled with Git. The main repository is hosted in GitHub,
-<https://github.com/tuomasjjrasanen/klupu/>. The preferred way to
-contibute code is to clone the main Git repository and send a
+controlled with Git and hosted hosted in GitHub_. The preferred
+way to contibute code is to clone the main Git repository and send a
 pull-request. Good old patches via email are also accepted.
 
 How to copy
 ===========
 
-Klupu is free (libre) software and licensed under the terms of GNU
-Public License version 3 or later. In short, it means that you are
+Klupu is free (libre) software and licensed under the terms of `GNU
+Public License version 3 or later`_. In short, it means that you are
 free to copy, modify and redistribute this software as long as you
 place the derivative work under a compatible license. See COPYING for
 details.
+
+.. _Jyväskylä: https://en.wikipedia.org/wiki/Jyv%C3%A4skyl%C3%A4
+.. _Python 3: http://www.python.org/
+.. _Beautiful Soup 4: http://www.crummy.com/software/BeautifulSoup/
+.. _GitHub: https://github.com/tuomasjjrasanen/klupu/
+.. _GNU Public License version 3 or later: https://www.gnu.org/copyleft/gpl.html
