@@ -94,17 +94,20 @@ def thresh_decisionmakers(soup):
     td = markerspan.parent.parent.parent("td")[1]
     return thresh_persons(td)
 
+def thresh_others(soup):
+    markerspan = soup(text=re.compile("Muut läsnäolijat"))[0].parent
+    td = markerspan.parent.parent.parent("td")[1]
+    return thresh_persons(td)
+
 def thresh(minutes_dirpath):
     minutes_dirpath = os.path.normpath(minutes_dirpath)
     info_filepath = os.path.join(minutes_dirpath, FILENAME_INFO)
     with open(info_filepath, encoding="windows-1252") as info_file:
         info_soup = BeautifulSoup(info_file, features=["lxml"])
 
-    tds = info_soup.body("table")[1]("td")[1::2]
-
     place, starttime, endtime = thresh_meetinginfo(info_soup)
     decisionmakers = thresh_decisionmakers(info_soup)
-    others = thresh_persons(tds[2])
+    others = thresh_others(info_soup)
 
     minutes = {
         "place": place,
