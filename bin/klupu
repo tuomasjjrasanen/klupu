@@ -56,11 +56,17 @@ def thresh_meetinginfo(soup):
     assert(texts[0] == "\xa0")
     starttimes = []
     endtimes = []
+    place = None
     for text in texts[1:-1]:
-        s, e = thresh_datetime(text)
+        try:
+            s, e = thresh_datetime(text)
+        except AttributeError as err:
+            if str(err) != "'NoneType' object has no attribute 'groups'":
+                raise err
+            place = text
         starttimes.extend(s)
         endtimes.extend(e)
-    place = texts[-1]
+    place = place or texts[-1]
 
     return place, starttimes, endtimes
 
