@@ -20,6 +20,7 @@
 import datetime
 import glob
 import itertools
+import json
 import os.path
 import re
 import sys
@@ -86,8 +87,8 @@ def thresh_datetime(text):
             # If the end-time is after midnight, add one day to the
             # date part.
             endtime += datetime.timedelta(1)
-        starttimes.append(starttime)
-        endtimes.append(endtime)
+        starttimes.append(starttime.isoformat())
+        endtimes.append(endtime.isoformat())
     assert(0 < len(starttimes) == len(endtimes))
     return starttimes, endtimes
 
@@ -151,8 +152,7 @@ def thresh(minutes_dirpath):
 
 def _main():
     grains = thresh(sys.argv[1])
-    for key, value in grains.items():
-        print(key, ":", value)
+    json.dump(grains, sys.stdout, ensure_ascii=False, indent=1)
 
 if __name__ == "__main__":
     _main()
