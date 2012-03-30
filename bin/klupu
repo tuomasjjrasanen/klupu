@@ -40,6 +40,7 @@ def iter_issue_filepaths(minutes_dirpath):
 
 def cleanws(text):
     text = re.sub(r"[ ]+", " ", text)
+    text = re.sub(r"\xad+", "", text)
     text = re.sub(r"\xa0+", "\xa0", text)
     return re.sub(r"[\r\n]", "", text)
 
