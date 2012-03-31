@@ -106,7 +106,7 @@ def thresh_persons(td):
 
         presence_mark_match = RE_PRESENCE_MARK.match(line)
         if not presence_mark_match:
-            warn("skipping line %r" % line)
+            warn("skipping participant info %r" % line)
             continue
 
         person_match = RE_PERSON.match(line[presence_mark_match.end():])
@@ -137,7 +137,7 @@ def thresh_issue(soup):
         # e.g. opening of the meeting, determination of quorum, which
         # do not have Dnro.
         dnro = None
-        warn("Dnro not found")
+        warn("Dnro not found for %r" % title)
 
     return {
         "number": number,
