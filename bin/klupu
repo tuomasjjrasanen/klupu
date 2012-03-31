@@ -32,6 +32,7 @@ RE_TIME = re.compile(r"(\d\d?)\D?(\d\d)\D+(\d\d?)\D?(\d\d)")
 RE_PERSON = re.compile(r"^([A-ZÖÄÅ][a-zöäå]*(?:-[A-ZÖÄÅ][a-zöäå]*)*(?: [A-ZÖÄÅ][a-zöäå]*(?:-[A-ZÖÄÅ][a-zöäå]*)*)+)")
 RE_PRESENCE_MARK = re.compile(r"^([–-].*)?[xX][\xa0 ]+")
 RE_DNRO = re.compile(r"^Dnro[\xa0 ]+(\d+/\d+)$")
+RE_TITLE = re.compile(r"^(\d+)[\xa0 ]+(.*)$")
 FILENAME_INFO = "htmtxt0.htm"
 
 def iter_issue_filepaths(minutes_dirpath):
@@ -123,6 +124,9 @@ def thresh_others(soup):
     return thresh_persons(td)
 
 def thresh_issue(soup):
+    numbered_title = soup.html.body("p", {"class": "Asiaotsikko"})[0].text
+    number, title = RE_TITLE.match(cleanws(numbered_title)).groups()
+    number = int(number)
     first_p = soup.html.body("p")[0]
     dnro_match = RE_DNRO.match(first_p.text)
     if dnro_match:
@@ -135,7 +139,9 @@ def thresh_issue(soup):
         warn("Dnro not found")
 
     return {
+        "number": number,
         "dnro": dnro,
+        "title": title,
         }
 
 def thresh(minutes_dirpath):
