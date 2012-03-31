@@ -125,11 +125,11 @@ def thresh_others(soup):
     return thresh_persons(td)
 
 def thresh_issue(soup):
-    numbered_title = soup.html.body("p", {"class": "Asiaotsikko"})[0].text
-    number, title = RE_TITLE.match(cleanws(numbered_title)).groups()
+    numbered_title = cleanws(soup.html.body("p", {"class": "Asiaotsikko"})[0].text)
+    number, title = RE_TITLE.match(numbered_title).groups()
     number = int(number)
-    first_p = soup.html.body("p")[0]
-    dnro_match = RE_DNRO.match(first_p.text)
+
+    dnro_match = RE_DNRO.match(soup.html.body("p")[0].text)
     if dnro_match:
         dnro = dnro_match.group(1)
     else:
