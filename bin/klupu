@@ -91,8 +91,8 @@ def thresh_datetime(text):
             # If the end-time is after midnight, add one day to the
             # date part.
             endtime += datetime.timedelta(1)
-        starttimes.append(starttime.isoformat())
-        endtimes.append(endtime.isoformat())
+        starttimes.append(starttime)
+        endtimes.append(endtime)
     assert(0 < len(starttimes) == len(endtimes))
     return starttimes, endtimes
 
@@ -201,8 +201,19 @@ def thresh(minutes_dirpath):
         }
 
 def _main():
-    grains = thresh(sys.argv[1])
-    json.dump(grains, sys.stdout, ensure_ascii=False, indent=1)
+    for minutes_dirpath in sys.argv[1:]:
+        grains = thresh(minutes_dirpath)
+        body = grains["body"]
+        starttime = grains["start-times"][0].strftime("%Y-%m-%d-%H-%M")
+        filename = "%s-%s" % (body, starttime)
+
+        # Jason does not know how to serialize datetimes, let's do it
+        # for him this time.
+        grains["start-times"] = [d.isoformat() for d in grains["start-times"]]
+        grains["end-times"] = [d.isoformat() for d in grains["end-times"]]
+
+        with open(filename + ".json", "w") as json_file:
+            json.dump(jsonify(grains), json_file, ensure_ascii=False, indent=1)
 
 if __name__ == "__main__":
     _main()
