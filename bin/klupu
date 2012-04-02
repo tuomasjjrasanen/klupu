@@ -31,7 +31,7 @@ RE_DATE = re.compile(r"^\D*(\d\d?)\.(\d\d?)\.(\d{4})\D+")
 RE_TIME = re.compile(r"(\d\d?)\D?(\d\d)\D+(\d\d?)\D?(\d\d)")
 RE_PERSON = re.compile(r"^([A-ZÖÄÅ][a-zöäå]*(?:-[A-ZÖÄÅ][a-zöäå]*)*(?: [A-ZÖÄÅ][a-zöäå]*(?:-[A-ZÖÄÅ][a-zöäå]*)*)+)")
 RE_PRESENCE_MARK = re.compile(r"^([–-].*)?[xX][\xa0 ]+")
-RE_DNRO = re.compile(r"^Dnro[\xa0 ]+(\d+/\d+)$")
+RE_DNRO = re.compile(r"^Dnro[\xa0 :]+(\d+[ ]?/\d+)$")
 RE_TITLE = re.compile(r"^(\d+)[\xa0 ]+(.*)$")
 FILENAME_INFO = "htmtxt0.htm"
 
@@ -129,15 +129,27 @@ def thresh_issue(soup):
     number, title = RE_TITLE.match(numbered_title).groups()
     number = int(number)
 
-    dnro_match = RE_DNRO.match(soup.html.body("p")[0].text)
-    if dnro_match:
-        dnro = dnro_match.group(1)
-    else:
+    ps = soup.html.body("p")
+    dnros = []
+    for p in ps:
+        dnro_match = RE_DNRO.match(cleanws(p.text))
+        if dnro_match:
+            dnros.append(dnro_match.group(1))
+
+    try:
+        dnro = dnros[0]
+    except IndexError:
         # Some of the issues in each meeting are "standard" issues,
         # e.g. opening of the meeting, determination of quorum, which
         # do not have Dnro.
         dnro = None
         warn("Dnro not found for %r" % title)
+
+    if len(dnros) > 1:
+        warn("Multiple dnros found")
+
+    if dnro == "0/00":
+        dnro = None
 
     return {
         "number": number,
@@ -169,7 +181,7 @@ def thresh(minutes_dirpath):
     decisionmakers = thresh_decisionmakers(info_soup)
     others = thresh_others(info_soup)
 
-    minutes = {
+    return {
         "body": body,
         "place": place,
         "start-times": starttimes,
@@ -178,8 +190,6 @@ def thresh(minutes_dirpath):
         "others": others,
         "issues": issues,
         }
-
-    return minutes
 
 def _main():
     grains = thresh(sys.argv[1])
