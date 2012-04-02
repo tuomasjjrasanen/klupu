@@ -33,6 +33,7 @@ RE_PERSON = re.compile(r"^([A-ZÖÄÅ][a-zöäå]*(?:-[A-ZÖÄÅ][a-zöäå]*)*(
 RE_PRESENCE_MARK = re.compile(r"^([–-].*)?[xX][\xa0 ]+")
 RE_DNRO = re.compile(r"^Dnro[\xa0 :]+(\d+[ ]?/\d+)$")
 RE_TITLE = re.compile(r"^(\d+)[\xa0 ]+(.*)$")
+RE_DECISION = re.compile(r"^Päätös[\xa0 ]+(.*)$")
 FILENAME_INFO = "htmtxt0.htm"
 
 def iter_issue_filepaths(minutes_dirpath):
@@ -151,10 +152,18 @@ def thresh_issue(soup):
     if dnro == "0/00":
         dnro = None
 
+    decision = None
+    decision_ps = soup.html.body("p")
+    for decision_p in decision_ps:
+        decision_match = RE_DECISION.match(cleanws(decision_p.text))
+        if decision_match:
+            decision = decision_match.group(1)
+
     return {
         "number": number,
         "dnro": dnro,
         "title": title,
+        "decision": decision,
         }
 
 def thresh(minutes_dirpath):
