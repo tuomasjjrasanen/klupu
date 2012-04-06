@@ -24,6 +24,7 @@ import json
 import os.path
 import re
 import sys
+import warnings
 
 from bs4 import BeautifulSoup
 
@@ -48,10 +49,6 @@ def cleanws(text):
     text = re.sub(r"\xa0+", "\xa0", text)
     text = re.sub(r"[ ]+", " ", text)
     return text
-
-def warn(msg):
-    print("%s: warning: %s" % (os.path.basename(__file__), msg),
-          file=sys.stderr)
 
 def thresh_meetinginfo(soup):
     markerspan = soup(text=re.compile("KOKOUSTIEDOT"))[0].parent
@@ -107,7 +104,7 @@ def thresh_persons(td):
 
         presence_mark_match = RE_PRESENCE_MARK.match(line)
         if not presence_mark_match:
-            warn("skipping participant info %r" % line)
+            warnings.warn("skipping participant info %r" % line)
             continue
 
         person_match = RE_PERSON.match(line[presence_mark_match.end():])
@@ -144,10 +141,10 @@ def thresh_issue(soup):
         # e.g. opening of the meeting, determination of quorum, which
         # do not have Dnro.
         dnro = None
-        warn("Dnro not found for %r" % title)
+        warnings.warn("Dnro not found for %r" % title)
 
     if len(dnros) > 1:
-        warn("Multiple dnros found")
+        warnings.warn("Multiple dnros found")
 
     if dnro == "0/00":
         dnro = None
