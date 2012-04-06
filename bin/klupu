@@ -213,7 +213,7 @@ def _main():
         grains["end-times"] = [d.isoformat() for d in grains["end-times"]]
 
         with open(filename + ".json", "w") as json_file:
-            json.dump(jsonify(grains), json_file, ensure_ascii=False, indent=1)
+            json.dump(grains, json_file, ensure_ascii=False, indent=1)
 
 if __name__ == "__main__":
     _main()
