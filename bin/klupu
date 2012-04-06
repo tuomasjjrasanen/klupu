@@ -166,25 +166,25 @@ def thresh_issue(soup):
         "decision": decision,
         }
 
+def get_soup(filepath, encoding):
+    with open(filepath, encoding=encoding) as f:
+        return BeautifulSoup(f, from_encoding=encoding)
+
 def thresh(minutes_dirpath):
     minutes_dirpath = os.path.normpath(minutes_dirpath)
 
     issues = []
     for issue_filepath in iter_issue_filepaths(minutes_dirpath):
-        with open(issue_filepath, encoding="windows-1252") as issue_file:
-            issue_soup = BeautifulSoup(issue_file, features=["lxml"])
-        issues.append(thresh_issue(issue_soup))
+        issues.append(thresh_issue(get_soup(issue_filepath, "windows-1252")))
 
     index_filepath = os.path.join(minutes_dirpath, "index.htm")
-    with open(index_filepath, encoding="iso-8859-15") as index_file:
-        index_soup = BeautifulSoup(index_file, features=["lxml"])
+    index_soup = get_soup(index_filepath, "iso-8859-15")
 
     selfurl = index_soup.html.body("a", target="_self")[0]["href"]
     body = os.path.splitext(os.path.basename(selfurl))[0]
 
     info_filepath = os.path.join(minutes_dirpath, FILENAME_INFO)
-    with open(info_filepath, encoding="windows-1252") as info_file:
-        info_soup = BeautifulSoup(info_file, features=["lxml"])
+    info_soup = get_soup(info_filepath, "windows-1252")
 
     place, starttimes, endtimes = thresh_meetinginfo(info_soup)
     decisionmakers = thresh_decisionmakers(info_soup)
