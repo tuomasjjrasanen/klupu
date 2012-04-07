@@ -127,8 +127,11 @@ def thresh_decisionmakers(soup):
     return thresh_persons(td)
 
 def thresh_others(soup):
-    markerspan = soup(text=re.compile("Muut läsnäolijat"))[0].parent
-    td = markerspan.parent.parent.parent("td")[1]
+    markers = soup(text=re.compile("Muut läsnäolijat"))
+    if not markers:
+        warnings.warn("other participants not found")
+        return []
+    td = markers[0].parent.parent.parent.parent("td")[1]
     return thresh_persons(td)
 
 def thresh_issue_title(soup):
