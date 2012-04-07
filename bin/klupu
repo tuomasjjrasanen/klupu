@@ -245,9 +245,43 @@ def json_dump(grains):
     with open("%s-%s.json" % (body, starttime), "w") as json_file:
         json.dump(grains, json_file, ensure_ascii=False, indent=1)
 
+class ValidityWarning(UserWarning):
+    pass
+
+def warn(message):
+    warnings.warn(message, ValidityWarning)
+
+def validate_issue(issue):
+    if not issue["number"]:
+        warn("issue number not found")
+    if not issue["title"]:
+        warn("issue title not found")
+    if issue["dnro"] and not issue["presenters"]:
+        warn("presenters not found")
+
+def validate(grains):
+    if not grains["body"]:
+        warn("governing body not found")
+    if not grains["place"]:
+        warn("meeting place not found")
+    if len(grains["start-times"]) != len(grains["end-times"]):
+        warn("number of meeting start-times and end-times do not match")
+    for starttime, endtime in zip(grains["start-times"], grains["end-times"]):
+        if starttime >= endtime:
+            warn("meeting start time is past end time")
+    if not grains["decision-makers"]:
+        warn("decision-makers not found")
+    if not grains["others"]:
+        warn("other participants not found")
+    if not grains["issues"]:
+        warn("issues not found")
+    for issue in grains["issues"]:
+        validate_issue(issue)
+
 def _main():
     for minutes_dirpath in sys.argv[1:]:
         grains = thresh(minutes_dirpath)
+        validate(grains)
         json_dump(grains)
 
 if __name__ == "__main__":
