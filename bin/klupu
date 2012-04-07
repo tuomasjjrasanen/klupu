@@ -39,11 +39,12 @@ from bs4 import BeautifulSoup
 
 RE_DATE = re.compile(r"^\D*(\d\d?)\.(\d\d?)\.(\d{4})\D+")
 RE_TIME = re.compile(r"(\d\d?)\D?(\d\d)\D+(\d\d?)\D?(\d\d)")
-RE_PERSON = re.compile(r"^([A-ZÖÄÅ][a-zöäå]*(?:-[A-ZÖÄÅ][a-zöäå]*)*(?: [A-ZÖÄÅ][a-zöäå]*(?:-[A-ZÖÄÅ][a-zöäå]*)*)+)")
+RE_PERSON = re.compile(r"([A-ZÖÄÅ][a-zöäå]*(?:-[A-ZÖÄÅ][a-zöäå]*)*(?: [A-ZÖÄÅ][a-zöäå]*(?:-[A-ZÖÄÅ][a-zöäå]*)*)+)")
 RE_PRESENCE_MARK = re.compile(r"^([–-].*)?[xX][\xa0 ]+")
 RE_DNRO = re.compile(r"^Dnro[\xa0 :]+(\d+[ ]?/\d+)$")
 RE_TITLE = re.compile(r"^(\d+)[\xa0 ]+(.*)$")
 RE_DECISION = re.compile(r"^Päätös[\xa0 ]+(.*)$")
+RE_PRESENTER = re.compile(r".*Asian valmisteli(.*)")
 FILENAME_INFO = "htmtxt0.htm"
 
 def iter_issue_filepaths(minutes_dirpath):
@@ -181,8 +182,20 @@ def thresh_decision(soup):
             decision = decision_match.group(1)
     return decision
 
+def thresh_presenters(soup):
+    ps = soup.html.body("p")
+    presenters = []
+    for p in ps:
+        clean_text = cleanws(p.text)
+        match = RE_PRESENTER.match(clean_text)
+        if match:
+            presenters = RE_PERSON.findall(match.group(1))
+            break
+    return presenters
+
 def thresh_issue(soup):
     number, title = thresh_issue_title(soup)
+    presenters = thresh_presenters(soup)
     dnro = thresh_dnro(soup)
     decision = thresh_decision(soup)
     return {
@@ -190,6 +203,7 @@ def thresh_issue(soup):
         "dnro": dnro,
         "title": title,
         "decision": decision,
+        "presenters": presenters,
         }
 
 def get_soup(filepath, encoding):
