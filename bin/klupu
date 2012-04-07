@@ -185,7 +185,7 @@ def thresh_issue(soup):
         }
 
 def get_soup(filepath, encoding):
-    with open(filepath, encoding=encoding) as f:
+    with open(filepath, encoding=encoding, errors="replace") as f:
         return BeautifulSoup(f, from_encoding=encoding)
 
 def thresh(minutes_dirpath):
@@ -220,11 +220,7 @@ def thresh(minutes_dirpath):
 
 def _main():
     for minutes_dirpath in sys.argv[1:]:
-        try:
-            grains = thresh(minutes_dirpath)
-        except UnicodeDecodeError as err:
-            warnings.warn(str(err), UnicodeWarning)
-            continue
+        grains = thresh(minutes_dirpath)
         body = grains["body"]
         starttime = grains["start-times"][0].strftime("%Y-%m-%d-%H-%M")
         filename = "%s-%s" % (body, starttime)
