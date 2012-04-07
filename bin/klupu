@@ -31,12 +31,6 @@ def showwarning(message, category, filename, lineno, *args):
         file = args[0]
     except IndexError:
         file = sys.stderr
-        line = ""
-    else:
-        try:
-            line = args[1]
-        except IndexError:
-            line = ""
     print("klupu: %s:" % category.__name__, message, file=file)
 
 warnings.showwarning = showwarning
