@@ -139,8 +139,14 @@ def thresh_others(soup):
 
 def thresh_issue(soup):
     numbered_title = cleanws(soup.html.body("p", {"class": "Asiaotsikko"})[0].text)
-    number, title = RE_TITLE.match(numbered_title).groups()
-    number = int(number)
+    title_match = RE_TITLE.match(numbered_title)
+    if title_match:
+        number, title = title_match.groups()
+        number = int(number)
+    else:
+        warnings.warn("numbered title not found")
+        number = None
+        title = None
 
     ps = soup.html.body("p")
     dnros = []
