@@ -220,7 +220,11 @@ def thresh(minutes_dirpath):
 
 def _main():
     for minutes_dirpath in sys.argv[1:]:
-        grains = thresh(minutes_dirpath)
+        try:
+            grains = thresh(minutes_dirpath)
+        except UnicodeDecodeError as err:
+            warnings.warn(str(err), UnicodeWarning)
+            continue
         body = grains["body"]
         starttime = grains["start-times"][0].strftime("%Y-%m-%d-%H-%M")
         filename = "%s-%s" % (body, starttime)
