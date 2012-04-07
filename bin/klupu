@@ -26,6 +26,21 @@ import re
 import sys
 import warnings
 
+def showwarning(message, category, filename, lineno, *args):
+    try:
+        file = args[0]
+    except IndexError:
+        file = sys.stderr
+        line = ""
+    else:
+        try:
+            line = args[1]
+        except IndexError:
+            line = ""
+    print("klupu: warning:", message, file=file)
+
+warnings.showwarning = showwarning
+
 from bs4 import BeautifulSoup
 
 RE_DATE = re.compile(r"^\D*(\d\d?)\.(\d\d?)\.(\d{4})\D+")
@@ -104,7 +119,7 @@ def thresh_persons(td):
 
         presence_mark_match = RE_PRESENCE_MARK.match(line)
         if not presence_mark_match:
-            warnings.warn("skipping participant info %r" % line)
+            warnings.warn("skipping participant info")
             continue
 
         person_match = RE_PERSON.match(line[presence_mark_match.end():])
@@ -141,10 +156,10 @@ def thresh_issue(soup):
         # e.g. opening of the meeting, determination of quorum, which
         # do not have Dnro.
         dnro = None
-        warnings.warn("Dnro not found for %r" % title)
+        warnings.warn("dnro not found")
 
     if len(dnros) > 1:
-        warnings.warn("Multiple dnros found")
+        warnings.warn("multiple dnros found")
 
     if dnro == "0/00":
         dnro = None
