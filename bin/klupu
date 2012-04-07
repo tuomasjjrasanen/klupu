@@ -131,7 +131,7 @@ def thresh_others(soup):
     td = markerspan.parent.parent.parent("td")[1]
     return thresh_persons(td)
 
-def thresh_issue(soup):
+def thresh_issue_title(soup):
     numbered_title = cleanws(soup.html.body("p", {"class": "Asiaotsikko"})[0].text)
     title_match = RE_TITLE.match(numbered_title)
     if title_match:
@@ -142,6 +142,9 @@ def thresh_issue(soup):
         number = None
         title = None
 
+    return number, title
+
+def thresh_dnro(soup):
     ps = soup.html.body("p")
     dnros = []
     for p in ps:
@@ -164,13 +167,21 @@ def thresh_issue(soup):
     if dnro == "0/00":
         dnro = None
 
+    return dnro
+
+def thresh_decision(soup):
     decision = None
     decision_ps = soup.html.body("p")
     for decision_p in decision_ps:
         decision_match = RE_DECISION.match(cleanws(decision_p.text))
         if decision_match:
             decision = decision_match.group(1)
+    return decision
 
+def thresh_issue(soup):
+    number, title = thresh_issue_title(soup)
+    dnro = thresh_dnro(soup)
+    decision = thresh_decision(soup)
     return {
         "number": number,
         "dnro": dnro,
