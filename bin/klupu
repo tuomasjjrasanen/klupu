@@ -100,9 +100,6 @@ def parse_datetime(text):
         endtimes.append(endtime)
     return starttimes, endtimes
 
-def is_almost_empty(line):
-    return not line or re.match(r"[\xa0 ]+", line)
-
 def parse_persons(soup, text):
     markers = soup(text=re.compile(text))
     if not markers:
@@ -110,7 +107,7 @@ def parse_persons(soup, text):
     td = markers[0].parent.parent.parent.parent("td")[1]
     persons = []
     for line in [cleanws(p.text) for p in td("p")]:
-        if is_almost_empty(line):
+        if not line or re.match(r"[\xa0 ]+", line):
             continue
 
         presence_mark_match = RE_PRESENCE_MARK.match(line)
