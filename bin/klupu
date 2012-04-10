@@ -64,7 +64,6 @@ def parse_meeting_info(soup):
     ps = markerspan.parent.parent.parent("td")[1]("p")
 
     texts = [cleanws(p.text) for p in ps]
-    assert(texts[0] == "\xa0")
     starttimes = []
     endtimes = []
     place = None
@@ -99,7 +98,6 @@ def parse_datetime(text):
             endtime += datetime.timedelta(1)
         starttimes.append(starttime)
         endtimes.append(endtime)
-    assert(0 < len(starttimes) == len(endtimes))
     return starttimes, endtimes
 
 def is_almost_empty(line):
