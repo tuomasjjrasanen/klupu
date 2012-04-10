@@ -44,12 +44,12 @@ RE_PRESENCE_MARK = re.compile(r"^([–-].*)?[xX][\xa0 ]+")
 RE_DNRO = re.compile(r"^Dnro[\xa0 :]+(\d+[ ]?/\d+)$")
 RE_TITLE = re.compile(r"^(\d+)[\xa0 ]+(.*)$")
 RE_DECISION = re.compile(r"^Päätös[\xa0 ]+(.*)$")
-FILENAME_INFO = "htmtxt0.htm"
+INFO_FILENAME = "htmtxt0.htm"
 
 def iter_issue_filepaths(minutes_dirpath):
     pathname = os.path.join(minutes_dirpath, "htmtxt*.htm")
     for issue_filepath in glob.iglob(pathname):
-        if os.path.basename(issue_filepath) != FILENAME_INFO:
+        if os.path.basename(issue_filepath) != INFO_FILENAME:
             yield issue_filepath
 
 def cleanws(text):
@@ -202,7 +202,7 @@ def thresh(minutes_dirpath):
     selfurl = index_soup.html.body("a", target="_self")[0]["href"]
     body = os.path.splitext(os.path.basename(selfurl))[0]
 
-    info_filepath = os.path.join(minutes_dirpath, FILENAME_INFO)
+    info_filepath = os.path.join(minutes_dirpath, INFO_FILENAME)
     info_soup = get_soup(info_filepath, "windows-1252")
 
     place, starttimes, endtimes = thresh_meetinginfo(info_soup)
