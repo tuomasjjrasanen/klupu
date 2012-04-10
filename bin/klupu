@@ -105,7 +105,11 @@ def parse_datetime(text):
 def is_almost_empty(line):
     return not line or re.match(r"[\xa0 ]+", line)
 
-def parse_persons(td):
+def parse_persons(soup, text):
+    markers = soup(text=re.compile(text))
+    if not markers:
+        return []
+    td = markers[0].parent.parent.parent.parent("td")[1]
     persons = []
     for line in [cleanws(p.text) for p in td("p")]:
         if is_almost_empty(line):
@@ -119,18 +123,6 @@ def parse_persons(td):
         persons.append(person_match.group(1))
 
     return persons
-
-def parse_decisionmakers(soup):
-    markerspan = soup(text=re.compile("Päätöksentekijä"))[0].parent
-    td = markerspan.parent.parent.parent("td")[1]
-    return parse_persons(td)
-
-def parse_others(soup):
-    markers = soup(text=re.compile("Muut läsnäolijat"))
-    if not markers:
-        return []
-    td = markers[0].parent.parent.parent.parent("td")[1]
-    return parse_persons(td)
 
 def parse_issue_title(soup):
     numbered_title = cleanws(soup.html.body("p", {"class": "Asiaotsikko"})[0].text)
@@ -206,8 +198,9 @@ def parse_meeting(minutes_dirpath):
     info_soup = read_soup(info_filepath, "windows-1252")
 
     place, starttimes, endtimes = parse_meeting_info(info_soup)
-    decisionmakers = parse_decisionmakers(info_soup)
-    others = parse_others(info_soup)
+
+    decisionmakers = parse_persons(info_soup, "Päätöksentekijä")
+    others = parse_persons(info_soup, "Muut läsnäolijat")
 
     return {
         "body": body,
