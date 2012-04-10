@@ -59,7 +59,7 @@ def cleanws(text):
     text = re.sub(r"[ ]+", " ", text)
     return text
 
-def thresh_meetinginfo(soup):
+def parse_meeting_info(soup):
     markerspan = soup(text=re.compile("KOKOUSTIEDOT"))[0].parent
     ps = markerspan.parent.parent.parent("td")[1]("p")
 
@@ -70,7 +70,7 @@ def thresh_meetinginfo(soup):
     place = None
     for text in texts[1:-1]:
         try:
-            s, e = thresh_datetime(text)
+            s, e = parse_datetime(text)
         except AttributeError as err:
             if str(err) != "'NoneType' object has no attribute 'groups'":
                 raise err
@@ -81,7 +81,7 @@ def thresh_meetinginfo(soup):
 
     return place, starttimes, endtimes
 
-def thresh_datetime(text):
+def parse_datetime(text):
     # TODO: handle constant timezone + variable DST
     date_match = RE_DATE.match(text)
     day, month, year = [int(v) for v in date_match.groups()]
@@ -105,7 +105,7 @@ def thresh_datetime(text):
 def is_almost_empty(line):
     return not line or re.match(r"[\xa0 ]+", line)
 
-def thresh_persons(td):
+def parse_persons(td):
     persons = []
     for line in [cleanws(p.text) for p in td("p")]:
         if is_almost_empty(line):
@@ -120,19 +120,19 @@ def thresh_persons(td):
 
     return persons
 
-def thresh_decisionmakers(soup):
+def parse_decisionmakers(soup):
     markerspan = soup(text=re.compile("Päätöksentekijä"))[0].parent
     td = markerspan.parent.parent.parent("td")[1]
-    return thresh_persons(td)
+    return parse_persons(td)
 
-def thresh_others(soup):
+def parse_others(soup):
     markers = soup(text=re.compile("Muut läsnäolijat"))
     if not markers:
         return []
     td = markers[0].parent.parent.parent.parent("td")[1]
-    return thresh_persons(td)
+    return parse_persons(td)
 
-def thresh_issue_title(soup):
+def parse_issue_title(soup):
     numbered_title = cleanws(soup.html.body("p", {"class": "Asiaotsikko"})[0].text)
     title_match = RE_TITLE.match(numbered_title)
     if title_match:
@@ -144,7 +144,7 @@ def thresh_issue_title(soup):
 
     return number, title
 
-def thresh_dnro(soup):
+def parse_dnro(soup):
     ps = soup.html.body("p")
     dnros = []
     for p in ps:
@@ -165,7 +165,7 @@ def thresh_dnro(soup):
 
     return dnro
 
-def thresh_decision(soup):
+def parse_decision(soup):
     decision = None
     decision_ps = soup.html.body("p")
     for decision_p in decision_ps:
@@ -174,10 +174,10 @@ def thresh_decision(soup):
             decision = decision_match.group(1)
     return decision
 
-def thresh_issue(soup):
-    number, title = thresh_issue_title(soup)
-    dnro = thresh_dnro(soup)
-    decision = thresh_decision(soup)
+def parse_issue(soup):
+    number, title = parse_issue_title(soup)
+    dnro = parse_dnro(soup)
+    decision = parse_decision(soup)
     return {
         "number": number,
         "dnro": dnro,
@@ -185,29 +185,29 @@ def thresh_issue(soup):
         "decision": decision,
         }
 
-def get_soup(filepath, encoding):
+def read_soup(filepath, encoding):
     with open(filepath, encoding=encoding, errors="replace") as f:
         return BeautifulSoup(f, from_encoding=encoding)
 
-def thresh(minutes_dirpath):
+def parse_meeting(minutes_dirpath):
     minutes_dirpath = os.path.normpath(minutes_dirpath)
 
     issues = []
     for issue_filepath in iter_issue_filepaths(minutes_dirpath):
-        issues.append(thresh_issue(get_soup(issue_filepath, "windows-1252")))
+        issues.append(parse_issue(read_soup(issue_filepath, "windows-1252")))
 
     index_filepath = os.path.join(minutes_dirpath, "index.htm")
-    index_soup = get_soup(index_filepath, "iso-8859-15")
+    index_soup = read_soup(index_filepath, "iso-8859-15")
 
     selfurl = index_soup.html.body("a", target="_self")[0]["href"]
     body = os.path.splitext(os.path.basename(selfurl))[0]
 
     info_filepath = os.path.join(minutes_dirpath, INFO_FILENAME)
-    info_soup = get_soup(info_filepath, "windows-1252")
+    info_soup = read_soup(info_filepath, "windows-1252")
 
-    place, starttimes, endtimes = thresh_meetinginfo(info_soup)
-    decisionmakers = thresh_decisionmakers(info_soup)
-    others = thresh_others(info_soup)
+    place, starttimes, endtimes = parse_meeting_info(info_soup)
+    decisionmakers = parse_decisionmakers(info_soup)
+    others = parse_others(info_soup)
 
     return {
         "body": body,
@@ -264,7 +264,7 @@ def validate(meeting):
 
 def _main():
     for minutes_dirpath in sys.argv[1:]:
-        meeting = thresh(minutes_dirpath)
+        meeting = parse_meeting(minutes_dirpath)
         validate(meeting)
         json_dump(meeting)
 
