@@ -219,17 +219,17 @@ def thresh(minutes_dirpath):
         "issues": issues,
         }
 
-def json_dump(grains):
-    body = grains["body"]
-    starttime = grains["start-times"][0].strftime("%Y-%m-%d-%H-%M")
+def json_dump(meeting):
+    body = meeting["body"]
+    starttime = meeting["start-times"][0].strftime("%Y-%m-%d-%H-%M")
 
     # Jason does not know how to serialize datetimes, let's do it for
     # him this time.
-    grains["start-times"] = [d.isoformat() for d in grains["start-times"]]
-    grains["end-times"] = [d.isoformat() for d in grains["end-times"]]
+    meeting["start-times"] = [d.isoformat() for d in meeting["start-times"]]
+    meeting["end-times"] = [d.isoformat() for d in meeting["end-times"]]
 
     with open("%s-%s.json" % (body, starttime), "w") as json_file:
-        json.dump(grains, json_file, ensure_ascii=False, indent=1)
+        json.dump(meeting, json_file, ensure_ascii=False, indent=1)
 
 class ValidityWarning(UserWarning):
     pass
@@ -243,30 +243,30 @@ def validate_issue(issue):
     if not issue["title"]:
         warn("issue title not found")
 
-def validate(grains):
-    if not grains["body"]:
+def validate(meeting):
+    if not meeting["body"]:
         warn("governing body not found")
-    if not grains["place"]:
+    if not meeting["place"]:
         warn("meeting place not found")
-    if len(grains["start-times"]) != len(grains["end-times"]):
+    if len(meeting["start-times"]) != len(meeting["end-times"]):
         warn("number of meeting start-times and end-times do not match")
-    for starttime, endtime in zip(grains["start-times"], grains["end-times"]):
+    for starttime, endtime in zip(meeting["start-times"], meeting["end-times"]):
         if starttime >= endtime:
             warn("meeting start time is past end time")
-    if not grains["decision-makers"]:
+    if not meeting["decision-makers"]:
         warn("decision-makers not found")
-    if not grains["others"]:
+    if not meeting["others"]:
         warn("other participants not found")
-    if not grains["issues"]:
+    if not meeting["issues"]:
         warn("issues not found")
-    for issue in grains["issues"]:
+    for issue in meeting["issues"]:
         validate_issue(issue)
 
 def _main():
     for minutes_dirpath in sys.argv[1:]:
-        grains = thresh(minutes_dirpath)
-        validate(grains)
-        json_dump(grains)
+        meeting = thresh(minutes_dirpath)
+        validate(meeting)
+        json_dump(meeting)
 
 if __name__ == "__main__":
     _main()
