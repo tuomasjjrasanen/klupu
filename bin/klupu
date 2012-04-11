@@ -25,6 +25,7 @@ import re
 import sys
 import warnings
 
+import klupu.db
 import klupu.json
 
 def showwarning(message, category, filename, lineno, *args):
@@ -243,7 +244,8 @@ def _main():
     for minutes_dirpath in sys.argv[1:]:
         meeting = parse_meeting(minutes_dirpath)
         validate(meeting)
-        klupu.json.dump(meeting)
+        # klupu.json.dump(meeting)
+        klupu.db.insert(meeting)
 
 if __name__ == "__main__":
     _main()
