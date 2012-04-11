@@ -3,13 +3,15 @@
 from distutils.core import setup
 
 def _main():
-    setup(name="Klupu",
+    setup(name="klupu",
           version="0.1",
           description="scrape meeting minutes of governing bodies of city of Jyväskylä",
           author="Tuomas Jorma Juhani Räsänen",
           author_email="tuomasjjrasanen@tjjr.fi",
           url="http://tjjr.fi/sw/klupu/",
           scripts=["bin/klupu"],
+          packages=["klupu"],
+          package_dir={"klupu": "src"},
           license="GPLv3+",
           platforms=["Linux"],
           requires=["bs4"],

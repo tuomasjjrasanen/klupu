@@ -20,11 +20,12 @@
 import datetime
 import glob
 import itertools
-import json
 import os.path
 import re
 import sys
 import warnings
+
+import klupu.json
 
 def showwarning(message, category, filename, lineno, *args):
     try:
@@ -207,18 +208,6 @@ def parse_meeting(minutes_dirpath):
         "issues": issues,
         }
 
-def json_dump(meeting):
-    body = meeting["body"]
-    starttime = meeting["start-times"][0].strftime("%Y-%m-%d-%H-%M")
-
-    # Jason does not know how to serialize datetimes, let's do it for
-    # him this time.
-    meeting["start-times"] = [d.isoformat() for d in meeting["start-times"]]
-    meeting["end-times"] = [d.isoformat() for d in meeting["end-times"]]
-
-    with open("%s-%s.json" % (body, starttime), "w") as json_file:
-        json.dump(meeting, json_file, ensure_ascii=False, indent=1)
-
 class ValidityWarning(UserWarning):
     pass
 
@@ -254,7 +243,7 @@ def _main():
     for minutes_dirpath in sys.argv[1:]:
         meeting = parse_meeting(minutes_dirpath)
         validate(meeting)
-        json_dump(meeting)
+        klupu.json.dump(meeting)
 
 if __name__ == "__main__":
     _main()
