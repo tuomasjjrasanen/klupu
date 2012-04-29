@@ -26,7 +26,6 @@ import sys
 import warnings
 
 import klupu.db
-import klupu.json
 
 def showwarning(message, category, filename, lineno, *args):
     try:
@@ -244,7 +243,6 @@ def _main():
     for minutes_dirpath in sys.argv[1:]:
         meeting = parse_meeting(minutes_dirpath)
         validate(meeting)
-        # klupu.json.dump(meeting)
         klupu.db.insert(meeting)
 
 if __name__ == "__main__":
