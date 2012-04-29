@@ -13,3 +13,14 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+import glob
+import os.path
+
+INFO_FILENAME = "htmtxt0.htm"
+
+def iter_issue_filepaths(minutes_dirpath):
+    pathname = os.path.join(minutes_dirpath, "htmtxt*.htm")
+    for issue_filepath in glob.iglob(pathname):
+        if os.path.basename(issue_filepath) != INFO_FILENAME:
+            yield issue_filepath

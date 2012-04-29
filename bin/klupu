@@ -18,13 +18,13 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import datetime
-import glob
 import itertools
 import os.path
 import re
 import sys
 import warnings
 
+import klupu
 import klupu.db
 
 def showwarning(message, category, filename, lineno, *args):
@@ -45,13 +45,6 @@ RE_PRESENCE_MARK = re.compile(r"^([–-].*)?[xX][\xa0 ]+")
 RE_DNRO = re.compile(r"^Dnro[\xa0 :]+(\d+[ ]?/\d+)$")
 RE_TITLE = re.compile(r"^(\d+)[\xa0 ]+(.*)$")
 RE_DECISION = re.compile(r"^Päätös[\xa0 ]+(.*)$")
-INFO_FILENAME = "htmtxt0.htm"
-
-def iter_issue_filepaths(minutes_dirpath):
-    pathname = os.path.join(minutes_dirpath, "htmtxt*.htm")
-    for issue_filepath in glob.iglob(pathname):
-        if os.path.basename(issue_filepath) != INFO_FILENAME:
-            yield issue_filepath
 
 def cleanws(text):
     text = re.sub(r"[\r\n]", " ", text)
@@ -181,7 +174,7 @@ def parse_meeting(minutes_dirpath):
     minutes_dirpath = os.path.normpath(minutes_dirpath)
 
     issues = []
-    for issue_filepath in iter_issue_filepaths(minutes_dirpath):
+    for issue_filepath in klupu.iter_issue_filepaths(minutes_dirpath):
         issues.append(parse_issue(read_soup(issue_filepath, "windows-1252")))
 
     index_filepath = os.path.join(minutes_dirpath, "index.htm")
