@@ -9,7 +9,7 @@ def _main():
           author="Tuomas Jorma Juhani Räsänen",
           author_email="tuomasjjrasanen@tjjr.fi",
           url="http://tjjr.fi/sw/klupu/",
-          scripts=["bin/klupu"],
+          scripts=["bin/klupu", "bin/klupu-clean"],
           packages=["klupu"],
           package_dir={"klupu": "src"},
           license="GPLv3+",
