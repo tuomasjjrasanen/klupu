@@ -16,6 +16,7 @@
 
 import glob
 import os.path
+import re
 
 import bs4
 
@@ -65,5 +66,13 @@ def clean_soup(soup):
     for tag in soup.find_all():
         if not tag.text.strip():
             tag.replace_with_children()
+
+    for tag in soup.find_all(text=True):
+        text = tag.string
+        text = re.sub(r"[\r\n]", " ", text)
+        text = re.sub(r"\xad+", "", text)
+        text = re.sub(r"\xa0+", "\xa0", text)
+        text = re.sub(r"[ ]+", " ", text)
+        tag.replace_with(text)
 
     return soup

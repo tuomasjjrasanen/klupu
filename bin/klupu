@@ -46,18 +46,11 @@ RE_DNRO = re.compile(r"^Dnro[\xa0 :]+(\d+[ ]?/\d+)$")
 RE_TITLE = re.compile(r"^(\d+)[\xa0 ]+(.*)$")
 RE_DECISION = re.compile(r"^Päätös[\xa0 ]+(.*)$")
 
-def cleanws(text):
-    text = re.sub(r"[\r\n]", " ", text)
-    text = re.sub(r"\xad+", "", text)
-    text = re.sub(r"\xa0+", "\xa0", text)
-    text = re.sub(r"[ ]+", " ", text)
-    return text
-
 def parse_meeting_info(soup):
     markerspan = soup(text=re.compile("KOKOUSTIEDOT"))[0].parent
     ps = markerspan.parent.parent.parent("td")[1]("p")
 
-    texts = [cleanws(p.text) for p in ps]
+    texts = [p.text for p in ps]
     starttimes = []
     endtimes = []
     place = None
@@ -100,7 +93,7 @@ def parse_persons(soup, text):
         return []
     td = markers[0].parent.parent.parent.parent("td")[1]
     persons = []
-    for line in [cleanws(p.text) for p in td("p")]:
+    for line in [p.text for p in td("p")]:
         if not line or re.match(r"[\xa0 ]+", line):
             continue
 
@@ -114,7 +107,7 @@ def parse_persons(soup, text):
     return persons
 
 def parse_issue_title(soup):
-    numbered_title = cleanws(soup.html.body("p", {"class": "Asiaotsikko"})[0].text)
+    numbered_title = soup.html.body("p", {"class": "Asiaotsikko"})[0].text
     title_match = RE_TITLE.match(numbered_title)
     if title_match:
         number, title = title_match.groups()
@@ -129,7 +122,7 @@ def parse_dnro(soup):
     ps = soup.html.body("p")
     dnros = []
     for p in ps:
-        dnro_match = RE_DNRO.match(cleanws(p.text))
+        dnro_match = RE_DNRO.match(p.text)
         if dnro_match:
             dnros.append(dnro_match.group(1))
 
@@ -150,7 +143,7 @@ def parse_decision(soup):
     decision = None
     decision_ps = soup.html.body("p")
     for decision_p in decision_ps:
-        decision_match = RE_DECISION.match(cleanws(decision_p.text))
+        decision_match = RE_DECISION.match(decision_p.text)
         if decision_match:
             decision = decision_match.group(1)
     return decision
