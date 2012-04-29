@@ -103,7 +103,10 @@ def parse_persons(soup, text):
 
 def parse_issue_title(soup):
     numbered_title = soup.html.body("p", {"class": "Asiaotsikko"})[0].text
-    return [s.strip() for s in numbered_title.split("\xa0") if s.strip()]
+    parts = [s.strip() for s in numbered_title.split("\xa0") if s.strip()]
+    number = int(parts[0])
+    title = " ".join(parts[1:])
+    return number, title
 
 def parse_dnro(soup):
     ps = soup.html.body("p")
