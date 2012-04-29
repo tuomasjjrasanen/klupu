@@ -111,7 +111,7 @@ def parse_dnro(soup):
     ps = soup.html.body("p")
     dnros = []
     for p in ps:
-        dnro_match = RE_DNRO.match(p.text)
+        dnro_match = RE_DNRO.match(p.text.strip())
         if dnro_match:
             dnros.append(dnro_match.group(1))
 
