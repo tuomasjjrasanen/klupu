@@ -130,11 +130,11 @@ def parse_dnro(soup):
 
 def parse_decision(soup):
     decision = None
-    decision_ps = soup.html.body("p")
-    for decision_p in decision_ps:
-        decision_match = RE_DECISION.match(decision_p.text)
-        if decision_match:
-            decision = decision_match.group(1)
+    for p in soup.html.body("p"):
+        try:
+            marker, decision = [s.strip() for s in p.text.split("\xa0")]
+        except ValueError:
+            continue
     return decision
 
 def parse_issue(soup):
