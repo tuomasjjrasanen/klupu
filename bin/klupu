@@ -130,9 +130,11 @@ def parse_decision(soup):
     decision = None
     for p in soup.html.body("p"):
         try:
-            marker, decision = [s.strip() for s in p.text.split("\xa0")]
+            marker, decision_candidate = [s.strip() for s in p.text.split("\xa0")]
         except ValueError:
             continue
+        if marker == "Päätös":
+            decision = decision_candidate
     return decision
 
 def parse_issue(soup):
