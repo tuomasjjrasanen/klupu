@@ -70,30 +70,34 @@ def _main():
         minutes_dirpath = os.path.normpath(minutes_dirpath)
 
         minutes_dirname = os.path.basename(minutes_dirpath)
-        dest_dirpath = os.path.join(dest_dirpath, minutes_dirname)
+        clean_minutes_dirpath = os.path.join(dest_dirpath, minutes_dirname)
         try:
-            os.mkdir(dest_dirpath)
+            os.mkdir(clean_minutes_dirpath)
         except OSError as err:
             if err.errno != errno.EEXIST:
                 raise err
 
-        index_filepath = os.path.join(minutes_dirpath, "index.htm")
+        index_filename = "index.htm"
+        index_filepath = os.path.join(minutes_dirpath, index_filename)
         index_soup = klupu.read_soup(index_filepath, "iso-8859-15")
         clean_index_soup = clean(index_soup)
-        with open(os.path.join(dest_dirpath, "index.htm"), "w") as f:
+        clean_index_filepath = os.path.join(clean_minutes_dirpath, index_filename)
+        with open(clean_index_filepath, "w") as f:
             f.write(clean_index_soup.prettify(formatter="html"))
 
         for issue_filepath in klupu.iter_issue_filepaths(minutes_dirpath):
+            issue_filename = os.path.basename(issue_filepath)
             issue_soup = klupu.read_soup(issue_filepath, "windows-1252")
             clean_issue_soup = clean(issue_soup)
-            issue_filename = os.path.basename(issue_filepath)
-            with open(os.path.join(dest_dirpath, issue_filename), "w") as f:
+            clean_issue_filepath = os.path.join(clean_minutes_dirpath, issue_filename)
+            with open(clean_issue_filepath, "w") as f:
                 f.write(clean_issue_soup.prettify(formatter="html"))
 
-        info_filepath = os.path.join(minutes_dirpath, klupu.INFO_FILENAME)
+        info_filename = klupu.INFO_FILENAME
+        info_filepath = os.path.join(minutes_dirpath, info_filename)
         info_soup = klupu.read_soup(info_filepath, "windows-1252")
         clean_info_soup = clean(info_soup)
-        with open(os.path.join(dest_dirpath, klupu.INFO_FILENAME), "w") as f:
+        with open(os.path.join(clean_minutes_dirpath, info_filename), "w") as f:
             f.write(clean_info_soup.prettify(formatter="html"))
 
 if __name__ == "__main__":
