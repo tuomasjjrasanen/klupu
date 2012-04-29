@@ -17,7 +17,7 @@
 import glob
 import os.path
 
-from bs4 import BeautifulSoup
+import bs4
 
 INFO_FILENAME = "htmtxt0.htm"
 
@@ -29,4 +29,41 @@ def iter_issue_filepaths(minutes_dirpath):
 
 def read_soup(filepath, encoding):
     with open(filepath, encoding=encoding, errors="replace") as f:
-        return BeautifulSoup(f, from_encoding=encoding)
+        return bs4.BeautifulSoup(f, from_encoding=encoding)
+
+def clean_soup(soup):
+
+    for tag in soup.find_all(text=lambda t: isinstance(t, bs4.Comment)):
+        tag.extract()
+
+    for tag in soup.find_all(text=lambda t: isinstance(t, bs4.Declaration)):
+        tag.extract()
+
+    for tag in soup("style"):
+        tag.extract()
+
+    for tag in soup("meta"):
+        tag.extract()
+
+    for tag in soup("span"):
+        tag.replace_with_children()
+
+    for tag in soup("font"):
+        tag.replace_with_children()
+
+    for tag in soup("st1:metricconverter"):
+        tag.replace_with_children()
+
+    for tag in soup("st1:personname"):
+        tag.replace_with_children()
+
+    for tag in soup.find_all():
+        attrs = tag.attrs
+        saved_attrs = set(["class", "href", "target"]) & set(attrs.keys())
+        tag.attrs = {a: attrs[a] for a in saved_attrs}
+
+    for tag in soup.find_all():
+        if not tag.text.strip():
+            tag.replace_with_children()
+
+    return soup

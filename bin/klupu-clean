@@ -21,48 +21,7 @@ import errno
 import os.path
 import sys
 
-from bs4 import Comment
-from bs4 import CData
-import bs4
-
 import klupu
-
-def clean(soup):
-
-    for tag in soup.find_all(text=lambda t: isinstance(t, Comment)):
-        tag.extract()
-
-    for tag in soup.find_all(text=lambda t: isinstance(t, bs4.Declaration)):
-        tag.extract()
-
-    for tag in soup("style"):
-        tag.extract()
-
-    for tag in soup("meta"):
-        tag.extract()
-
-    for tag in soup("span"):
-        tag.replace_with_children()
-
-    for tag in soup("font"):
-        tag.replace_with_children()
-
-    for tag in soup("st1:metricconverter"):
-        tag.replace_with_children()
-
-    for tag in soup("st1:personname"):
-        tag.replace_with_children()
-
-    for tag in soup.find_all():
-        attrs = tag.attrs
-        saved_attrs = set(["class", "href", "target"]) & set(attrs.keys())
-        tag.attrs = {a: attrs[a] for a in saved_attrs}
-
-    for tag in soup.find_all():
-        if not tag.text.strip():
-            tag.replace_with_children()
-
-    return soup
 
 def _main():
     dest_dirpath = sys.argv[1]
@@ -80,7 +39,7 @@ def _main():
         index_filename = "index.htm"
         index_filepath = os.path.join(minutes_dirpath, index_filename)
         index_soup = klupu.read_soup(index_filepath, "iso-8859-15")
-        clean_index_soup = clean(index_soup)
+        clean_index_soup = klupu.clean_soup(index_soup)
         clean_index_filepath = os.path.join(clean_minutes_dirpath, index_filename)
         with open(clean_index_filepath, "w") as f:
             f.write(clean_index_soup.prettify(formatter="html"))
@@ -88,7 +47,7 @@ def _main():
         for issue_filepath in klupu.iter_issue_filepaths(minutes_dirpath):
             issue_filename = os.path.basename(issue_filepath)
             issue_soup = klupu.read_soup(issue_filepath, "windows-1252")
-            clean_issue_soup = clean(issue_soup)
+            clean_issue_soup = klupu.clean_soup(issue_soup)
             clean_issue_filepath = os.path.join(clean_minutes_dirpath, issue_filename)
             with open(clean_issue_filepath, "w") as f:
                 f.write(clean_issue_soup.prettify(formatter="html"))
@@ -96,7 +55,7 @@ def _main():
         info_filename = klupu.INFO_FILENAME
         info_filepath = os.path.join(minutes_dirpath, info_filename)
         info_soup = klupu.read_soup(info_filepath, "windows-1252")
-        clean_info_soup = clean(info_soup)
+        clean_info_soup = klupu.clean_soup(info_soup)
         with open(os.path.join(clean_minutes_dirpath, info_filename), "w") as f:
             f.write(clean_info_soup.prettify(formatter="html"))
 
