@@ -37,7 +37,7 @@ warnings.showwarning = showwarning
 
 RE_DATE = re.compile(r"^\D*(\d\d?)\.(\d\d?)\.(\d{4})\D+")
 RE_TIME = re.compile(r"(\d\d?)\D?(\d\d)\D+(\d\d?)\D?(\d\d)")
-RE_PERSON = re.compile(r"([A-ZÖÄÅ][a-zöäå]*(?:-[A-ZÖÄÅ][a-zöäå]*)*(?: [A-ZÖÄÅ][a-zöäå]*(?:-[A-ZÖÄÅ][a-zöäå]*)*)+)")
+RE_PERSON = re.compile(r"^([A-ZÖÄÅ][a-zöäå]*(?:-[A-ZÖÄÅ][a-zöäå]*)*(?: [A-ZÖÄÅ][a-zöäå]*(?:-[A-ZÖÄÅ][a-zöäå]*)*)+)$")
 RE_PRESENCE_MARK = re.compile(r"^([–-].*)?[xX][\xa0 ]+")
 RE_DNRO = re.compile(r"^Dnro[\xa0 :]+(\d+[ ]?/\d+)$")
 
@@ -82,23 +82,34 @@ def parse_datetime(text):
         endtimes.append(endtime)
     return starttimes, endtimes
 
-def parse_persons(soup, text):
-    markers = soup(text=re.compile(text))
+def parse_decision_makers(soup):
+    markers = soup(text=re.compile("Päätöksentekijä"))
     if not markers:
         return []
-    td = markers[0].parent.parent.parent.parent("td")[1]
+    td = markers[0].parent.parent.parent("td")[1]
     persons = []
-    for line in [p.text for p in td("p")]:
-        if not line or re.match(r"[\xa0 ]+", line):
-            continue
+    for text in [p.text for p in td("p")]:
+        parts = [s.strip() for s in text.split("\xa0") if s.strip()]
+        if parts[0].upper() == "X":
+            name_match = RE_PERSON.match(parts[1])
+            persons.append(name_match.group(1))
+        elif parts[0].upper() in ("–", "-"):
+            name_match = RE_PERSON.match(parts[2])
+            persons.append(name_match.group(1))
 
-        presence_mark_match = RE_PRESENCE_MARK.match(line)
-        if not presence_mark_match:
-            continue
+    return persons
 
-        person_match = RE_PERSON.match(line[presence_mark_match.end():])
-        persons.append(person_match.group(1))
-
+def parse_others(soup):
+    markers = soup(text=re.compile("Muut läsnäolijat"))
+    if not markers:
+        return []
+    td = markers[0].parent.parent.parent("td")[1]
+    persons = []
+    for text in [p.text for p in td("p")]:
+        parts = [s.strip() for s in text.split("\xa0") if s.strip()]
+        if parts[0].upper() == "X":
+            name_match = RE_PERSON.match(parts[1])
+            persons.append(name_match.group(1))
     return persons
 
 def parse_issue_title(soup):
@@ -171,15 +182,15 @@ def parse_meeting(minutes_dirpath):
 
     place, starttimes, endtimes = parse_meeting_info(info_soup)
 
-    decisionmakers = parse_persons(info_soup, "Päätöksentekijä")
-    others = parse_persons(info_soup, "Muut läsnäolijat")
+    decision_makers = parse_decision_makers(info_soup)
+    others = parse_others(info_soup)
 
     return {
         "body": body,
         "place": place,
         "start-times": starttimes,
         "end-times": endtimes,
-        "decision-makers": decisionmakers,
+        "decision-makers": decision_makers,
         "others": others,
         "issues": issues,
         }
