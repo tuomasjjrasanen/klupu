@@ -169,7 +169,7 @@ def parse_meeting(minutes_dirpath):
     selfurl = index_soup.html.body("a", target="_self")[0]["href"]
     body = os.path.splitext(os.path.basename(selfurl))[0]
 
-    info_filepath = os.path.join(minutes_dirpath, INFO_FILENAME)
+    info_filepath = os.path.join(minutes_dirpath, klupu.INFO_FILENAME)
     info_soup = klupu.read_soup(info_filepath, "windows-1252")
 
     place, starttimes, endtimes = parse_meeting_info(info_soup)
