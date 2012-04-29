@@ -166,25 +166,21 @@ def parse_issue(soup):
         "decision": decision,
         }
 
-def read_soup(filepath, encoding):
-    with open(filepath, encoding=encoding, errors="replace") as f:
-        return BeautifulSoup(f, from_encoding=encoding)
-
 def parse_meeting(minutes_dirpath):
     minutes_dirpath = os.path.normpath(minutes_dirpath)
 
     issues = []
     for issue_filepath in klupu.iter_issue_filepaths(minutes_dirpath):
-        issues.append(parse_issue(read_soup(issue_filepath, "windows-1252")))
+        issues.append(parse_issue(klupu.read_soup(issue_filepath, "windows-1252")))
 
     index_filepath = os.path.join(minutes_dirpath, "index.htm")
-    index_soup = read_soup(index_filepath, "iso-8859-15")
+    index_soup = klupu.read_soup(index_filepath, "iso-8859-15")
 
     selfurl = index_soup.html.body("a", target="_self")[0]["href"]
     body = os.path.splitext(os.path.basename(selfurl))[0]
 
     info_filepath = os.path.join(minutes_dirpath, INFO_FILENAME)
-    info_soup = read_soup(info_filepath, "windows-1252")
+    info_soup = klupu.read_soup(info_filepath, "windows-1252")
 
     place, starttimes, endtimes = parse_meeting_info(info_soup)
 

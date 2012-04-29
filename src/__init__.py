@@ -17,6 +17,8 @@
 import glob
 import os.path
 
+from bs4 import BeautifulSoup
+
 INFO_FILENAME = "htmtxt0.htm"
 
 def iter_issue_filepaths(minutes_dirpath):
@@ -24,3 +26,7 @@ def iter_issue_filepaths(minutes_dirpath):
     for issue_filepath in glob.iglob(pathname):
         if os.path.basename(issue_filepath) != INFO_FILENAME:
             yield issue_filepath
+
+def read_soup(filepath, encoding):
+    with open(filepath, encoding=encoding, errors="replace") as f:
+        return BeautifulSoup(f, from_encoding=encoding)
