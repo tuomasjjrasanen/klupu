@@ -103,7 +103,7 @@ def parse_persons(soup, text):
 
 def parse_issue_title(soup):
     numbered_title = soup.html.body("p", {"class": "Asiaotsikko"})[0].text
-    return [s.strip() for s in numbered_title.split("\xa0")]
+    return [s.strip() for s in numbered_title.split("\xa0") if s.strip()]
 
 def parse_dnro(soup):
     ps = soup.html.body("p")
@@ -130,11 +130,11 @@ def parse_decision(soup):
     decision = None
     for p in soup.html.body("p"):
         try:
-            marker, decision_candidate = [s.strip() for s in p.text.split("\xa0")]
+            marker, d = [s.strip() for s in p.text.split("\xa0") if s.strip()]
         except ValueError:
             continue
         if marker == "Päätös":
-            decision = decision_candidate
+            decision = d
     return decision
 
 def parse_issue(soup):
