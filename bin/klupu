@@ -40,8 +40,6 @@ RE_TIME = re.compile(r"(\d\d?)\D?(\d\d)\D+(\d\d?)\D?(\d\d)")
 RE_PERSON = re.compile(r"([A-ZÖÄÅ][a-zöäå]*(?:-[A-ZÖÄÅ][a-zöäå]*)*(?: [A-ZÖÄÅ][a-zöäå]*(?:-[A-ZÖÄÅ][a-zöäå]*)*)+)")
 RE_PRESENCE_MARK = re.compile(r"^([–-].*)?[xX][\xa0 ]+")
 RE_DNRO = re.compile(r"^Dnro[\xa0 :]+(\d+[ ]?/\d+)$")
-RE_TITLE = re.compile(r"^(\d+)[\xa0 ]+(.*)$")
-RE_DECISION = re.compile(r"^Päätös[\xa0 ]+(.*)$")
 
 def parse_meeting_info(soup):
     markerspan = soup(text=re.compile("KOKOUSTIEDOT"))[0].parent
