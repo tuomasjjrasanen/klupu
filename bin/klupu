@@ -105,15 +105,7 @@ def parse_persons(soup, text):
 
 def parse_issue_title(soup):
     numbered_title = soup.html.body("p", {"class": "Asiaotsikko"})[0].text
-    title_match = RE_TITLE.match(numbered_title)
-    if title_match:
-        number, title = title_match.groups()
-        number = int(number)
-    else:
-        number = None
-        title = None
-
-    return number, title
+    return [s.strip() for s in numbered_title.split("\xa0")]
 
 def parse_dnro(soup):
     ps = soup.html.body("p")
@@ -161,7 +153,9 @@ def parse_meeting(minutes_dirpath):
 
     issues = []
     for issue_filepath in klupu.iter_issue_filepaths(minutes_dirpath):
-        issues.append(parse_issue(klupu.read_soup(issue_filepath, "windows-1252")))
+        issue_soup = klupu.read_soup(issue_filepath, "windows-1252")
+        issue = parse_issue(issue_soup)
+        issues.append(issue)
 
     index_filepath = os.path.join(minutes_dirpath, "index.htm")
     index_soup = klupu.read_soup(index_filepath, "iso-8859-15")
