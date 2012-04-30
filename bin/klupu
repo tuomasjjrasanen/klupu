@@ -35,32 +35,53 @@ def showwarning(message, category, filename, lineno, *args):
 
 warnings.showwarning = showwarning
 
-RE_DATE = re.compile(r"^\D*(\d\d?)\.(\d\d?)\.(\d{4})\D+")
-RE_TIME = re.compile(r"(\d\d?)\D?(\d\d)\D+(\d\d?)\D?(\d\d)")
+RE_DATE = re.compile(r"(\d\d?)\.(\d\d?)\.(\d{4})")
+RE_TIME = re.compile(r"kello (\d\d?)\.(\d\d)[–-](\d\d?)\.(\d\d)")
+
 RE_PERSON = re.compile(r"^([A-ZÖÄÅ][a-zöäå]*(?:-[A-ZÖÄÅ][a-zöäå]*)*(?: [A-ZÖÄÅ][a-zöäå]*(?:-[A-ZÖÄÅ][a-zöäå]*)*)+)$")
 RE_PRESENCE_MARK = re.compile(r"^([–-].*)?[xX][\xa0 ]+")
 RE_DNRO = re.compile(r"^Dnro[\xa0 :]+(\d+[ ]?/\d+)$")
 
 def parse_meeting_info(soup):
-    markerspan = soup(text=re.compile("KOKOUSTIEDOT"))[0].parent
-    ps = markerspan.parent.parent.parent("td")[1]("p")
+    starts = []
+    ends = []
 
-    texts = [p.text for p in ps]
-    starttimes = []
-    endtimes = []
-    place = None
-    for text in texts[1:-1]:
-        try:
-            s, e = parse_datetime(text)
-        except AttributeError as err:
-            if str(err) != "'NoneType' object has no attribute 'groups'":
-                raise err
-            place = text
-        starttimes.extend(s)
-        endtimes.extend(e)
-    place = place or texts[-1]
+    # Find the correct element.
+    markertag = soup(text=re.compile("KOKOUSTIEDOT"))[0]
+    ps = markertag.parent.parent.parent("td")[1]("p")
 
-    return place, starttimes, endtimes
+    # We are interested only in text elements.
+    texts = [klupu.cleanws(p.text).strip() for p in ps if p.text.strip()]
+
+    # The place of meeting is easy, it's always the last element.
+    place = texts[-1]
+
+    # Then there might be one or more start time - end time pairs:
+    # some of the meetings are two-day meetings.
+    for text in texts[:-1]:
+
+        # We assume that each date element has only one date. If
+        # that's not the case, it should be checked how several dates
+        # are to be interpreted.
+        day, month, year = [int(v) for v in RE_DATE.findall(text)[0]]
+
+        # Two times per element: start and end times.
+        times = [int(v) for v in RE_TIME.findall(text)[0]]
+        start_hour, start_minute, end_hour, end_minute = times
+
+        # Someone uses stupid format to denote that this is part of
+        # the yesterday..
+        end_hour %= 24
+
+        start = datetime.datetime(year, month, day, start_hour, start_minute)
+        end = datetime.datetime(year, month, day, end_hour, end_minute)
+        if start > end:
+            end += datetime.timedelta(1)
+
+    starts.append(start)
+    ends.append(end)
+
+    return place, starts, ends
 
 def parse_datetime(text):
     # TODO: handle constant timezone + variable DST
@@ -70,8 +91,7 @@ def parse_datetime(text):
     endtimes = []
     for times in RE_TIME.findall(text, date_match.end()):
         starthour, startminutes, endhour, endminutes = [int(v) for v in times]
-        endhour %= 24 # Someone uses stupid format to denote that this
-                      # is part of the yesterday..
+        endhour %= 24
         starttime = datetime.datetime(year, month, day, starthour, startminutes)
         endtime = datetime.datetime(year, month, day, endhour, endminutes)
         if starttime > endtime:
@@ -94,7 +114,7 @@ def parse_decision_makers(soup):
             name_match = RE_PERSON.match(parts[1])
             persons.append(name_match.group(1))
         elif parts[0].upper() in ("–", "-"):
-            name_match = RE_PERSON.match(parts[2])
+            name_match = RE_PERSON.match(parts[3])
             persons.append(name_match.group(1))
 
     return persons
