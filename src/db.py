@@ -61,6 +61,15 @@ CREATE TABLE klupu_issues
  UNIQUE(decision, title, number, dnro))
 """)
 
+        db_conn.execute("""
+CREATE TABLE klupu_presenters
+(id INTEGER PRIMARY KEY,
+ issue_id INTEGER NOT NULL,
+ name TEXT NOT NULL,
+ FOREIGN KEY(issue_id) REFERENCES klupu_issues(id)
+ UNIQUE(issue_id, name))
+""")
+
 def insert_meeting(db_conn, body, place, starttime, duration):
     starttime = starttime.isoformat()
     cur = db_conn.cursor()
@@ -86,6 +95,14 @@ VALUES (NULL, ?, ?, ?, ?, ?)
 """, [meeting_id, decision, title, number, dnro])
     return cur.lastrowid
 
+def insert_presenter(db_conn, issue_id, name):
+    cur = db_conn.cursor()
+    cur.execute("""
+INSERT INTO klupu_presenters (id, issue_id, name)
+VALUES (NULL, ?, ?)
+""", [issue_id, name])
+    return cur.lastrowid
+
 def insert(meeting):
     with connect() as db_conn:
         duration = 0
@@ -98,5 +115,7 @@ def insert(meeting):
         for name in meeting["others"]:
             insert_participant(db_conn, meeting_id, name, "other")
         for issue in meeting["issues"]:
-            insert_issue(db_conn, meeting_id, issue["decision"], issue["title"],
-                         issue["number"], issue["dnro"])
+            issue_id = insert_issue(db_conn, meeting_id, issue["decision"], issue["title"],
+                                    issue["number"], issue["dnro"])
+            for name in issue["presenters"]:
+                insert_presenter(db_conn, issue_id, name)
