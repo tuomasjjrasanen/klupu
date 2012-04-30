@@ -154,13 +154,25 @@ def parse_decision(soup):
             decision = d
     return decision
 
+def parse_presenters(soup):
+    presenters = []
+    try:
+        markertag = soup.html.body("p", text=re.compile("Asian valmisteli.*"))[0]
+    except IndexError:
+        return presenters
+    text = klupu.cleanws(markertag.text).strip()
+    presenters.extend(RE_PERSON.findall(text))
+    return presenters
+
 def parse_issue(soup):
     number, title = parse_issue_title(soup)
     dnro = parse_dnro(soup)
+    presenters = parse_presenters(soup)
     decision = parse_decision(soup)
     return {
         "number": number,
         "dnro": dnro,
+        "presenters": presenters,
         "title": title,
         "decision": decision,
         }
@@ -209,6 +221,10 @@ def validate_issue(issue):
         warn("issue number not found")
     if not issue["title"]:
         warn("issue title not found")
+    if not issue["presenters"] and issue["dnro"]:
+        warn("dnro'd issue does not have presenters")
+    if not issue["dnro"] and issue["presenters"]:
+        warn("presented issues does not have dnro")
 
 def validate(meeting):
     if not meeting["body"]:
