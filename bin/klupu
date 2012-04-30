@@ -39,7 +39,6 @@ RE_DATE = re.compile(r"(\d\d?)\.(\d\d?)\.(\d{4})")
 RE_TIME = re.compile(r"kello (\d\d?)\.(\d\d)[–-](\d\d?)\.(\d\d)")
 
 RE_PERSON = re.compile(r"^([A-ZÖÄÅ][a-zöäå]*(?:-[A-ZÖÄÅ][a-zöäå]*)*(?: [A-ZÖÄÅ][a-zöäå]*(?:-[A-ZÖÄÅ][a-zöäå]*)*)+)$")
-RE_PRESENCE_MARK = re.compile(r"^([–-].*)?[xX][\xa0 ]+")
 RE_DNRO = re.compile(r"^Dnro[\xa0 :]+(\d+[ ]?/\d+)$")
 
 def parse_meeting_info(soup):
@@ -82,25 +81,6 @@ def parse_meeting_info(soup):
     ends.append(end)
 
     return place, starts, ends
-
-def parse_datetime(text):
-    # TODO: handle constant timezone + variable DST
-    date_match = RE_DATE.match(text)
-    day, month, year = [int(v) for v in date_match.groups()]
-    starttimes = []
-    endtimes = []
-    for times in RE_TIME.findall(text, date_match.end()):
-        starthour, startminutes, endhour, endminutes = [int(v) for v in times]
-        endhour %= 24
-        starttime = datetime.datetime(year, month, day, starthour, startminutes)
-        endtime = datetime.datetime(year, month, day, endhour, endminutes)
-        if starttime > endtime:
-            # If the end-time is after midnight, add one day to the
-            # date part.
-            endtime += datetime.timedelta(1)
-        starttimes.append(starttime)
-        endtimes.append(endtime)
-    return starttimes, endtimes
 
 def parse_decision_makers(soup):
     markers = soup(text=re.compile("Päätöksentekijä"))
