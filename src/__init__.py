@@ -74,7 +74,7 @@ def clean_soup(soup):
 
 def cleanws(text):
     text = re.sub(r"[\r\n]", " ", text)
-    text = re.sub(r"\xad+", "", text)
-    text = re.sub(r"\xa0+", "\xa0", text)
+    text = re.sub(r"\xad+", " ", text)
+    text = re.sub(r"\xa0+", " ", text)
     text = re.sub(r"[ ]+", " ", text)
     return text
