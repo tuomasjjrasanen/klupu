@@ -77,8 +77,8 @@ def parse_meeting_info(soup):
         if start > end:
             end += datetime.timedelta(1)
 
-    starts.append(start)
-    ends.append(end)
+        starts.append(start)
+        ends.append(end)
 
     return place, starts, ends
 
