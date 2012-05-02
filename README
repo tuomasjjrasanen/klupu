@@ -19,7 +19,7 @@ Requirements
 How to use
 ==========
 
-1. Clean dirty meeting minute directory::
+1. Clean dirty meeting minutes directories::
 
   ./clean CLEAN_OUTPUT_DIR DIRTY_SOURCE_DIR...
 
