@@ -26,7 +26,7 @@ PRAGMA foreign_keys = ON
 """)
     return db_conn
 
-def init(db_path=_DEFAULT_DB_PATH):
+def init(db_path):
     with connect(db_path) as db_conn:
         db_conn.execute("""
 CREATE TABLE klupu_meetings

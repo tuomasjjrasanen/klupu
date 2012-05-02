@@ -246,7 +246,8 @@ def validate(meeting):
         validate_issue(issue)
 
 def _main():
-    for minutes_dirpath in sys.argv[1:]:
+    db_path = sys.argv[1]
+    for minutes_dirpath in sys.argv[2:]:
         meeting = parse_meeting(minutes_dirpath)
         validate(meeting)
         klupu.db.insert(db_path, meeting)

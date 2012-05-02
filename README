@@ -19,9 +19,13 @@ Requirements
 How to use
 ==========
 
-1. Clean vanilla (ugly) meeting minute directory::
+1. Clean dirty meeting minute directory::
 
-  ./clean CLEAN_OUTPUT_DIR UGLY_SOURCE_DIR...
+  ./clean CLEAN_OUTPUT_DIR DIRTY_SOURCE_DIR...
+
+2. Initialize database::
+
+  ./init-db DB_PATH
 
 2. Extract information from clean directories to Sqlite3 database::
 
