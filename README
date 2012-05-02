@@ -9,27 +9,27 @@ separating grains from husks. Grains of knowledge, in this case.
 
 Author: Tuomas Jorma Juhani Räsänen <tuomasjjrasanen@tjjr.fi>
 
-How to install
-==============
-
 Requirements
-------------
+============
 
 - Python 3
 - Beautiful Soup 4
+- Matplotlib
 
-To install system-wide, run::
+How to use
+==========
 
-  python setup.py install
+1. Clean vanilla (ugly) meeting minute directory::
 
-To install only to your home directory, run::
+  ./clean CLEAN_OUTPUT_DIR UGLY_SOURCE_DIR...
 
-  python setup.py install --prefix=$HOME
+2. Extract information from clean directories to Sqlite3 database::
 
-If you would like to save the list of installed files for later use,
-run::
+  ./save-to-db CLEAN_OUTPUT_DIR...
 
-  python setup.py install --prefix=$HOME --record=installedfiles.txt
+3. Draw figures from the database::
+
+  ./draw-from-db
 
 How to contribute
 =================
