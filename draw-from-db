@@ -249,7 +249,7 @@ where body = ?;
 
         participation_counts = zip(*participation_counts)[0]
         samples = [x / meeting_count * 100 for x in participation_counts]
-        cdf_plot(subplot, samples)
+        cdf_plot(subplot, samples, label=body)
 
     # subplot.bar(range(len(samples)), samples, width=1.0, color="k")
     # avg = sum(samples) / len(samples)
