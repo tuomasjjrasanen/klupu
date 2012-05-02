@@ -49,7 +49,7 @@ def iter_cumprobs(probs):
 def cdf_plot(subplot, samples, **kwargs):
     subplot.grid(True)
     subplot.set_ylim(0.0, 100.0)
-    subplot.set_ylabel("Percents")
+    subplot.set_ylabel("Percents of samples")
     values, probs = get_dist(samples)
     subplot.plot(values, list(iter_cumprobs(probs)), **kwargs)
     subplot.legend(labelspacing=0.1, loc="best")
@@ -112,14 +112,15 @@ ORDER BY starttime;
 
     return result
 
-def draw_monthly_durations(db_path, start_year, start_month, end_year, end_month):
+def draw_monthly_durations(db_path):
     fig = plt.figure()
+
     subplot = fig.add_subplot(1, 1, 1)
     subplot.set_title(u"Monthly meeting durations")
     subplot.set_ylabel("Hours")
     subplot.grid(True)
 
-    yearmonths = list(iter_yearmonths(start_year, start_month, end_year, end_month))
+    yearmonths = list(iter_yearmonths(2008, 11, 2010, 12))
     xvals = range(len(yearmonths))
     bottom = len(xvals) * [0]
 
@@ -223,12 +224,52 @@ ORDER BY body;
     subplot.set_xlim(-0.6, len(ratios) - 0.4)
     subplot.grid(axis="y")
 
+def draw_participation_activity(db_path, role):
+    fig = plt.figure()
+
+    subplot = fig.add_subplot(1,1,1)
+    subplot.set_title("Participation activity of %ss" % role)
+    subplot.set_xlabel("Participation percentage")
+
+    for body in ("karltk", "kh", "kv"):
+        participation_counts = query(db_path, """
+select count()
+from klupu_participants
+join klupu_meetings
+  on klupu_meetings.id == klupu_participants.meeting_id
+where role = ? and body = ?
+group by name
+order by count();
+""", role, body)
+        meeting_count, = query(db_path, """
+select count()
+from klupu_meetings
+where body = ?;
+""", body)[0]
+
+        participation_counts = zip(*participation_counts)[0]
+        samples = [x / meeting_count * 100 for x in participation_counts]
+        cdf_plot(subplot, samples)
+
+    # subplot.bar(range(len(samples)), samples, width=1.0, color="k")
+    # avg = sum(samples) / len(samples)
+    # subplot.axhline(samples[int(len(samples) * 0.95)], label="95th percentile",
+    #                 color="g", linestyle="--", linewidth=3)
+    # subplot.axhline(avg, label="average", color="r", linestyle="--", linewidth=3)
+    # subplot.set_xlim(0, len(samples))
+    # subplot.set_yticks(range(0, 275, 25))
+    # subplot.grid(axis="y")
+    # subplot.legend(loc="best")
+
 def _main():
     db_path = sys.argv[1]
-    draw_monthly_durations(db_path, 2008, 11, 2010, 12)
+    draw_monthly_durations(db_path)
     draw_duration_cdf(db_path)
     draw_presenter_cdf(db_path)
     draw_approved_bars(db_path)
+    draw_participation_activity(db_path, "other")
+    draw_participation_activity(db_path, "decision-maker")
+
     plt.show()
 
 if __name__ == "__main__":
