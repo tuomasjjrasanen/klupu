@@ -25,11 +25,11 @@ How to use
 
 2. Extract information from clean directories to Sqlite3 database::
 
-  ./save-to-db CLEAN_OUTPUT_DIR...
+  ./save-to-db DB_PATH CLEAN_OUTPUT_DIR...
 
 3. Draw figures from the database::
 
-  ./draw-from-db
+  ./draw-from-db DB_PATH
 
 How to contribute
 =================

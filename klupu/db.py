@@ -18,9 +18,7 @@
 import os
 import sqlite3
 
-_DEFAULT_DB_PATH = os.path.expanduser("~/.klupu.db")
-
-def connect(db_path=_DEFAULT_DB_PATH):
+def connect(db_path):
     db_conn = sqlite3.connect(db_path)
     with db_conn:
         db_conn.execute("""
@@ -104,8 +102,8 @@ VALUES (NULL, ?, ?)
 """, [issue_id, name])
     return cur.lastrowid
 
-def insert(meeting):
-    with connect() as db_conn:
+def insert(db_path, meeting):
+    with connect(db_path) as db_conn:
         duration = 0
         for start, end in zip(meeting["start-times"], meeting["end-times"]):
             duration += (end - start).total_seconds()
