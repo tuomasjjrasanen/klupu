@@ -23,11 +23,12 @@ from __future__ import with_statement
 import collections
 import datetime
 import os.path
-import sqlite3
 
 import matplotlib
 matplotlib.use("Qt4Agg")
 import matplotlib.pyplot as plt
+
+import klupu.db
 
 def get_dist(values):
     dist = collections.OrderedDict()
@@ -81,7 +82,7 @@ def iter_yearmonths(startyear, startmonth, stopyear, stopmonth):
             yield year, month
 
 def query(expr, *args):
-    with sqlite3.connect(os.path.expanduser("~/.klupu.db")) as db_conn:
+    with klupu.db.connect() as db_conn:
         cur = db_conn.cursor()
         return cur.execute(expr, args).fetchall()
 

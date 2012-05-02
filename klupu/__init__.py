@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # klupu - scrape meeting minutes of governing bodies of city of Jyväskylä
 # Copyright (C) 2012 Tuomas Jorma Juhani Räsänen <tuomasjjrasanen@tjjr.fi>
 #
