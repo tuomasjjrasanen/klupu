@@ -34,21 +34,11 @@ warnings.showwarning = showwarning
 
 RE_PERSON = re.compile(r"([A-ZÖÄÅ][a-zöäå]*(?:-[A-ZÖÄÅ][a-zöäå]*)*(?: [A-ZÖÄÅ][a-zöäå]*(?:-[A-ZÖÄÅ][a-zöäå]*)*)+)")
 RE_DNRO = re.compile(r"Dnro (\d+[ ]?/\d+)")
+RE_TIME = re.compile(r"(?:[a-zA-Z]+ )?(\d\d?)\.(\d\d?)\.(\d{4})[ ]?,? (?:kello|klo) (\d\d?)\.(\d\d)\s*[–-]\s*(\d\d?)\.(\d\d)")
 
 def parse_meeting_times(text):
-    regexps = (
-        r"[a-zA-Z]+ (\d\d?)\.(\d\d?)\.(\d{4}) kello (\d\d?)\.(\d\d)\s*[–-]\s*(\d\d?)\.(\d\d)",
-        r"[a-zA-Z]+ (\d\d?)\.(\d\d?)\.(\d{4}), kello (\d\d?)\.(\d\d)\s*[–-]\s*(\d\d?)\.(\d\d)",
-        r"[a-zA-Z]+ (\d\d?)\.(\d\d?)\.(\d{4}) klo (\d\d?)\.(\d\d)\s*[–-]\s*(\d\d?)\.(\d\d)",
-        )
-    for regexp in regexps:
-        time_specs = re.findall(regexp, text)
-        if time_specs:
-            break
-    result = []
-    for time_spec in time_specs:
-        result.append([int(v) for v in time_spec])
-    return result
+    for time_spec in RE_TIME.findall(text):
+        yield [int(v) for v in time_spec]
 
 def parse_meeting_info(soup):
     starts = []
