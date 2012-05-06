@@ -1,6 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-#
 # klupu - scrape meeting minutes of governing bodies of city of Jyväskylä
 # Copyright (C) 2012 Tuomas Jorma Juhani Räsänen <tuomasjjrasanen@tjjr.fi>
 #
@@ -35,11 +32,23 @@ def showwarning(message, category, filename, lineno, *args):
 
 warnings.showwarning = showwarning
 
-RE_DATE = re.compile(r"(\d\d?)\.(\d\d?)\.(\d{4})")
-RE_TIME = re.compile(r"kello (\d\d?)\.(\d\d)\s*[–-]\s*(\d\d?)\.(\d\d)")
-
 RE_PERSON = re.compile(r"([A-ZÖÄÅ][a-zöäå]*(?:-[A-ZÖÄÅ][a-zöäå]*)*(?: [A-ZÖÄÅ][a-zöäå]*(?:-[A-ZÖÄÅ][a-zöäå]*)*)+)")
 RE_DNRO = re.compile(r"Dnro (\d+[ ]?/\d+)")
+
+def parse_meeting_times(text):
+    regexps = (
+        r"[a-zA-Z]+ (\d\d?)\.(\d\d?)\.(\d{4}) kello (\d\d?)\.(\d\d)\s*[–-]\s*(\d\d?)\.(\d\d)",
+        r"[a-zA-Z]+ (\d\d?)\.(\d\d?)\.(\d{4}), kello (\d\d?)\.(\d\d)\s*[–-]\s*(\d\d?)\.(\d\d)",
+        r"[a-zA-Z]+ (\d\d?)\.(\d\d?)\.(\d{4}) klo (\d\d?)\.(\d\d)\s*[–-]\s*(\d\d?)\.(\d\d)",
+        )
+    for regexp in regexps:
+        time_specs = re.findall(regexp, text)
+        if time_specs:
+            break
+    result = []
+    for time_spec in time_specs:
+        result.append([int(v) for v in time_spec])
+    return result
 
 def parse_meeting_info(soup):
     starts = []
@@ -59,61 +68,44 @@ def parse_meeting_info(soup):
     # some of the meetings are two-day meetings.
     for text in texts[:-1]:
 
-        # We assume that each date element has only one date. If
-        # that's not the case, it should be checked how several dates
-        # are to be interpreted.
-        day, month, year = [int(v) for v in RE_DATE.findall(text)[0]]
+        # There can be also several datetime within one paragraph
+        for meeting_time in parse_meeting_times(text):
+            day, month, year, start_hour, start_minute, end_hour, end_minute = meeting_time
 
-        # Two times per element: start and end times.
-        times = [int(v) for v in RE_TIME.findall(text)[0]]
-        start_hour, start_minute, end_hour, end_minute = times
+            # Someone uses stupid format to denote that this is part
+            # of the yesterday..
+            end_hour %= 24
 
-        # Someone uses stupid format to denote that this is part of
-        # the yesterday..
-        end_hour %= 24
+            start = datetime.datetime(year, month, day, start_hour, start_minute)
+            end = datetime.datetime(year, month, day, end_hour, end_minute)
+            if start > end:
+                end += datetime.timedelta(1)
 
-        start = datetime.datetime(year, month, day, start_hour, start_minute)
-        end = datetime.datetime(year, month, day, end_hour, end_minute)
-        if start > end:
-            end += datetime.timedelta(1)
-
-        starts.append(start)
-        ends.append(end)
+            starts.append(start)
+            ends.append(end)
 
     return place, starts, ends
 
-def parse_decision_makers(soup):
-    markers = soup(text=re.compile("Päätöksentekijä"))
+def parse_participants(soup, marker_text):
+    markers = soup(text=re.compile(marker_text))
     if not markers:
         return []
     td = markers[0].parent.parent.parent("td")[1]
     persons = []
-    for text in [p.text for p in td("p")]:
-        parts = [klupu.cleanws(s).strip() for s in text.splitlines() if s.strip()]
-        if parts[0].upper() == "X":
-            name_match = RE_PERSON.match(parts[1])
-            persons.append(name_match.group(1))
-        elif parts[0].upper() in ("–", "-"):
-            if len(parts) == 3:
-                name_match = RE_PERSON.match(parts[2])
-            else:
-                name_match = RE_PERSON.match(parts[3])
-            persons.append(name_match.group(1))
+    for text in [klupu.cleanws(p.text).strip() for p in td("p")]:
+        parts = re.findall(r"(?:^| )[xX] (.*)", text)
+        if parts:
+            name_candidate = parts[0]
+            name = RE_PERSON.findall(name_candidate)[0]
+            persons.append(name)
 
     return persons
+
+def parse_decision_makers(soup):
+    return parse_participants(soup, "Päätöksentekijä")
 
 def parse_others(soup):
-    markers = soup(text=re.compile("Muut läsnäolijat"))
-    if not markers:
-        return []
-    td = markers[0].parent.parent.parent("td")[1]
-    persons = []
-    for text in [p.text for p in td("p")]:
-        parts = [klupu.cleanws(s).strip() for s in text.splitlines() if s.strip()]
-        if parts[0].upper() == "X":
-            name_match = RE_PERSON.match(parts[1])
-            persons.append(name_match.group(1))
-    return persons
+    return parse_participants(soup, "Muut läsnäolijat")
 
 def parse_issue_title(soup):
     numbered_title = soup.html.body("p", {"class": "Asiaotsikko"})[0].text
@@ -126,7 +118,7 @@ def parse_dnro(soup):
     ps = soup.html.body("p")
     dnros = []
     for p in ps:
-        dnro_match = RE_DNRO.match(p.text.strip())
+        dnro_match = RE_DNRO.match(klupu.cleanws(p.text).strip())
         if dnro_match:
             dnros.append(dnro_match.group(1))
 
@@ -182,18 +174,18 @@ def parse_meeting(minutes_dirpath):
 
     issues = []
     for issue_filepath in klupu.iter_issue_filepaths(minutes_dirpath):
-        issue_soup = klupu.read_soup(issue_filepath, "windows-1252")
+        issue_soup = klupu.read_soup(issue_filepath)
         issue = parse_issue(issue_soup)
         issues.append(issue)
 
     index_filepath = os.path.join(minutes_dirpath, "index.htm")
-    index_soup = klupu.read_soup(index_filepath, "iso-8859-15")
+    index_soup = klupu.read_soup(index_filepath)
 
     selfurl = index_soup.html.body("a", target="_self")[0]["href"]
     body = os.path.splitext(os.path.basename(selfurl))[0]
 
     info_filepath = os.path.join(minutes_dirpath, klupu.INFO_FILENAME)
-    info_soup = klupu.read_soup(info_filepath, "windows-1252")
+    info_soup = klupu.read_soup(info_filepath)
 
     place, starttimes, endtimes = parse_meeting_info(info_soup)
 
@@ -221,10 +213,8 @@ def validate_issue(issue):
         warn("issue number not found")
     if not issue["title"]:
         warn("issue title not found")
-    if not issue["presenters"] and issue["dnro"]:
-        warn("dnro'd issue does not have presenters")
     if not issue["dnro"] and issue["presenters"]:
-        warn("presented issues does not have dnro")
+        warn("presented issue does not have dnro")
 
 def validate(meeting):
     if not meeting["body"]:

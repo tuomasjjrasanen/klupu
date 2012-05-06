@@ -37,7 +37,7 @@ def iter_issue_filepaths(minutes_dirpath):
         if os.path.basename(issue_filepath) != INFO_FILENAME:
             yield issue_filepath
 
-def read_soup(filepath, encoding):
+def read_soup(filepath, encoding="utf-8"):
     with open(filepath, encoding=encoding, errors="replace") as f:
         return bs4.BeautifulSoup(f, from_encoding=encoding)
 
