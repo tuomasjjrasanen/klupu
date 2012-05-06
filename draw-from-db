@@ -147,7 +147,7 @@ def draw_duration_cdf(db_path):
     fig = plt.figure()
 
     subplot = fig.add_subplot(1,1,1)
-    subplot.set_title(u"Cumulative issue duration distribution\n2008/11 - 2010/12")
+    subplot.set_title(u"Cumulative issue duration distribution")
     subplot.set_xlabel(u"Hours")
 
     for body in ("karltk", "kh", "kv"):
@@ -163,7 +163,7 @@ def draw_presenter_cdf(db_path):
     fig = plt.figure()
 
     subplot = fig.add_subplot(1,1,1)
-    subplot.set_title(u"""Issue preparation distribution among all preparers\n2008/11 - 2010/12""")
+    subplot.set_title(u"Issue preparation distribution among all preparers")
     subplot.set_ylabel(u"Number of issue preparations")
     subplot.set_xlabel(u"Preparer")
     subplot.set_xticks([])
@@ -189,7 +189,7 @@ def draw_approved_bars(db_path):
     fig = plt.figure()
 
     subplot = fig.add_subplot(1,1,1)
-    subplot.set_title(u"""Approval rate of decisions proposed by city officials\n2008/11 - 2010/12""")
+    subplot.set_title(u"Approval rate of decisions proposed by city officials")
     subplot.set_ylabel(u"Percents")
     subplot.set_xlabel(u"Governing body")
 
