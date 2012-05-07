@@ -39,7 +39,7 @@ def _main():
             if e.errno != errno.EEXIST:
                 raise e
         with open(index_filepath, "w") as f:
-            f.write(index_soup.prettify())
+            print(index_soup, file=f)
         for issue_url in iter_issue_urls(index_soup):
             issue_url = urljoin(index_url, issue_url)
             try:
@@ -52,7 +52,7 @@ def _main():
             issue_path = urlsplit(issue_url).path
             issue_filepath = os.path.normpath("." + issue_path)
             with open(issue_filepath, "w") as f:
-                f.write(issue_soup.prettify())
+                print(issue_soup, file=f)
 
 if __name__ == "__main__":
     _main()
