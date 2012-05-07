@@ -11,6 +11,8 @@ from urllib.request import urlopen
 
 import bs4
 
+import klupu
+
 def iter_issue_urls(index_soup):
     for tr in index_soup("table")[0]("tr"):
         a = tr("a")[0]
@@ -54,9 +56,9 @@ def _main():
             issue_path = urlsplit(issue_url).path
             issue_filepath = os.path.normpath("." + issue_path)
             with open(issue_filepath, "w") as f:
-                print(issue_soup, file=f)
+                print(klupu.clean_soup(issue_soup), file=f)
         with open(index_filepath, "w") as f:
-            print(index_soup, file=f)
+            print(klupu.clean_soup(index_soup), file=f)
 
 if __name__ == "__main__":
     _main()

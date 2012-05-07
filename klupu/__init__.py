@@ -47,29 +47,13 @@ def clean_soup(soup):
     for tag in soup("meta"):
         tag.extract()
 
-    for tag in soup("span"):
-        tag.replace_with_children()
-
-    for tag in soup("font"):
-        tag.replace_with_children()
-
-    for tag in soup("st1:metricconverter"):
-        tag.replace_with_children()
-
-    for tag in soup("st1:personname"):
-        tag.replace_with_children()
-
     for tag in soup.find_all():
         attrs = tag.attrs
         saved_attrs = set(["class", "href", "target"]) & set(attrs.keys())
         tag.attrs = {a: attrs[a] for a in saved_attrs}
 
-    for tag in soup.find_all():
-        if not tag.text.strip():
-            tag.replace_with_children()
-
     for tag in soup.find_all(text=True):
-        tag.replace_with(cleanws(tag.string))
+        tag.replace_with(re.sub(r"\r", "", tag.string))
 
     return soup
 
