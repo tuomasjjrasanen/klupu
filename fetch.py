@@ -19,6 +19,8 @@ def iter_issue_urls(index_soup):
         if match and match.group(2) != "9999":
             url = "%shtmtxt%s.htm" % (match.groups())
             a["href"] = url
+            if match.group(2) == "0":
+                a.string = "0"
             yield url
 
 def _main():
