@@ -1,6 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-#
 # klupu - scrape meeting minutes of governing bodies of city of Jyväskylä
 # Copyright (C) 2012 Tuomas Jorma Juhani Räsänen <tuomasjjrasanen@tjjr.fi>
 #
@@ -38,26 +35,26 @@ def _main():
 
         index_filename = "index.htm"
         index_filepath = os.path.join(minutes_dirpath, index_filename)
-        index_soup = klupu.read_soup(index_filepath, "iso-8859-15")
+        index_soup = klupu.read_soup(index_filepath)
         clean_index_soup = klupu.clean_soup(index_soup)
         clean_index_filepath = os.path.join(clean_minutes_dirpath, index_filename)
         with open(clean_index_filepath, "w") as f:
-            f.write(clean_index_soup.prettify(formatter="html"))
+            print(clean_index_soup, file=f)
 
         for issue_filepath in klupu.iter_issue_filepaths(minutes_dirpath):
             issue_filename = os.path.basename(issue_filepath)
-            issue_soup = klupu.read_soup(issue_filepath, "windows-1252")
+            issue_soup = klupu.read_soup(issue_filepath)
             clean_issue_soup = klupu.clean_soup(issue_soup)
             clean_issue_filepath = os.path.join(clean_minutes_dirpath, issue_filename)
             with open(clean_issue_filepath, "w") as f:
-                f.write(clean_issue_soup.prettify(formatter="html"))
+                print(clean_issue_soup, file=f)
 
-        info_filename = klupu.INFO_FILENAME
+        info_filename = "htmtxt0.htm"
         info_filepath = os.path.join(minutes_dirpath, info_filename)
-        info_soup = klupu.read_soup(info_filepath, "windows-1252")
+        info_soup = klupu.read_soup(info_filepath)
         clean_info_soup = klupu.clean_soup(info_soup)
         with open(os.path.join(clean_minutes_dirpath, info_filename), "w") as f:
-            f.write(clean_info_soup.prettify(formatter="html"))
+            print(clean_info_soup, file=f)
 
 if __name__ == "__main__":
     _main()
