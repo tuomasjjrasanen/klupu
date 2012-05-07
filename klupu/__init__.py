@@ -23,14 +23,6 @@ import bs4
 
 INFO_FILENAME = "htmtxt0.htm"
 
-def iter_issue_urls(index_soup):
-    for tr in index_soup("table")[0]("tr"):
-        a = tr("a")[0]
-        href = a["href"].strip()
-        match = re.match(r"(.*)frmtxt(\d+)\.htm", href)
-        if match and match.group(2) != "9999":
-            yield "%shtmtxt%s.htm" % (match.groups())
-
 def iter_issue_filepaths(minutes_dirpath):
     pathname = os.path.join(minutes_dirpath, "htmtxt*.htm")
     for issue_filepath in glob.iglob(pathname):

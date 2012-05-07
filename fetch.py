@@ -1,7 +1,9 @@
 import errno
 import os
 import os.path
+import re
 import sys
+
 from urllib.error import HTTPError
 from urllib.parse import urljoin
 from urllib.parse import urlsplit
@@ -9,7 +11,13 @@ from urllib.request import urlopen
 
 import bs4
 
-import klupu
+def iter_issue_urls(index_soup):
+    for tr in index_soup("table")[0]("tr"):
+        a = tr("a")[0]
+        href = a["href"].strip()
+        match = re.match(r"(.*)frmtxt(\d+)\.htm", href)
+        if match and match.group(2) != "9999":
+            yield "%shtmtxt%s.htm" % (match.groups())
 
 def _main():
     base_url = sys.argv[1]
@@ -23,7 +31,6 @@ def _main():
             print("Skipping..", file=sys.stderr)
             continue
         index_soup = bs4.BeautifulSoup(resp, from_encoding="iso-8859-1")
-        clean_index_soup = klupu.clean_soup(index_soup)
         index_path = urlsplit(index_url).path
         index_filepath = os.path.normpath("." + index_path)
         try:
@@ -32,8 +39,8 @@ def _main():
             if e.errno != errno.EEXIST:
                 raise e
         with open(index_filepath, "w") as f:
-            f.write(clean_index_soup.prettify())
-        for issue_url in klupu.iter_issue_urls(clean_index_soup):
+            f.write(index_soup.prettify())
+        for issue_url in iter_issue_urls(index_soup):
             issue_url = urljoin(index_url, issue_url)
             try:
                 resp = urlopen(issue_url)
@@ -42,11 +49,10 @@ def _main():
                 print("Skipping..", file=sys.stderr)
                 continue
             issue_soup = bs4.BeautifulSoup(resp, from_encoding="windows-1252")
-            clean_issue_soup = klupu.clean_soup(issue_soup)
             issue_path = urlsplit(issue_url).path
             issue_filepath = os.path.normpath("." + issue_path)
             with open(issue_filepath, "w") as f:
-                f.write(clean_issue_soup.prettify())
+                f.write(issue_soup.prettify())
 
 if __name__ == "__main__":
     _main()
