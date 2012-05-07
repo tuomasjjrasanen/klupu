@@ -17,7 +17,9 @@ def iter_issue_urls(index_soup):
         href = a["href"].strip()
         match = re.match(r"(.*)frmtxt(\d+)\.htm", href)
         if match and match.group(2) != "9999":
-            yield "%shtmtxt%s.htm" % (match.groups())
+            url = "%shtmtxt%s.htm" % (match.groups())
+            a["href"] = url
+            yield url
 
 def _main():
     base_url = sys.argv[1]
@@ -38,8 +40,6 @@ def _main():
         except OSError as e:
             if e.errno != errno.EEXIST:
                 raise e
-        with open(index_filepath, "w") as f:
-            print(index_soup, file=f)
         for issue_url in iter_issue_urls(index_soup):
             issue_url = urljoin(index_url, issue_url)
             try:
@@ -53,6 +53,8 @@ def _main():
             issue_filepath = os.path.normpath("." + issue_path)
             with open(issue_filepath, "w") as f:
                 print(issue_soup, file=f)
+        with open(index_filepath, "w") as f:
+            print(index_soup, file=f)
 
 if __name__ == "__main__":
     _main()
