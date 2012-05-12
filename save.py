@@ -99,9 +99,9 @@ def parse_others(soup):
 
 def parse_issue_title(soup):
     numbered_title = soup.html.body("p", {"class": "Asiaotsikko"})[0].text
-    parts = [s.strip() for s in numbered_title.splitlines() if s.strip()]
-    number = int(parts[0])
-    title = " ".join(parts[1:])
+    match = re.match(r"^(\d+)\s+", numbered_title)
+    number = int(match.group(1))
+    title = re.sub(r"\s+", " ", numbered_title[match.end():])
     return number, title
 
 def parse_dnro(soup):
