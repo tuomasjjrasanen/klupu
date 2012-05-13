@@ -19,9 +19,9 @@ Requirements
 How to use
 ==========
 
-1. Clean dirty meeting minutes directories::
+1. Fetch meeting minutes::
 
-  python3 clean.py CLEAN_OUTPUT_DIR DIRTY_SOURCE_DIR...
+  python3 fetch.py http://www3.jkl.fi/paatokset/karltk08.htm
 
 2. Initialize database::
 
