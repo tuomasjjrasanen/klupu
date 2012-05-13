@@ -17,6 +17,7 @@
 import datetime
 import os.path
 import re
+import sqlite3
 import sys
 import warnings
 
@@ -34,7 +35,7 @@ warnings.showwarning = showwarning
 
 RE_PERSON = re.compile(r"([A-ZÖÄÅ][a-zöäå]*(?:-[A-ZÖÄÅ][a-zöäå]*)*(?: [A-ZÖÄÅ][a-zöäå]*(?:-[A-ZÖÄÅ][a-zöäå]*)*)+)")
 RE_DNRO = re.compile(r"Dnro (\d+[ ]?/\d+)")
-RE_TIME = re.compile(r"(?:[a-zA-Z]+ )?(\d\d?)\.(\d\d?)\.(\d{4})[ ]?,? (?:kello|klo) (\d\d?)\.(\d\d)\s*[–-]\s*(\d\d?)\.(\d\d)")
+RE_TIME = re.compile(r"(?:[a-zA-Z]+ )?(\d\d?)\.(\d\d?)\.(\d{4})[ ]?,? (?:kello|klo)\s?(\d\d?)\.(\d\d)\s*[–-]\s*(\d\d?)\.(\d\d)")
 
 def parse_meeting_times(text):
     for time_spec in RE_TIME.findall(text):
@@ -46,10 +47,10 @@ def parse_meeting_info(soup):
 
     # Find the correct element.
     markertag = soup(text=re.compile("KOKOUSTIEDOT"))[0]
-    ps = markertag.parent.parent.parent("td")[1]("p")
+    ps = markertag.parent.parent.parent.parent("td")[1]("p")
 
     # We are interested only in text elements.
-    texts = [klupu.cleanws(p.text).strip() for p in ps if p.text.strip()]
+    texts = [re.sub(r"[\xad\s]+", " ", p.text) for p in ps if p.text.strip()]
 
     # The place of meeting is easy, it's always the last element.
     place = texts[-1]
@@ -80,14 +81,14 @@ def parse_participants(soup, marker_text):
     markers = soup(text=re.compile(marker_text))
     if not markers:
         return []
-    td = markers[0].parent.parent.parent("td")[1]
+    td = markers[0].parent.parent.parent.parent("td")[1]
     persons = []
-    for text in [klupu.cleanws(p.text).strip() for p in td("p")]:
-        parts = re.findall(r"(?:^| )[xX] (.*)", text)
-        if parts:
-            name_candidate = parts[0]
-            name = RE_PERSON.findall(name_candidate)[0]
-            persons.append(name)
+    for text in [p.text for p in td("p")]:
+        parts = re.findall(r"[xX]\s+([^\xa0]+)", text)
+        for part in parts:
+            s = re.sub("\s+", " ", part)
+            for name in RE_PERSON.findall(s):
+                persons.append(name)
 
     return persons
 
@@ -107,8 +108,8 @@ def parse_issue_title(soup):
 def parse_dnro(soup):
     ps = soup.html.body("p")
     dnros = []
-    for p in ps:
-        dnro_match = RE_DNRO.match(klupu.cleanws(p.text).strip())
+    for text in [re.sub(r"\s+", " ", p.text) for p in ps]:
+        dnro_match = RE_DNRO.match(text)
         if dnro_match:
             dnros.append(dnro_match.group(1))
 
@@ -128,22 +129,17 @@ def parse_dnro(soup):
 def parse_decision(soup):
     decision = None
     for p in soup.html.body("p"):
-        try:
-            marker, d = [s.strip() for s in p.text.splitlines() if s.strip()]
-        except ValueError:
-            continue
-        if marker == "Päätös":
-            decision = d
+        match = re.match(r"^\s*Päätös\s+(.*)", p.text, re.DOTALL)
+        if match:
+            decision = re.sub("\s+", " ", match.group(1))
     return decision
 
 def parse_presenters(soup):
     presenters = []
-    try:
-        markertag = soup.html.body("p", text=re.compile("Asian valmisteli.*"))[0]
-    except IndexError:
-        return presenters
-    text = klupu.cleanws(markertag.text).strip()
-    presenters.extend(RE_PERSON.findall(text))
+    for text in [re.sub(r"\s+", " ", p.text).strip() for p in soup("p")]:
+        if text.startswith("Asian valmisteli"):
+            presenters.extend(RE_PERSON.findall(text))
+            break
     return presenters
 
 def parse_issue(soup):
@@ -230,7 +226,11 @@ def _main():
     for minutes_dirpath in sys.argv[2:]:
         meeting = parse_meeting(minutes_dirpath)
         validate(meeting)
-        klupu.db.insert(db_path, meeting)
+        try:
+            klupu.db.insert(db_path, meeting)
+        except sqlite3.IntegrityError as err:
+            print(err, "Skipping...", file=sys.stderr)
+            continue
 
 if __name__ == "__main__":
     _main()
