@@ -49,7 +49,7 @@ def iter_cumprobs(probs):
 def cdf_plot(subplot, samples, **kwargs):
     subplot.grid(True)
     subplot.set_ylim(0.0, 100.0)
-    subplot.set_ylabel("Percents of samples")
+    subplot.set_ylabel("[%]")
     values, probs = get_dist(samples)
     subplot.plot(values, list(iter_cumprobs(probs)), **kwargs)
     subplot.legend(labelspacing=0.1, loc="best")
@@ -189,8 +189,8 @@ def draw_approved_bars(db_path):
     fig = plt.figure()
 
     subplot = fig.add_subplot(1,1,1)
-    subplot.set_title(u"Approval rate of decisions proposed by city officials")
-    subplot.set_ylabel(u"Percents")
+    subplot.set_title(u"Approval rate of decisions")
+    subplot.set_ylabel(u"[%]")
     subplot.set_xlabel(u"Governing body")
 
     decision_counts, bodies = zip(*query(db_path, """
@@ -228,7 +228,7 @@ def draw_participation_activity(db_path, role):
     fig = plt.figure()
 
     subplot = fig.add_subplot(1,1,1)
-    subplot.set_title("Participation activity of %ss" % role)
+    subplot.set_title("Cumulative participation activity distribution of %ss" % role)
     subplot.set_xlabel("Participation percentage")
 
     for body in ("karltk", "kh", "kv"):
