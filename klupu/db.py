@@ -57,7 +57,7 @@ CREATE TABLE klupu_issues
  number INTEGER NOT NULL,
  dnro TEXT,
  FOREIGN KEY(meeting_id) REFERENCES klupu_meetings(id)
- UNIQUE(decision, title, number, dnro))
+ UNIQUE(meeting_id, decision, title, number, dnro))
 """)
 
         db_conn.execute("""
