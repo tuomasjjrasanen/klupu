@@ -112,7 +112,7 @@ ORDER BY starttime;
 
     return result
 
-def draw_monthly_durations(db_path):
+def draw_monthly_durations(db_path, startyear, startmonth, endyear, endmonth):
     fig = plt.figure()
 
     subplot = fig.add_subplot(1, 1, 1)
@@ -120,7 +120,7 @@ def draw_monthly_durations(db_path):
     subplot.set_ylabel("Hours")
     subplot.grid(True)
 
-    yearmonths = list(iter_yearmonths(2008, 11, 2010, 12))
+    yearmonths = list(iter_yearmonths(startyear, startmonth, endyear, endmonth))
     xvals = range(len(yearmonths))
     bottom = len(xvals) * [0]
 
@@ -263,7 +263,7 @@ where body = ?;
 
 def _main():
     db_path = sys.argv[1]
-    draw_monthly_durations(db_path)
+    draw_monthly_durations(db_path, 2008, 11, 2011, 12)
     draw_duration_cdf(db_path)
     draw_presenter_cdf(db_path)
     draw_approved_bars(db_path)
