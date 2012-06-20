@@ -14,31 +14,54 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import json
+import os.path
 import re
 import sys
 
+from bs4 import BeautifulSoup
+
 def _main():
-    counts = {}
     cases = {}
+    issue_filepaths = {}
     with open(sys.argv[1]) as f:
         for line in f:
             line = line.strip()
             nominative, case = line.split(",")
-            counts[nominative] = 0
             cases[case] = nominative
 
     for filepath in sys.argv[3:]:
         with open(filepath) as f:
-            text = f.read()
+            soup = BeautifulSoup(f)
+        text = re.sub(r"\s+", " ", soup.text)
         words = set(re.split(r"[^a-zA-ZåäöÅÄÖ]", text))
         for case in words & set(cases):
             nominative = cases[case]
-            counts[nominative] += 1
+            filepaths = issue_filepaths.setdefault(nominative, set())
+            filepaths.add(filepath)
 
-    with open(sys.argv[2], "w") as f:
-        for nominative, count in counts.items():
-            if count:
-                print(nominative, count, sep=",", file=f)
+    objects = []
+    data = {"objects": objects}
+    locations = {}
+
+    with open(sys.argv[2]) as f:
+        for line in f:
+            line = line.strip()
+            nominative, lat, lng = line.split(",")
+            if not nominative in locations:
+                locations[nominative] = (float(lat), float(lng))
+
+    for nominative, filepaths in issue_filepaths.items():
+        if not nominative in locations:
+            continue
+        urls = []
+        for filepath in filepaths:
+            urls.append("http://www3.jkl.fi/" + os.path.splitext(filepath)[0] + ".htm")
+        lat, lng = locations[nominative]
+        obj = {"address": nominative, "issues": urls, "lat": lat, "lng": lng}
+        objects.append(obj)
+
+    json.dump(data, sys.stdout)
 
 if __name__ == "__main__":
     _main()
