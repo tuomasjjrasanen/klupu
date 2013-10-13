@@ -46,10 +46,6 @@ def query(zipcode="", po_commune="", po_commune_radio=""):
 
 def _main():
 
-    # Use set, because we are searching by zipcodes and the same
-    # street might have several zipcodes. Let's just pick one of the
-    # hits.
-    streetnames = set()
     zipcode_soup = query(po_commune_radio="commune", po_commune=sys.argv[1])
     for tr in find_result_trs(zipcode_soup):
         zipcode = tr("td")[0].text.strip().split(" ")[0]
@@ -57,10 +53,8 @@ def _main():
         time.sleep(2)
         for tr in find_result_trs(streetname_soup):
             streetname = tr("td")[0].text.strip()
-            streetnames.add(streetname)
-
-    for streetname in sorted(streetnames):
-        print(streetname)
+            if streetname:
+                print("%s,%s,FI" % (streetname.encode("iso-8859-1"), sys.argv[1]))
 
 if __name__ == "__main__":
     _main()
