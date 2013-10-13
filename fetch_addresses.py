@@ -15,6 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import sys
+import time
 import urllib.parse
 import urllib.request
 import urllib.response
@@ -53,6 +54,7 @@ def _main():
     for tr in find_result_trs(zipcode_soup):
         zipcode = tr("td")[0].text.strip().split(" ")[0]
         streetname_soup = query(zipcode=zipcode)
+        time.sleep(2)
         for tr in find_result_trs(streetname_soup):
             streetname = tr("td")[0].text.strip()
             streetnames.add(streetname)
