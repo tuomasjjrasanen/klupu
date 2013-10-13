@@ -224,6 +224,7 @@ def validate(meeting):
 def _main():
     db_path = sys.argv[1]
     for minutes_dirpath in sys.argv[2:]:
+        print(minutes_dirpath)
         meeting = parse_meeting(minutes_dirpath)
         validate(meeting)
         try:
