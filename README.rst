@@ -23,17 +23,26 @@ How to use
 
   python3 fetch.py http://www3.jkl.fi/paatokset/karltk08.htm
 
-2. Initialize database::
+2. Initialize Sqlite3 database::
 
-  python3 init.py DB_PATH
+  python3 init.py myklupu.db
 
-2. Extract information from clean directories to Sqlite3 database::
+3. Import meeting minutes to the database::
 
-  python3 save.py DB_PATH CLEAN_OUTPUT_DIR...
+  python3 save.py myklupu.db paatokset/karltk/2008/16121630.0
 
-3. Draw figures from the database::
+4. Draw figures from the database::
 
-  python draw.py DB_PATH
+  python draw.py myklupu.db
+
+5. Fetch addresses::
+
+  python3 fetch_addresses.py Jyväskylä >fetched_addresses.txt
+
+6. Geocode addresses::
+
+  mkdir osm_gecodes
+  python3 geocode_addresses.py osm_geocodes addresses.txt your@email.address
 
 How to contribute
 =================
