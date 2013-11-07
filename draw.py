@@ -26,7 +26,7 @@ import os.path
 import sys
 
 import matplotlib
-matplotlib.use("Qt4Agg")
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 import klupu.db
@@ -57,7 +57,7 @@ def cdf_plot(subplot, samples, **kwargs):
 def stacked_bar(subplot, xvals, yvals, **kwargs):
     bottom = len(xvals) * [0]
 
-    for color, label in zip("bgr", ("kv", "kh", "karltk")):
+    for color, label in zip("bgry", ("kv", "kh", "karltk", "rakympltk")):
         yvals = read_monthly_durations("%s*.json" % label, yearmonths)
         subplot.bar(xvals, yvals, color=color, align="center",
                    bottom=bottom, label=label)
@@ -124,7 +124,7 @@ def draw_monthly_durations(db_path, startyear, startmonth, endyear, endmonth):
     xvals = range(len(yearmonths))
     bottom = len(xvals) * [0]
 
-    for color, body in zip("bgr", ("karltk", "kh", "kv")):
+    for color, body in zip("bgry", ("karltk", "kh", "kv", "rakympltk")):
         yvals = get_monthly_durations(db_path, body, yearmonths)
         subplot.bar(xvals, yvals, color=color, align="center",
                    bottom=bottom, label=body)
@@ -139,25 +139,29 @@ def draw_monthly_durations(db_path, startyear, startmonth, endyear, endmonth):
     subplot.get_xaxis().set_ticklabels(xticklabels)
 
     for label in subplot.get_xticklabels():
-        label.set_rotation(30)
+        label.set_rotation(90)
 
     subplot.legend(loc="best")
+    fig.subplots_adjust(bottom=0.14, top=0.95, left=0.08, right=0.98)
+    fig.savefig("monthly_durations.png")
 
 def draw_duration_cdf(db_path):
     fig = plt.figure()
 
     subplot = fig.add_subplot(1,1,1)
-    subplot.set_title(u"Cumulative issue duration distribution")
+    subplot.set_title(u"Cumulative meeting duration distribution")
     subplot.set_xlabel(u"Hours")
 
-    for body in ("karltk", "kh", "kv"):
+    for color, body in zip("bgry", ("karltk", "kh", "kv", "rakympltk")):
         samples = query(db_path, """
 SELECT duration/3600.0
 FROM klupu_meetings
 WHERE body = ?
 ORDER BY duration;
 """, body)
-        cdf_plot(subplot, samples, label=body)
+        cdf_plot(subplot, samples, label=body, color=color, linewidth=2.0)
+    fig.subplots_adjust(bottom=0.14, top=0.95, left=0.08, right=0.98)
+    fig.savefig("meeting_durations.png")
 
 def draw_presenter_cdf(db_path):
     fig = plt.figure()
@@ -169,27 +173,33 @@ def draw_presenter_cdf(db_path):
     subplot.set_xticks([])
 
     samples = query(db_path, """
-SELECT count()
+SELECT count(), name
 FROM klupu_presenters
 GROUP BY name
 ORDER BY count();
 """)
+
     samples = zip(*samples)[0]
     subplot.bar(range(len(samples)), samples, width=1.0, color="k")
     avg = sum(samples) / len(samples)
     subplot.axhline(samples[int(len(samples) * 0.95)], label="95th percentile",
                     color="g", linestyle="--", linewidth=3)
     subplot.axhline(avg, label="average", color="r", linestyle="--", linewidth=3)
+    subplot.axhline(samples[int(len(samples) * 0.5)], label="50th percentile",
+                    color="b", linestyle="--", linewidth=3)
     subplot.set_xlim(0, len(samples))
-    subplot.set_yticks(range(0, 275, 25))
+    subplot.set_yticks(range(0, max(samples), 25))
+
     subplot.grid(axis="y")
     subplot.legend(loc="best")
+    fig.subplots_adjust(bottom=0.14, top=0.95, left=0.08, right=0.98)
+    fig.savefig("preparation_distribution.png")
 
 def draw_approved_bars(db_path):
     fig = plt.figure()
 
     subplot = fig.add_subplot(1,1,1)
-    subplot.set_title(u"Approval rate of decisions")
+    subplot.set_title(u"Approval rate of decision proposals")
     subplot.set_ylabel(u"[%]")
     subplot.set_xlabel(u"Governing body")
 
@@ -200,6 +210,7 @@ FROM klupu_issues
     ON klupu_presenters.issue_id = klupu_issues.id
   JOIN klupu_meetings
     ON klupu_meetings.id = klupu_issues.meeting_id
+  WHERE body != 'usovtmk'
 GROUP BY body
 ORDER BY body;
 """))
@@ -211,7 +222,7 @@ FROM klupu_issues
     ON klupu_presenters.issue_id = klupu_issues.id
   JOIN klupu_meetings
     ON klupu_meetings.id = klupu_issues.meeting_id
-WHERE (decision GLOB 'Päätösehdotus hyväksyttiin.*'
+WHERE body != 'usovtmk' AND (decision GLOB 'Päätösehdotus hyväksyttiin.*'
        OR decision GLOB 'Ehdotus hyväksyttiin.*')
 GROUP BY body
 ORDER BY body;
@@ -220,9 +231,12 @@ ORDER BY body;
     subplot.set_xticks(range(len(approved_counts)))
     subplot.set_xticklabels(bodies)
     ratios = [x/y*100.0 for x, y in zip(approved_counts, decision_counts)]
-    subplot.bar(range(len(ratios)), ratios, align="center", color="bgr")
+    subplot.bar(range(len(ratios)), ratios, align="center", color="bgry")
     subplot.set_xlim(-0.6, len(ratios) - 0.4)
+    subplot.set_ylim(0, 100)
     subplot.grid(axis="y")
+    fig.subplots_adjust(bottom=0.14, top=0.95, left=0.08, right=0.98)
+    fig.savefig("approval_rate.png")
 
 def draw_participation_activity(db_path, role):
     fig = plt.figure()
@@ -231,7 +245,7 @@ def draw_participation_activity(db_path, role):
     subplot.set_title("Cumulative participation activity distribution of %ss" % role)
     subplot.set_xlabel("Participation percentage")
 
-    for body in ("karltk", "kh", "kv"):
+    for body in ("karltk", "kh", "kv", "rakympltk"):
         participation_counts = query(db_path, """
 select count()
 from klupu_participants
@@ -251,26 +265,12 @@ where body = ?;
         samples = [x / meeting_count * 100 for x in participation_counts]
         cdf_plot(subplot, samples, label=body)
 
-    # subplot.bar(range(len(samples)), samples, width=1.0, color="k")
-    # avg = sum(samples) / len(samples)
-    # subplot.axhline(samples[int(len(samples) * 0.95)], label="95th percentile",
-    #                 color="g", linestyle="--", linewidth=3)
-    # subplot.axhline(avg, label="average", color="r", linestyle="--", linewidth=3)
-    # subplot.set_xlim(0, len(samples))
-    # subplot.set_yticks(range(0, 275, 25))
-    # subplot.grid(axis="y")
-    # subplot.legend(loc="best")
-
 def _main():
     db_path = sys.argv[1]
-    draw_monthly_durations(db_path, 2008, 11, 2011, 12)
+    draw_monthly_durations(db_path, 2008, 11, 2013, 9)
     draw_duration_cdf(db_path)
     draw_presenter_cdf(db_path)
     draw_approved_bars(db_path)
-    draw_participation_activity(db_path, "other")
-    draw_participation_activity(db_path, "decision-maker")
-
-    plt.show()
 
 if __name__ == "__main__":
     _main()
