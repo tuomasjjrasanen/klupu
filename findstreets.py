@@ -30,7 +30,8 @@ def _main():
             nominative, case = line.split(",")
             cases[case] = nominative
 
-    for filepath in sys.argv[3:]:
+    for filepath in sys.stdin:
+        filepath = filepath.strip()
         with open(filepath) as f:
             soup = BeautifulSoup(f)
         text = re.sub(r"\s+", " ", soup.text)
