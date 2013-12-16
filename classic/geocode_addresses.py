@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # klupu - scrape meeting minutes of governing bodies of city of Jyväskylä
-# Copyright (C) 2013 Tuomas Räsänen <tuomasjjrasanen@tjjr.fi>
+# Copyright (C) 2013 Koodilehto Osk <http://koodilehto.fi>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
