@@ -16,12 +16,12 @@
 
 import klupung.ktweb
 
-downloader = klupung.ktweb.HTMLDownloader()
+downloader = klupung.ktweb.HTMLDownloader(download_dir="downloads")
 
 # HTTP requests will not be made more often than once per second.
 downloader.min_http_request_interval = 1
 
-# Do not download pages if they are found from the local filesystem.
+# Do not download pages if they are found from download_dir.
 downloader.force_download = False
 
 downloader.download("http://www3.jkl.fi/paatokset/karltk.htm")

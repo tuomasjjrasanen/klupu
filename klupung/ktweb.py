@@ -66,13 +66,15 @@ def _cleanup_soup(soup):
 
 class HTMLDownloader(object):
 
-    def __init__(self):
+    def __init__(self, download_dir="."):
+        self.__download_dir = download_dir
         self.force_download = False
         self.min_http_request_interval = 1.0
         self.__last_download_time = 0
 
     def __download_page(self, url, encoding):
-        filepath = os.path.normpath("." + urlparse.urlsplit(url).path)
+        filepath = os.path.normpath(self.__download_dir
+                                    + urlparse.urlsplit(url).path)
         if os.path.exists(filepath) and not self.force_download:
             print('%s already exists in %s, downloading skipped'
                   % (url, filepath), file=sys.stderr)
