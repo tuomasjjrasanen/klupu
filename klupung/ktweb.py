@@ -17,6 +17,8 @@
 from __future__ import print_function
 
 import errno
+import logging
+import logging.handlers
 import os
 import os.path
 import re
@@ -66,8 +68,21 @@ def _cleanup_soup(soup):
 
 class HTMLDownloader(object):
 
-    def __init__(self, download_dir="."):
+    def __init__(self, download_dir=".", **kwargs):
         self.__download_dir = download_dir
+
+        try:
+            self.logger = kwargs["logger"]
+        except KeyError:
+            self.logger = logging.getLogger("klupung.ktweb.HTMLDownloader")
+            self.logger.setLevel(logging.INFO)
+
+            logfilepath = os.path.join(self.__download_dir, "download.log")
+            loghandler = logging.handlers.WatchedFileHandler(logfilepath)
+            logformat = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+            loghandler.setFormatter(logging.Formatter(logformat))
+            self.logger.addHandler(loghandler)
+
         self.force_download = False
         self.min_http_request_interval = 1.0
         self.__last_download_time = 0
@@ -76,8 +91,8 @@ class HTMLDownloader(object):
         filepath = os.path.normpath(self.__download_dir
                                     + urlparse.urlsplit(url).path)
         if os.path.exists(filepath) and not self.force_download:
-            print('%s already exists in %s, downloading skipped'
-                  % (url, filepath), file=sys.stderr)
+            self.logger.warning('page %s already exists at %s'
+                                ', downloading skipped', url, filepath)
             with open(filepath) as f:
                 return bs4.BeautifulSoup(f)
 
@@ -116,8 +131,9 @@ class HTMLDownloader(object):
             try:
                 index_soup = self.__download_page(index_url, "iso-8859-1")
             except urllib2.HTTPError as err:
-                print("failed to download meetingdoc index", err, err.url,
-                      "skipped", file=sys.stderr)
+                self.logger.warning("failed to download meeting document"
+                                    " index %s (%s), downloading skipped",
+                                    err.url, err)
                 continue
 
             for agendaitem_url in _iter_agendaitem_urls(index_soup, index_url):
@@ -125,6 +141,7 @@ class HTMLDownloader(object):
                 try:
                     self.__download_page(agendaitem_url, "windows-1252")
                 except urllib2.HTTPError as err:
-                    print("failed to download agendaitem", err, err.url,
-                          "skipped", file=sys.stderr)
+                    self.logger.warning("failed to download agenda item"
+                                        " %s (%s), downloading skipped",
+                                        err.url, err)
                     continue

@@ -14,6 +14,9 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
+import logging
+import sys
+
 import klupung.ktweb
 
 downloader = klupung.ktweb.HTMLDownloader(download_dir="downloads")
@@ -23,5 +26,8 @@ downloader.min_http_request_interval = 1
 
 # Do not download pages if they are found from download_dir.
 downloader.force_download = False
+
+# Log messages to stderr as well.
+downloader.logger.addHandler(logging.StreamHandler(sys.stderr))
 
 downloader.download("http://www3.jkl.fi/paatokset/karltk.htm")
