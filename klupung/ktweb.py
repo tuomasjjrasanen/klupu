@@ -66,6 +66,12 @@ def _cleanup_soup(soup):
 
     return soup
 
+class Error(Exception):
+    pass
+
+class HTMLDownloadError(Error):
+    pass
+
 class HTMLDownloader(object):
 
     def __init__(self, base_url, download_dir=".", **kwargs):
@@ -93,10 +99,8 @@ class HTMLDownloader(object):
         urlpath = urlparse.urlsplit(url).path
         base, sep, path = urlpath.partition(self.__base_path)
         if base or not sep:
-            self.logger.error("download url %s has different base path than"
-                              " the base URL %s, downloading skipped",
-                              url, self.__base_url)
-            return None
+            raise HTMLDownloadError("download URL has different base path than"
+                                    " the base URL", url, self.__base_url)
         filepath = os.path.normpath(self.__download_dir + path)
         if os.path.exists(filepath) and not self.force_download:
             self.logger.warning('page %s already exists at %s'
