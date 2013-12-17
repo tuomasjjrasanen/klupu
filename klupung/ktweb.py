@@ -68,7 +68,9 @@ def _cleanup_soup(soup):
 
 class HTMLDownloader(object):
 
-    def __init__(self, download_dir=".", **kwargs):
+    def __init__(self, base_url, download_dir=".", **kwargs):
+        self.__base_url = base_url
+        self.__base_path = urlparse.urlsplit(base_url).path
         self.__download_dir = os.path.abspath(download_dir)
 
         try:
@@ -124,11 +126,13 @@ class HTMLDownloader(object):
 
         return clean_soup
 
-    def download(self, base_url):
-        self.logger.info("starting to download from %s to %s",
-                         base_url, self.__download_dir)
-        base_soup = self.__download_page(base_url, "windows-1252")
-        for index_url in _iter_meetingdoc_index_urls(base_soup, base_url):
+    def download(self, policymaker_id):
+        url = "%s/%s.htm" % (self.__base_url, policymaker_id)
+        self.logger.info("starting to download meeting documents of"
+                         " %s from %s to %s", policymaker_id,
+                         self.__base_url, self.__download_dir)
+        base_soup = self.__download_page(url, "windows-1252")
+        for index_url in _iter_meetingdoc_index_urls(base_soup, url):
 
             try:
                 index_soup = self.__download_page(index_url, "iso-8859-1")
@@ -147,4 +151,5 @@ class HTMLDownloader(object):
                                         " %s (%s), downloading skipped",
                                         err.url, err)
                     continue
-        self.logger.info("finished downloading from %s", base_url)
+        self.logger.info("finished downloading meeting documents of %s from %s",
+                         policymaker_id, self.__base_url)
