@@ -125,6 +125,8 @@ class HTMLDownloader(object):
         return clean_soup
 
     def download(self, base_url):
+        self.logger.info("starting to download from %s to %s",
+                         base_url, self.__download_dir)
         base_soup = self.__download_page(base_url, "windows-1252")
         for index_url in _iter_meetingdoc_index_urls(base_soup, base_url):
 
@@ -145,3 +147,4 @@ class HTMLDownloader(object):
                                         " %s (%s), downloading skipped",
                                         err.url, err)
                     continue
+        self.logger.info("finished downloading from %s", base_url)
