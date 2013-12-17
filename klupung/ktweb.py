@@ -69,7 +69,7 @@ def _cleanup_soup(soup):
 class HTMLDownloader(object):
 
     def __init__(self, download_dir=".", **kwargs):
-        self.__download_dir = download_dir
+        self.__download_dir = os.path.abspath(download_dir)
 
         try:
             self.logger = kwargs["logger"]
