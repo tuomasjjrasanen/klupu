@@ -144,22 +144,23 @@ class HTMLDownloader(object):
         base_soup = self.__download_page(url, "windows-1252")
         for index_url in _iter_meetingdoc_index_urls(base_soup, url):
 
+            # Try to download individual pages, but do not interrupt the
+            # whole download process if something goes wrong with a
+            # single page. Just log it so the user can come back to it
+            # afterwards if necessary.
             try:
                 index_soup = self.__download_page(index_url, "iso-8859-1")
-            except urllib2.HTTPError as err:
-                self.logger.warning("failed to download meeting document"
-                                    " index %s (%s), downloading skipped",
-                                    err.url, err)
+                for ai_url in _iter_agendaitem_urls(index_soup, index_url):
+                    try:
+                        self.__download_page(ai_url, "windows-1252")
+                    except Exception:
+                        self.logger.exception("failed to download agenda item %s",
+                                              ai_url)
+                        continue
+            except Exception:
+                self.logger.exception("failed to download meeting document"
+                                      " index %s", index_url)
                 continue
 
-            for agendaitem_url in _iter_agendaitem_urls(index_soup, index_url):
-
-                try:
-                    self.__download_page(agendaitem_url, "windows-1252")
-                except urllib2.HTTPError as err:
-                    self.logger.warning("failed to download agenda item"
-                                        " %s (%s), downloading skipped",
-                                        err.url, err)
-                    continue
         self.logger.info("finished downloading meeting documents of %s from %s",
                          policymaker_id, self.__base_url)
