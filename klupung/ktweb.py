@@ -14,7 +14,9 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
+import datetime
 import errno
+import glob
 import logging
 import logging.handlers
 import os
@@ -28,6 +30,16 @@ from urllib.parse import urlsplit
 from urllib.request import urlopen
 
 import bs4
+
+def _make_soup(filepath, encoding="utf-8"):
+    with open(filepath, encoding=encoding, errors="replace") as f:
+        return bs4.BeautifulSoup(f, from_encoding=encoding)
+
+def _iter_issue_page_filepaths(meetingdoc_dirpath):
+    issue_page_filepath_pattern = os.path.join(meetingdoc_dirpath, "htmtxt*.htm")
+    for issue_page_filepath in glob.iglob(issue_page_filepath_pattern):
+        if os.path.basename(issue_page_filepath) != "htmtxt0.htm":
+            yield issue_page_filepath
 
 def _iter_issue_page_urls(meetingdoc_index_soup, meetingdoc_index_url):
     for tr in meetingdoc_index_soup("table")[0]("tr"):
@@ -163,3 +175,113 @@ class HTMLDownloader(object):
 
         self.logger.info("finished downloading meeting documents of %s from %s",
                          policymaker_id, self.__base_url)
+
+class HTMLParseError(Error):
+    pass
+
+class HTMLParser(object):
+
+    RE_TIME = re.compile(r"(?:[a-zA-Z]+ )?(\d\d?)\.(\d\d?)\.(\d{4})[ ]?,? (?:kello|klo)\s?(\d\d?)\.(\d\d)\s*[–-]\s*(\d\d?)\.(\d\d)")
+
+    def __parse_cover_page_datetimes(self, text):
+        retval = []
+
+        for values in HTMLParser.RE_TIME.findall(text):
+            (day, month, year,
+             start_hour, start_minute,
+             end_hour, end_minute) = [int(v) for v in values]
+
+            # Someone uses stupid format to denote that the meeting lasted
+            # past midnight.
+            end_hour %= 24
+
+            start = datetime.datetime(year, month, day, start_hour, start_minute)
+            end = datetime.datetime(year, month, day, end_hour, end_minute)
+            if start > end:
+                end += datetime.timedelta(1)
+
+            retval.append((start, end))
+
+        return retval
+
+    def __init__(self, *args, **kwargs):
+
+        try:
+            self.logger = kwargs["logger"]
+        except KeyError:
+            self.logger = logging.getLogger("klupung.ktweb.HTMLParser")
+            self.logger.setLevel(logging.INFO)
+
+            loghandler = logging.handlers.WatchedFileHandler("parse.log")
+            logformat = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+            loghandler.setFormatter(logging.Formatter(logformat))
+            self.logger.addHandler(loghandler)
+
+    def __parse_issue_page(self, filepath):
+        soup = _make_soup(filepath)
+
+        return {
+        }
+
+    def parse_issue_pages(self, meetingdoc_dirpath):
+        retval = []
+
+        for issue_page_filepath in _iter_issue_page_filepaths(meetingdoc_dirpath):
+            issue_page = self.__parse_issue_page(issue_page_filepath)
+            retval.append(issue_page)
+
+        return retval
+
+    def parse_cover_page(self, meetingdoc_dirpath):
+        cover_page_filepath = os.path.join(meetingdoc_dirpath, "htmtxt0.htm")
+        cover_page_soup = _make_soup(cover_page_filepath)
+
+        # Find the marker element. Datetimes and such are nearby...
+        markertag = cover_page_soup(text=re.compile("KOKOUSTIEDOT"))[0]
+
+        # Filters p-elements which might contain the actual payload
+        # (datetimes and place). Looks a bit scary but seems to work
+        # really well in practice.
+        ps = markertag.parent.parent.parent.parent("td")[1]("p")
+
+        # Accept only non-empty strings.
+        texts = [re.sub(r"[\xad\s]+", " ", p.text) for p in ps if p.text.strip()]
+
+        # There must be at least two text elements: datetime and place.
+        if len(texts) != 2:
+            raise HTMLParseError("cover page has unknown structure for "
+                                 "datetime and place information",
+                                 cover_page_filepath)
+
+        # The place of the meeting is easy, it's always the last element.
+        place = texts[-1]
+
+        # There can be several datetimes within one paragraph.
+        datetimes = self.__parse_cover_page_datetimes(texts[0])
+
+        return {
+            "datetimes": datetimes,
+            "place": place,
+        }
+
+    def parse_index_page(self, meetingdoc_dirpath):
+        index_filepath = os.path.join(meetingdoc_dirpath, "index.htm")
+        index_soup = _make_soup(index_filepath)
+
+        magical_selfurl = index_soup.html.body("a", target="_self")[0]["href"]
+        policymaker = os.path.splitext(os.path.basename(magical_selfurl))[0]
+
+        return {
+            "policymaker": policymaker,
+        }
+
+    def parse_meetingdoc(self, meetingdoc_dirpath):
+        index_page = self.parse_index_page(meetingdoc_dirpath)
+        cover_page = self.parse_cover_page(meetingdoc_dirpath)
+        issue_pages = self.parse_issue_pages(meetingdoc_dirpath)
+
+        return {
+            "index_page": index_page,
+            "cover_page": cover_page,
+            "issue_pages": issue_pages,
+        }
