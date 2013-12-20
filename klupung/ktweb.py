@@ -253,7 +253,7 @@ class HTMLParser(object):
             "resolution": resolution,
         }
 
-    def parse_issue_pages(self, meetingdoc_dirpath):
+    def __parse_issue_pages(self, meetingdoc_dirpath):
         retval = []
 
         for issue_page_filepath in _iter_issue_page_filepaths(meetingdoc_dirpath):
@@ -262,7 +262,7 @@ class HTMLParser(object):
 
         return retval
 
-    def parse_cover_page(self, meetingdoc_dirpath):
+    def __parse_meeting_info(self, meetingdoc_dirpath):
         cover_page_filepath = os.path.join(meetingdoc_dirpath, "htmtxt0.htm")
         cover_page_soup = _make_soup(cover_page_filepath)
 
@@ -277,7 +277,7 @@ class HTMLParser(object):
         # Accept only non-empty strings.
         texts = [re.sub(r"[\xad\s]+", " ", p.text) for p in ps if p.text.strip()]
 
-        datetimes = []
+        meeting_datetimes = []
         for i, text in enumerate(texts):
             timespecs = HTMLParser.RE_TIME.findall(text)
             if not timespecs:
@@ -296,28 +296,28 @@ class HTMLParser(object):
                 if start > end:
                     end += datetime.timedelta(1)
 
-                datetimes.append((start, end))
+                meeting_datetimes.append((start, end))
 
         # The place of the meeting is easy, it always follows the last
         # datetime field.
-        place = texts[i]
+        meeting_place = texts[i]
 
         return {
-            "datetimes": datetimes,
-            "place": place,
+            "meeting_datetimes": meeting_datetimes,
+            "meeting_place": meeting_place,
         }
 
-    def parse_meetingdoc(self, meetingdoc_dirpath):
-
+    def parse(self, meetingdoc_dirpath):
         policymaker_dirpath = os.path.join(meetingdoc_dirpath, "..", "..")
         policymaker_absdirpath = os.path.abspath(policymaker_dirpath)
         policymaker_abbreviation = os.path.basename(policymaker_absdirpath)
 
-        cover_page = self.parse_cover_page(meetingdoc_dirpath)
-        issue_pages = self.parse_issue_pages(meetingdoc_dirpath)
-
-        return {
+        meetingdoc = {
             "policymaker_abbreviation": policymaker_abbreviation,
-            "cover_page": cover_page,
-            "issue_pages": issue_pages,
         }
+
+        meetingdoc.update(self.parse_meeting_info(meetingdoc_dirpath))
+
+        meetingdoc["issue_pages"] = self.parse_issue_pages(meetingdoc_dirpath)
+
+        return meetingdoc
