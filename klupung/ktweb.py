@@ -35,13 +35,13 @@ def _make_soup(filepath, encoding="utf-8"):
     with open(filepath, encoding=encoding, errors="replace") as f:
         return bs4.BeautifulSoup(f, from_encoding=encoding)
 
-def _iter_issue_page_filepaths(meetingdoc_dirpath):
-    issue_page_filepath_pattern = os.path.join(meetingdoc_dirpath, "htmtxt*.htm")
-    for issue_page_filepath in glob.iglob(issue_page_filepath_pattern):
-        if os.path.basename(issue_page_filepath) != "htmtxt0.htm":
-            yield issue_page_filepath
+def _iter_agendaitem_filepaths(meetingdoc_dirpath):
+    agendaitem_filepath_pattern = os.path.join(meetingdoc_dirpath, "htmtxt*.htm")
+    for agendaitem_filepath in glob.iglob(agendaitem_filepath_pattern):
+        if os.path.basename(agendaitem_filepath) != "htmtxt0.htm":
+            yield agendaitem_filepath
 
-def _iter_issue_page_urls(meetingdoc_index_soup, meetingdoc_index_url):
+def _iter_agendaitem_urls(meetingdoc_index_soup, meetingdoc_index_url):
     for tr in meetingdoc_index_soup("table")[0]("tr"):
         a = tr("a")[0]
         href = a["href"].strip()
@@ -157,11 +157,11 @@ class HTMLDownloader(object):
             # afterwards if necessary.
             try:
                 index_soup = self.__download_page(index_url, "iso-8859-1")
-                for ai_url in _iter_issue_page_urls(index_soup, index_url):
+                for ai_url in _iter_agendaitem_urls(index_soup, index_url):
                     try:
                         self.__download_page(ai_url, "windows-1252")
                     except Exception:
-                        self.logger.exception("failed to download issue page %s",
+                        self.logger.exception("failed to download agenda item %s",
                                               ai_url)
                         continue
             except Exception:
@@ -193,24 +193,24 @@ class HTMLParser(object):
             loghandler.setFormatter(logging.Formatter(logformat))
             self.logger.addHandler(loghandler)
 
-    def __parse_issue_resolution(self, issue_page_soup):
+    def __parse_agendaitem_resolution(self, agendaitem_soup):
         resolution = None
-        for p in issue_page_soup.html.body("p"):
+        for p in agendaitem_soup.html.body("p"):
             match = re.match(r"^\s*Päätös\s+(.*)", p.text, re.DOTALL)
             if match:
                 resolution = re.sub("\s+", " ", match.group(1))
         return resolution
 
-    def __parse_issue_preparers(self, issue_page_soup):
+    def __parse_agendaitem_preparers(self, agendaitem_soup):
         preparers = []
-        for text in [re.sub(r"\s+", " ", p.text).strip() for p in issue_page_soup("p")]:
+        for text in [re.sub(r"\s+", " ", p.text).strip() for p in agendaitem_soup("p")]:
             if text.startswith("Asian valmisteli"):
                 preparers.extend(HTMLParser.RE_PERSON.findall(text))
                 break
         return preparers
 
-    def __parse_issue_dnro(self, issue_page_soup):
-        ps = issue_page_soup.html.body("p")
+    def __parse_agendaitem_dnro(self, agendaitem_soup):
+        ps = agendaitem_soup.html.body("p")
         dnros = []
         for text in [re.sub(r"\s+", " ", p.text) for p in ps]:
             dnro_match = HTMLParser.RE_DNRO.match(text)
@@ -220,9 +220,9 @@ class HTMLParser(object):
         try:
             dnro = dnros[0]
         except IndexError:
-            # Some of the issues in each meeting are "standard" issues,
-            # e.g. opening of the meeting, determination of quorum, which
-            # do not have Dnro.
+            # Some of the agenda items in each meeting are "standard"
+            # agenda items, e.g. opening of the meeting, determination
+            # of quorum, which do not have Dnro.
             dnro = None
 
         if dnro == "0/00":
@@ -230,20 +230,20 @@ class HTMLParser(object):
 
         return dnro
 
-    def __parse_issue_subject(self, issue_page_soup):
-        indexed_subject = issue_page_soup.html.body("p", {"class": "Asiaotsikko"})[0].text
+    def __parse_agendaitem_subject(self, agendaitem_soup):
+        indexed_subject = agendaitem_soup.html.body("p", {"class": "Asiaotsikko"})[0].text
         match = re.match(r"^(\d+)\s+", indexed_subject)
         index = int(match.group(1))
         subject = re.sub(r"\s+", " ", indexed_subject[match.end():])
         return index, subject
 
-    def __parse_issue_page(self, issue_page_filepath):
-        issue_page_soup = _make_soup(issue_page_filepath)
+    def __parse_agendaitem(self, agendaitem_filepath):
+        agendaitem_soup = _make_soup(agendaitem_filepath)
 
-        index, subject = self.__parse_issue_subject(issue_page_soup)
-        dnro = self.__parse_issue_dnro(issue_page_soup)
-        preparers = self.__parse_issue_preparers(issue_page_soup)
-        resolution = self.__parse_issue_resolution(issue_page_soup)
+        index, subject = self.__parse_agendaitem_subject(agendaitem_soup)
+        dnro = self.__parse_agendaitem_dnro(agendaitem_soup)
+        preparers = self.__parse_agendaitem_preparers(agendaitem_soup)
+        resolution = self.__parse_agendaitem_resolution(agendaitem_soup)
 
         return {
             "index": index,
@@ -253,12 +253,12 @@ class HTMLParser(object):
             "resolution": resolution,
         }
 
-    def __parse_issue_pages(self, meetingdoc_dirpath):
+    def __parse_agendaitems(self, meetingdoc_dirpath):
         retval = []
 
-        for issue_page_filepath in _iter_issue_page_filepaths(meetingdoc_dirpath):
-            issue_page = self.__parse_issue_page(issue_page_filepath)
-            retval.append(issue_page)
+        for agendaitem_filepath in _iter_agendaitem_filepaths(meetingdoc_dirpath):
+            agendaitem = self.__parse_agendaitem(agendaitem_filepath)
+            retval.append(agendaitem)
 
         return retval
 
@@ -318,6 +318,6 @@ class HTMLParser(object):
 
         meetingdoc.update(self.parse_meeting_info(meetingdoc_dirpath))
 
-        meetingdoc["issue_pages"] = self.parse_issue_pages(meetingdoc_dirpath)
+        meetingdoc["agendaitems"] = self.parse_agendaitems(meetingdoc_dirpath)
 
         return meetingdoc
