@@ -178,27 +178,6 @@ class HTMLParser(object):
 
     RE_TIME = re.compile(r"(?:[a-zA-Z]+ )?(\d\d?)\.(\d\d?)\.(\d{4})[ ]?,? (?:kello|klo)\s?(\d\d?)\.(\d\d)\s*[–-]\s*(\d\d?)\.(\d\d)")
 
-    def __parse_cover_page_datetimes(self, text):
-        retval = []
-
-        for values in HTMLParser.RE_TIME.findall(text):
-            (day, month, year,
-             start_hour, start_minute,
-             end_hour, end_minute) = [int(v) for v in values]
-
-            # Someone uses stupid format to denote that the meeting lasted
-            # past midnight.
-            end_hour %= 24
-
-            start = datetime.datetime(year, month, day, start_hour, start_minute)
-            end = datetime.datetime(year, month, day, end_hour, end_minute)
-            if start > end:
-                end += datetime.timedelta(1)
-
-            retval.append((start, end))
-
-        return retval
-
     def __init__(self, *args, **kwargs):
 
         try:
@@ -242,17 +221,30 @@ class HTMLParser(object):
         # Accept only non-empty strings.
         texts = [re.sub(r"[\xad\s]+", " ", p.text) for p in ps if p.text.strip()]
 
-        # There must be at least two text elements: datetime and place.
-        if len(texts) != 2:
-            raise HTMLParseError("cover page has unknown structure for "
-                                 "datetime and place information",
-                                 cover_page_filepath)
+        datetimes = []
+        for i, text in enumerate(texts):
+            timespecs = HTMLParser.RE_TIME.findall(text)
+            if not timespecs:
+                break
+            for timespec in timespecs:
+                (day, month, year,
+                 start_hour, start_minute,
+                 end_hour, end_minute) = [int(v) for v in timespec]
 
-        # The place of the meeting is easy, it's always the last element.
-        place = texts[-1]
+                # Someone uses stupid format to denote that the meeting
+                # lasted past midnight.
+                end_hour %= 24
 
-        # There can be several datetimes within one paragraph.
-        datetimes = self.__parse_cover_page_datetimes(texts[0])
+                start = datetime.datetime(year, month, day, start_hour, start_minute)
+                end = datetime.datetime(year, month, day, end_hour, end_minute)
+                if start > end:
+                    end += datetime.timedelta(1)
+
+                datetimes.append((start, end))
+
+        # The place of the meeting is easy, it always follows the last
+        # datetime field.
+        place = texts[i]
 
         return {
             "datetimes": datetimes,
