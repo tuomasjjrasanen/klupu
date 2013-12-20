@@ -30,7 +30,7 @@ import urlparse
 
 import bs4
 
-def _iter_agendaitem_urls(meetingdoc_index_soup, meetingdoc_index_url):
+def _iter_issue_page_urls(meetingdoc_index_soup, meetingdoc_index_url):
     for tr in meetingdoc_index_soup("table")[0]("tr"):
         a = tr("a")[0]
         href = a["href"].strip()
@@ -150,11 +150,11 @@ class HTMLDownloader(object):
             # afterwards if necessary.
             try:
                 index_soup = self.__download_page(index_url, "iso-8859-1")
-                for ai_url in _iter_agendaitem_urls(index_soup, index_url):
+                for ai_url in _iter_issue_page_urls(index_soup, index_url):
                     try:
                         self.__download_page(ai_url, "windows-1252")
                     except Exception:
-                        self.logger.exception("failed to download agenda item %s",
+                        self.logger.exception("failed to download issue page %s",
                                               ai_url)
                         continue
             except Exception:
