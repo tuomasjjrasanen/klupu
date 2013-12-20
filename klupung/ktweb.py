@@ -307,24 +307,17 @@ class HTMLParser(object):
             "place": place,
         }
 
-    def parse_index_page(self, meetingdoc_dirpath):
-        index_filepath = os.path.join(meetingdoc_dirpath, "index.htm")
-        index_soup = _make_soup(index_filepath)
-
-        magical_selfurl = index_soup.html.body("a", target="_self")[0]["href"]
-        policymaker = os.path.splitext(os.path.basename(magical_selfurl))[0]
-
-        return {
-            "policymaker": policymaker,
-        }
-
     def parse_meetingdoc(self, meetingdoc_dirpath):
-        index_page = self.parse_index_page(meetingdoc_dirpath)
+
+        policymaker_dirpath = os.path.join(meetingdoc_dirpath, "..", "..")
+        policymaker_absdirpath = os.path.abspath(policymaker_dirpath)
+        policymaker_abbreviation = os.path.basename(policymaker_absdirpath)
+
         cover_page = self.parse_cover_page(meetingdoc_dirpath)
         issue_pages = self.parse_issue_pages(meetingdoc_dirpath)
 
         return {
-            "index_page": index_page,
+            "policymaker_abbreviation": policymaker_abbreviation,
             "cover_page": cover_page,
             "issue_pages": issue_pages,
         }
