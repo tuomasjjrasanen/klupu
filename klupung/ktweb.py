@@ -14,8 +14,6 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-from __future__ import print_function
-
 import errno
 import logging
 import logging.handlers
@@ -25,8 +23,9 @@ import re
 import sys
 import time
 
-import urllib2
-import urlparse
+from urllib.parse import urljoin
+from urllib.parse import urlsplit
+from urllib.request import urlopen
 
 import bs4
 
@@ -36,12 +35,12 @@ def _iter_issue_page_urls(meetingdoc_index_soup, meetingdoc_index_url):
         href = a["href"].strip()
         match = re.match(r"(.*)frmtxt(\d+)\.htm", href)
         if match and match.group(2) != "9999":
-            yield urlparse.urljoin(meetingdoc_index_url,
-                                   "%shtmtxt%s.htm" % (match.groups()))
+            yield urljoin(meetingdoc_index_url,
+                          "%shtmtxt%s.htm" % (match.groups()))
 
 def _iter_meetingdoc_index_urls(base_soup, base_url):
     for h3 in base_soup("h3"):
-        yield urlparse.urljoin(base_url, h3("a")[0]["href"])
+        yield urljoin(base_url, h3("a")[0]["href"])
 
 def _cleanup_soup(soup):
     for tag in soup.find_all(text=lambda t: isinstance(t, bs4.Comment)):
@@ -76,7 +75,7 @@ class HTMLDownloader(object):
 
     def __init__(self, base_url, download_dir=".", **kwargs):
         self.__base_url = base_url.rstrip("/")
-        self.__base_path = urlparse.urlsplit(self.__base_url).path
+        self.__base_path = urlsplit(self.__base_url).path
         self.__download_dir = os.path.abspath(download_dir)
 
         try:
@@ -96,7 +95,7 @@ class HTMLDownloader(object):
         self.__last_download_time = 0
 
     def __download_page(self, url, encoding):
-        urlpath = urlparse.urlsplit(url).path
+        urlpath = urlsplit(url).path
         base, sep, path = urlpath.partition(self.__base_path)
         if base or not sep:
             raise HTMLDownloadError("download URL has different base path than"
@@ -115,7 +114,7 @@ class HTMLDownloader(object):
             time.sleep(waittime)
 
         try:
-            response = urllib2.urlopen(url)
+            response = urlopen(url)
         finally:
             self.__last_download_time = time.time()
 
