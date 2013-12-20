@@ -176,6 +176,8 @@ class HTMLParseError(Error):
 
 class HTMLParser(object):
 
+    RE_PERSON = re.compile(r"([A-ZÖÄÅ][a-zöäå]*(?:-[A-ZÖÄÅ][a-zöäå]*)*(?: [A-ZÖÄÅ][a-zöäå]*(?:-[A-ZÖÄÅ][a-zöäå]*)*)+)")
+    RE_DNRO = re.compile(r"Dnro (\d+[ ]?/\d+)")
     RE_TIME = re.compile(r"(?:[a-zA-Z]+ )?(\d\d?)\.(\d\d?)\.(\d{4})[ ]?,? (?:kello|klo)\s?(\d\d?)\.(\d\d)\s*[–-]\s*(\d\d?)\.(\d\d)")
 
     def __init__(self, *args, **kwargs):
@@ -191,10 +193,64 @@ class HTMLParser(object):
             loghandler.setFormatter(logging.Formatter(logformat))
             self.logger.addHandler(loghandler)
 
-    def __parse_issue_page(self, filepath):
-        soup = _make_soup(filepath)
+    def __parse_issue_resolution(self, issue_page_soup):
+        resolution = None
+        for p in issue_page_soup.html.body("p"):
+            match = re.match(r"^\s*Päätös\s+(.*)", p.text, re.DOTALL)
+            if match:
+                resolution = re.sub("\s+", " ", match.group(1))
+        return resolution
+
+    def __parse_issue_preparers(self, issue_page_soup):
+        preparers = []
+        for text in [re.sub(r"\s+", " ", p.text).strip() for p in issue_page_soup("p")]:
+            if text.startswith("Asian valmisteli"):
+                preparers.extend(HTMLParser.RE_PERSON.findall(text))
+                break
+        return preparers
+
+    def __parse_issue_dnro(self, issue_page_soup):
+        ps = issue_page_soup.html.body("p")
+        dnros = []
+        for text in [re.sub(r"\s+", " ", p.text) for p in ps]:
+            dnro_match = HTMLParser.RE_DNRO.match(text)
+            if dnro_match:
+                dnros.append(dnro_match.group(1))
+
+        try:
+            dnro = dnros[0]
+        except IndexError:
+            # Some of the issues in each meeting are "standard" issues,
+            # e.g. opening of the meeting, determination of quorum, which
+            # do not have Dnro.
+            dnro = None
+
+        if dnro == "0/00":
+            dnro = None
+
+        return dnro
+
+    def __parse_issue_subject(self, issue_page_soup):
+        indexed_subject = issue_page_soup.html.body("p", {"class": "Asiaotsikko"})[0].text
+        match = re.match(r"^(\d+)\s+", indexed_subject)
+        index = int(match.group(1))
+        subject = re.sub(r"\s+", " ", indexed_subject[match.end():])
+        return index, subject
+
+    def __parse_issue_page(self, issue_page_filepath):
+        issue_page_soup = _make_soup(issue_page_filepath)
+
+        index, subject = self.__parse_issue_subject(issue_page_soup)
+        dnro = self.__parse_issue_dnro(issue_page_soup)
+        preparers = self.__parse_issue_preparers(issue_page_soup)
+        resolution = self.__parse_issue_resolution(issue_page_soup)
 
         return {
+            "index": index,
+            "dnro": dnro,
+            "preparers": preparers,
+            "subject": subject,
+            "resolution": resolution,
         }
 
     def parse_issue_pages(self, meetingdoc_dirpath):
