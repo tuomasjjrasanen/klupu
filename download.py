@@ -19,8 +19,7 @@ import sys
 
 import klupung.ktweb
 
-downloader = klupung.ktweb.HTMLDownloader("http://www3.jkl.fi/paatokset",
-                                          download_dir="downloads")
+downloader = klupung.ktweb.HTMLDownloader("http://www3.jkl.fi/paatokset")
 
 # HTTP requests will not be made more often than once per second.
 downloader.min_http_request_interval = 1

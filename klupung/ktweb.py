@@ -85,10 +85,9 @@ class HTMLDownloadError(Error):
 
 class HTMLDownloader(object):
 
-    def __init__(self, base_url, download_dir=".", **kwargs):
+    def __init__(self, base_url, **kwargs):
         self.__base_url = base_url.rstrip("/")
         self.__base_path = urlsplit(self.__base_url).path
-        self.__download_dir = os.path.abspath(download_dir)
 
         try:
             self.logger = kwargs["logger"]
@@ -96,8 +95,7 @@ class HTMLDownloader(object):
             self.logger = logging.getLogger("klupung.ktweb.HTMLDownloader")
             self.logger.setLevel(logging.INFO)
 
-            logfilepath = os.path.join(self.__download_dir, "download.log")
-            loghandler = logging.handlers.WatchedFileHandler(logfilepath)
+            loghandler = logging.handlers.WatchedFileHandler("download.log")
             logformat = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
             loghandler.setFormatter(logging.Formatter(logformat))
             self.logger.addHandler(loghandler)
@@ -112,7 +110,7 @@ class HTMLDownloader(object):
         if base or not sep:
             raise HTMLDownloadError("download URL has different base path than"
                                     " the base URL", url, self.__base_url)
-        filepath = os.path.normpath(self.__download_dir + path)
+        filepath = os.path.normpath("." + path)
         if os.path.exists(filepath) and not self.force_download:
             self.logger.warning('page %s already exists at %s'
                                 ', downloading skipped', url, filepath)
@@ -149,9 +147,7 @@ class HTMLDownloader(object):
 
     def download(self, policymaker_id):
         url = "%s/%s.htm" % (self.__base_url, policymaker_id)
-        self.logger.info("starting to download meeting documents of"
-                         " %s from %s to %s", policymaker_id,
-                         self.__base_url, self.__download_dir)
+        self.logger.info("starting to download meeting documents from %s", url)
         base_soup = self.__download_page(url, "windows-1252")
         for index_url in _iter_meetingdoc_index_urls(base_soup, url):
 
@@ -173,8 +169,7 @@ class HTMLDownloader(object):
                                       " index %s", index_url)
                 continue
 
-        self.logger.info("finished downloading meeting documents of %s from %s",
-                         policymaker_id, self.__base_url)
+        self.logger.info("finished downloading meeting documents from %s", url)
 
 class HTMLParseError(Error):
     pass
