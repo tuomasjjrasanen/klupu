@@ -181,17 +181,7 @@ class HTMLParser(object):
     RE_TIME = re.compile(r"(?:[a-zA-Z]+ )?(\d\d?)\.(\d\d?)\.(\d{4})[ ]?,? (?:kello|klo)\s?(\d\d?)\.(\d\d)\s*[–-]\s*(\d\d?)\.(\d\d)")
 
     def __init__(self, *args, **kwargs):
-
-        try:
-            self.logger = kwargs["logger"]
-        except KeyError:
-            self.logger = logging.getLogger("klupung.ktweb.HTMLParser")
-            self.logger.setLevel(logging.INFO)
-
-            loghandler = logging.handlers.WatchedFileHandler("parse.log")
-            logformat = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-            loghandler.setFormatter(logging.Formatter(logformat))
-            self.logger.addHandler(loghandler)
+        pass
 
     def __parse_agendaitem_resolution(self, agendaitem_soup):
         resolution = None
