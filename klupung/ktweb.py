@@ -82,6 +82,10 @@ def download_meetingdoc_dir(meetingdoc_url, download_interval=1):
     index_filepath, index_soup = _download_page(meetingdoc_url,
                                                 encoding="iso-8859-1")
     last_download_time = time.time()
+
+    meetingdoc_dir = os.path.dirname(index_filepath)
+    _print_to_file(os.path.join(meetingdoc_dir, "origin_url"), meetingdoc_url)
+
     for tr in index_soup("table")[0]("tr"):
         a = tr("a")[0]
         href = a["href"].strip()
@@ -94,7 +98,7 @@ def download_meetingdoc_dir(meetingdoc_url, download_interval=1):
         time.sleep(pause)
         _download_page(agendaitem_url, encoding="windows-1252")
 
-    return os.path.dirname(index_filepath)
+    return meetingdoc_dir
 
 def query_meetingdoc_urls(url):
     response = urlopen(url)
@@ -231,12 +235,20 @@ def _parse_meeting_info(meetingdoc_dirpath):
     }
 
 def parse_meetingdoc(meetingdoc_dirpath):
+    origin_url_filepath = os.path.join(meetingdoc_dirpath, "origin_url")
+    if os.path.exists(origin_url_filepath):
+        with open(origin_url_filepath) as f:
+            origin_url = f.readline().strip()
+    else:
+        origin_url = ""
+
     policymaker_dirpath = os.path.join(meetingdoc_dirpath, "..", "..")
     policymaker_absdirpath = os.path.abspath(policymaker_dirpath)
     policymaker_abbreviation = os.path.basename(policymaker_absdirpath)
 
     meetingdoc = {
         "policymaker_abbreviation": policymaker_abbreviation,
+        "origin_url": origin_url,
     }
 
     meetingdoc.update(_parse_meeting_info(meetingdoc_dirpath))
