@@ -55,13 +55,7 @@ def _cleanup_soup(soup):
 
     return soup
 
-def _download_page(url, encoding="utf-8"):
-    response = urlopen(url)
-    dirty_soup = bs4.BeautifulSoup(response, from_encoding=encoding)
-    clean_soup = _cleanup_soup(dirty_soup)
-
-    filepath = os.path.normpath("." + urlsplit(url).path)
-
+def _print_to_file(filepath, printable):
     # Make the target directory with all the leading components, do not
     # care whether the the directory exists or not.
     try:
@@ -71,7 +65,16 @@ def _download_page(url, encoding="utf-8"):
             raise e
 
     with open(filepath, "w") as f:
-        print(clean_soup, file=f)
+        print(printable, file=f)
+
+def _download_page(url, encoding="utf-8"):
+    response = urlopen(url)
+    dirty_soup = bs4.BeautifulSoup(response, from_encoding=encoding)
+    clean_soup = _cleanup_soup(dirty_soup)
+
+    filepath = os.path.normpath("." + urlsplit(url).path)
+
+    _print_to_file(filepath, clean_soup)
 
     return filepath, clean_soup
 
