@@ -122,18 +122,22 @@ def query_meetingdoc_urls(url):
 _RE_PERSON = re.compile(ur"([A-ZÖÄÅ][a-zöäå]*(?:-[A-ZÖÄÅ][a-zöäå]*)*(?: [A-ZÖÄÅ][a-zöäå]*(?:-[A-ZÖÄÅ][a-zöäå]*)*)+)")
 _RE_DNRO = re.compile(r"Dnro (\d+[\s\xa0\xad]?/\d+)")
 _RE_TIME = re.compile(ur"(?:[a-zA-Z]+ )?(\d\d?)\.(\d\d?)\.(\d{4})[ ]?,? (?:kello|klo)[\s\xa0\xad]?(\d\d?)\.(\d\d)[\s\xa0\xad]*[–-][\s\xa0\xad]*(\d\d?)\.(\d\d)")
+_RE_WS = re.compile(r"[\s\xa0\xad]+")
+
+def _trimws(text):
+    return _RE_WS.sub(" ", text).strip()
 
 def _parse_agendaitem_resolution(agendaitem_soup):
     resolution = None
     for p in agendaitem_soup.html.body("p"):
         match = re.match(ur"^[\s\xa0\xad]*Päätös[\s\xa0\xad]+(.*)", p.text, re.DOTALL)
         if match:
-            resolution = re.sub(r"[\s\xa0\xad]+", " ", match.group(1)).strip()
+            resolution = _trimws(match.group(1))
     return resolution
 
 def _parse_agendaitem_preparers(agendaitem_soup):
     preparers = []
-    for text in [re.sub(r"[\s\xa0\xad]+", " ", p.text).strip() for p in agendaitem_soup("p")]:
+    for text in [_trimws(p.text) for p in agendaitem_soup("p")]:
         if text.startswith("Asian valmisteli"):
             preparers.extend(_RE_PERSON.findall(text))
             break
@@ -142,7 +146,7 @@ def _parse_agendaitem_preparers(agendaitem_soup):
 def _parse_agendaitem_dnro(agendaitem_soup):
     ps = agendaitem_soup.html.body("p")
     dnros = []
-    for text in [re.sub(r"[\s\xa0\xad]+", " ", p.text) for p in ps]:
+    for text in [_trimws(p.text) for p in ps]:
         dnro_match = _RE_DNRO.match(text)
         if dnro_match:
             dnros.append(dnro_match.group(1))
@@ -164,7 +168,7 @@ def _parse_agendaitem_subject(agendaitem_soup):
     indexed_subject = agendaitem_soup.html.body("p", {"class": "Asiaotsikko"})[0].text
     match = re.match(r"^(\d+)[\s\xa0\xad]+", indexed_subject)
     index = int(match.group(1))
-    subject = re.sub(r"[\s\xa0\xad]+", " ", indexed_subject[match.end():])
+    subject = _trimws(indexed_subject[match.end():])
     return index, subject
 
 def _parse_agendaitem(agendaitem_filepath):
@@ -208,7 +212,11 @@ def _parse_meeting_info(meetingdoc_dirpath):
     ps = markertag.parent.parent.parent.parent("td")[1]("p")
 
     # Accept only non-empty strings.
-    texts = [re.sub(r"[\s\xa0\xad]+", " ", p.text) for p in ps if p.text.strip()]
+    texts = []
+    for p in ps:
+        text = _trimws(p.text)
+        if text:
+            texts.append(text)
 
     meeting_datetimes = []
     for i, text in enumerate(texts):
