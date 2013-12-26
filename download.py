@@ -19,15 +19,10 @@ import sys
 
 import klupung.ktweb
 
-downloader = klupung.ktweb.HTMLDownloader("http://www3.jkl.fi/paatokset")
+policymaker_url = "http://www3.jkl.fi/paatokset/karltk.htm"
 
-# HTTP requests will not be made more often than once per second.
-downloader.min_http_request_interval = 1
+meetingdoc_urls = klupung.ktweb.query_meetingdoc_urls(policymaker_url)
 
-# Do not download pages if they are found from download_dir.
-downloader.force_download = False
-
-# Log messages to stderr as well.
-downloader.logger.addHandler(logging.StreamHandler(sys.stderr))
-
-downloader.download("karltk")
+for meetingdoc_url in meetingdoc_urls:
+    meetingdoc_dir = klupung.ktweb.download_meetingdoc_dir(meetingdoc_url)
+    print(meetingdoc_dir)

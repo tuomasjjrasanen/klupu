@@ -17,12 +17,9 @@
 import datetime
 import errno
 import glob
-import logging
-import logging.handlers
 import os
 import os.path
 import re
-import sys
 import time
 
 from urllib.parse import urljoin
@@ -34,25 +31,6 @@ import bs4
 def _make_soup(filepath, encoding="utf-8"):
     with open(filepath, encoding=encoding, errors="replace") as f:
         return bs4.BeautifulSoup(f, from_encoding=encoding)
-
-def _iter_agendaitem_filepaths(meetingdoc_dirpath):
-    agendaitem_filepath_pattern = os.path.join(meetingdoc_dirpath, "htmtxt*.htm")
-    for agendaitem_filepath in glob.iglob(agendaitem_filepath_pattern):
-        if os.path.basename(agendaitem_filepath) != "htmtxt0.htm":
-            yield agendaitem_filepath
-
-def _iter_agendaitem_urls(meetingdoc_index_soup, meetingdoc_index_url):
-    for tr in meetingdoc_index_soup("table")[0]("tr"):
-        a = tr("a")[0]
-        href = a["href"].strip()
-        match = re.match(r"(.*)frmtxt(\d+)\.htm", href)
-        if match and match.group(2) != "9999":
-            yield urljoin(meetingdoc_index_url,
-                          "%shtmtxt%s.htm" % (match.groups()))
-
-def _iter_meetingdoc_index_urls(base_soup, base_url):
-    for h3 in base_soup("h3"):
-        yield urljoin(base_url, h3("a")[0]["href"])
 
 def _cleanup_soup(soup):
     for tag in soup.find_all(text=lambda t: isinstance(t, bs4.Comment)):
@@ -77,237 +55,189 @@ def _cleanup_soup(soup):
 
     return soup
 
-class Error(Exception):
-    pass
+def _download_page(url, encoding="utf-8"):
+    response = urlopen(url)
+    dirty_soup = bs4.BeautifulSoup(response, from_encoding=encoding)
+    clean_soup = _cleanup_soup(dirty_soup)
 
-class HTMLDownloadError(Error):
-    pass
+    filepath = os.path.normpath("." + urlsplit(url).path)
 
-class HTMLDownloader(object):
+    # Make the target directory with all the leading components, do not
+    # care whether the the directory exists or not.
+    try:
+        os.makedirs(os.path.dirname(filepath))
+    except OSError as e:
+        if e.errno != errno.EEXIST:
+            raise e
 
-    def __init__(self, base_url, **kwargs):
-        self.__base_url = base_url.rstrip("/")
-        self.__base_path = urlsplit(self.__base_url).path
+    with open(filepath, "w") as f:
+        print(clean_soup, file=f)
 
-        try:
-            self.logger = kwargs["logger"]
-        except KeyError:
-            self.logger = logging.getLogger("klupung.ktweb.HTMLDownloader")
-            self.logger.setLevel(logging.INFO)
+    return filepath, clean_soup
 
-            loghandler = logging.handlers.WatchedFileHandler("download.log")
-            logformat = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-            loghandler.setFormatter(logging.Formatter(logformat))
-            self.logger.addHandler(loghandler)
+def download_meetingdoc_dir(meetingdoc_url, download_interval=1):
+    index_filepath, index_soup = _download_page(meetingdoc_url,
+                                                encoding="iso-8859-1")
+    last_download_time = time.time()
+    for tr in index_soup("table")[0]("tr"):
+        a = tr("a")[0]
+        href = a["href"].strip()
+        match = re.match(r"(.*)frmtxt(\d+)\.htm", href)
+        if not match or match.group(2) == "9999":
+            continue
+        agendaitem_url = urljoin(meetingdoc_url,
+                                 "%shtmtxt%s.htm" % (match.groups()))
+        pause = max(last_download_time - time.time() + download_interval, 0)
+        time.sleep(pause)
+        _download_page(agendaitem_url, encoding="windows-1252")
 
-        self.force_download = False
-        self.min_http_request_interval = 1.0
-        self.__last_download_time = 0
+    return os.path.dirname(index_filepath)
 
-    def __download_page(self, url, encoding):
-        urlpath = urlsplit(url).path
-        base, sep, path = urlpath.partition(self.__base_path)
-        if base or not sep:
-            raise HTMLDownloadError("download URL has different base path than"
-                                    " the base URL", url, self.__base_url)
-        filepath = os.path.normpath("." + path)
-        if os.path.exists(filepath) and not self.force_download:
-            self.logger.warning('page %s already exists at %s'
-                                ', downloading skipped', url, filepath)
-            with open(filepath) as f:
-                return bs4.BeautifulSoup(f)
+def query_meetingdoc_urls(url):
+    response = urlopen(url)
+    dirty_soup = bs4.BeautifulSoup(response, from_encoding="windows-1252")
+    clean_soup = _cleanup_soup(dirty_soup)
 
-        # Ensure downloads are not made more often than once per
-        # self.min_http_request_interval seconds.
-        if (self.__last_download_time + self.min_http_request_interval
-            - time.time()) > 0:
-            time.sleep(waittime)
+    retval = []
+    for h3 in clean_soup("h3"):
+        rel_url = h3("a")[0]["href"]
+        abs_url = urljoin(url, rel_url)
+        retval.append(abs_url)
 
-        try:
-            response = urlopen(url)
-        finally:
-            self.__last_download_time = time.time()
+    return retval
 
-        # Make the target directory with all the leading components, do
-        # not care whether the the directory exists or not.
-        try:
-            os.makedirs(os.path.dirname(filepath))
-        except OSError as e:
-            if e.errno != errno.EEXIST:
-                raise e
+_RE_PERSON = re.compile(r"([A-ZÖÄÅ][a-zöäå]*(?:-[A-ZÖÄÅ][a-zöäå]*)*(?: [A-ZÖÄÅ][a-zöäå]*(?:-[A-ZÖÄÅ][a-zöäå]*)*)+)")
+_RE_DNRO = re.compile(r"Dnro (\d+[ ]?/\d+)")
+_RE_TIME = re.compile(r"(?:[a-zA-Z]+ )?(\d\d?)\.(\d\d?)\.(\d{4})[ ]?,? (?:kello|klo)\s?(\d\d?)\.(\d\d)\s*[–-]\s*(\d\d?)\.(\d\d)")
 
-        soup = bs4.BeautifulSoup(response, from_encoding=encoding)
+def _parse_agendaitem_resolution(agendaitem_soup):
+    resolution = None
+    for p in agendaitem_soup.html.body("p"):
+        match = re.match(r"^\s*Päätös\s+(.*)", p.text, re.DOTALL)
+        if match:
+            resolution = re.sub("\s+", " ", match.group(1))
+    return resolution
 
-        # Clean the soup to save diskspace.
-        clean_soup = _cleanup_soup(soup)
-        with open(filepath, "w") as f:
-            print(clean_soup, file=f)
+def _parse_agendaitem_preparers(agendaitem_soup):
+    preparers = []
+    for text in [re.sub(r"\s+", " ", p.text).strip() for p in agendaitem_soup("p")]:
+        if text.startswith("Asian valmisteli"):
+            preparers.extend(_RE_PERSON.findall(text))
+            break
+    return preparers
 
-        return clean_soup
+def _parse_agendaitem_dnro(agendaitem_soup):
+    ps = agendaitem_soup.html.body("p")
+    dnros = []
+    for text in [re.sub(r"\s+", " ", p.text) for p in ps]:
+        dnro_match = _RE_DNRO.match(text)
+        if dnro_match:
+            dnros.append(dnro_match.group(1))
 
-    def download(self, policymaker_id):
-        url = "%s/%s.htm" % (self.__base_url, policymaker_id)
-        self.logger.info("starting to download meeting documents from %s", url)
-        base_soup = self.__download_page(url, "windows-1252")
-        for index_url in _iter_meetingdoc_index_urls(base_soup, url):
+    try:
+        dnro = dnros[0]
+    except IndexError:
+        # Some of the agenda items in each meeting are "standard"
+        # agenda items, e.g. opening of the meeting, determination
+        # of quorum, which do not have Dnro.
+        dnro = None
 
-            # Try to download individual pages, but do not interrupt the
-            # whole download process if something goes wrong with a
-            # single page. Just log it so the user can come back to it
-            # afterwards if necessary.
-            try:
-                index_soup = self.__download_page(index_url, "iso-8859-1")
-                for ai_url in _iter_agendaitem_urls(index_soup, index_url):
-                    try:
-                        self.__download_page(ai_url, "windows-1252")
-                    except Exception:
-                        self.logger.exception("failed to download agenda item %s",
-                                              ai_url)
-                        continue
-            except Exception:
-                self.logger.exception("failed to download meeting document"
-                                      " index %s", index_url)
-                continue
+    if dnro == "0/00":
+        dnro = None
 
-        self.logger.info("finished downloading meeting documents from %s", url)
+    return dnro
 
-class HTMLParseError(Error):
-    pass
+def _parse_agendaitem_subject(agendaitem_soup):
+    indexed_subject = agendaitem_soup.html.body("p", {"class": "Asiaotsikko"})[0].text
+    match = re.match(r"^(\d+)\s+", indexed_subject)
+    index = int(match.group(1))
+    subject = re.sub(r"\s+", " ", indexed_subject[match.end():])
+    return index, subject
 
-class HTMLParser(object):
+def _parse_agendaitem(agendaitem_filepath):
+    agendaitem_soup = _make_soup(agendaitem_filepath)
 
-    RE_PERSON = re.compile(r"([A-ZÖÄÅ][a-zöäå]*(?:-[A-ZÖÄÅ][a-zöäå]*)*(?: [A-ZÖÄÅ][a-zöäå]*(?:-[A-ZÖÄÅ][a-zöäå]*)*)+)")
-    RE_DNRO = re.compile(r"Dnro (\d+[ ]?/\d+)")
-    RE_TIME = re.compile(r"(?:[a-zA-Z]+ )?(\d\d?)\.(\d\d?)\.(\d{4})[ ]?,? (?:kello|klo)\s?(\d\d?)\.(\d\d)\s*[–-]\s*(\d\d?)\.(\d\d)")
+    index, subject = _parse_agendaitem_subject(agendaitem_soup)
+    dnro = _parse_agendaitem_dnro(agendaitem_soup)
+    preparers = _parse_agendaitem_preparers(agendaitem_soup)
+    resolution = _parse_agendaitem_resolution(agendaitem_soup)
 
-    def __init__(self, *args, **kwargs):
-        pass
+    return {
+        "index": index,
+        "dnro": dnro,
+        "preparers": preparers,
+        "subject": subject,
+        "resolution": resolution,
+    }
 
-    def __parse_agendaitem_resolution(self, agendaitem_soup):
-        resolution = None
-        for p in agendaitem_soup.html.body("p"):
-            match = re.match(r"^\s*Päätös\s+(.*)", p.text, re.DOTALL)
-            if match:
-                resolution = re.sub("\s+", " ", match.group(1))
-        return resolution
+def _parse_agendaitems(meetingdoc_dirpath):
+    retval = []
 
-    def __parse_agendaitem_preparers(self, agendaitem_soup):
-        preparers = []
-        for text in [re.sub(r"\s+", " ", p.text).strip() for p in agendaitem_soup("p")]:
-            if text.startswith("Asian valmisteli"):
-                preparers.extend(HTMLParser.RE_PERSON.findall(text))
-                break
-        return preparers
+    agendaitem_filepath_pattern = os.path.join(meetingdoc_dirpath, "htmtxt*.htm")
+    for agendaitem_filepath in glob.iglob(agendaitem_filepath_pattern):
+        if os.path.basename(agendaitem_filepath) == "htmtxt0.htm":
+            continue
+        agendaitem = _parse_agendaitem(agendaitem_filepath)
+        retval.append(agendaitem)
 
-    def __parse_agendaitem_dnro(self, agendaitem_soup):
-        ps = agendaitem_soup.html.body("p")
-        dnros = []
-        for text in [re.sub(r"\s+", " ", p.text) for p in ps]:
-            dnro_match = HTMLParser.RE_DNRO.match(text)
-            if dnro_match:
-                dnros.append(dnro_match.group(1))
+    return retval
 
-        try:
-            dnro = dnros[0]
-        except IndexError:
-            # Some of the agenda items in each meeting are "standard"
-            # agenda items, e.g. opening of the meeting, determination
-            # of quorum, which do not have Dnro.
-            dnro = None
+def _parse_meeting_info(meetingdoc_dirpath):
+    cover_page_filepath = os.path.join(meetingdoc_dirpath, "htmtxt0.htm")
+    cover_page_soup = _make_soup(cover_page_filepath)
 
-        if dnro == "0/00":
-            dnro = None
+    # Find the marker element. Datetimes and such are nearby...
+    markertag = cover_page_soup(text=re.compile("KOKOUSTIEDOT"))[0]
 
-        return dnro
+    # Filters p-elements which might contain the actual payload
+    # (datetimes and place). Looks a bit scary but seems to work
+    # really well in practice.
+    ps = markertag.parent.parent.parent.parent("td")[1]("p")
 
-    def __parse_agendaitem_subject(self, agendaitem_soup):
-        indexed_subject = agendaitem_soup.html.body("p", {"class": "Asiaotsikko"})[0].text
-        match = re.match(r"^(\d+)\s+", indexed_subject)
-        index = int(match.group(1))
-        subject = re.sub(r"\s+", " ", indexed_subject[match.end():])
-        return index, subject
+    # Accept only non-empty strings.
+    texts = [re.sub(r"[\xad\s]+", " ", p.text) for p in ps if p.text.strip()]
 
-    def __parse_agendaitem(self, agendaitem_filepath):
-        agendaitem_soup = _make_soup(agendaitem_filepath)
+    meeting_datetimes = []
+    for i, text in enumerate(texts):
+        timespecs = _RE_TIME.findall(text)
+        if not timespecs:
+            break
+        for timespec in timespecs:
+            (day, month, year,
+             start_hour, start_minute,
+             end_hour, end_minute) = [int(v) for v in timespec]
 
-        index, subject = self.__parse_agendaitem_subject(agendaitem_soup)
-        dnro = self.__parse_agendaitem_dnro(agendaitem_soup)
-        preparers = self.__parse_agendaitem_preparers(agendaitem_soup)
-        resolution = self.__parse_agendaitem_resolution(agendaitem_soup)
+            # Someone uses stupid format to denote that the meeting
+            # lasted past midnight.
+            end_hour %= 24
 
-        return {
-            "index": index,
-            "dnro": dnro,
-            "preparers": preparers,
-            "subject": subject,
-            "resolution": resolution,
-        }
+            start = datetime.datetime(year, month, day, start_hour, start_minute)
+            end = datetime.datetime(year, month, day, end_hour, end_minute)
+            if start > end:
+                end += datetime.timedelta(1)
 
-    def __parse_agendaitems(self, meetingdoc_dirpath):
-        retval = []
+            meeting_datetimes.append((start, end))
 
-        for agendaitem_filepath in _iter_agendaitem_filepaths(meetingdoc_dirpath):
-            agendaitem = self.__parse_agendaitem(agendaitem_filepath)
-            retval.append(agendaitem)
+    # The place of the meeting is easy, it always follows the last
+    # datetime field.
+    meeting_place = texts[i]
 
-        return retval
+    return {
+        "meeting_datetimes": meeting_datetimes,
+        "meeting_place": meeting_place,
+    }
 
-    def __parse_meeting_info(self, meetingdoc_dirpath):
-        cover_page_filepath = os.path.join(meetingdoc_dirpath, "htmtxt0.htm")
-        cover_page_soup = _make_soup(cover_page_filepath)
+def parse_meetingdoc(meetingdoc_dirpath):
+    policymaker_dirpath = os.path.join(meetingdoc_dirpath, "..", "..")
+    policymaker_absdirpath = os.path.abspath(policymaker_dirpath)
+    policymaker_abbreviation = os.path.basename(policymaker_absdirpath)
 
-        # Find the marker element. Datetimes and such are nearby...
-        markertag = cover_page_soup(text=re.compile("KOKOUSTIEDOT"))[0]
+    meetingdoc = {
+        "policymaker_abbreviation": policymaker_abbreviation,
+    }
 
-        # Filters p-elements which might contain the actual payload
-        # (datetimes and place). Looks a bit scary but seems to work
-        # really well in practice.
-        ps = markertag.parent.parent.parent.parent("td")[1]("p")
+    meetingdoc.update(_parse_meeting_info(meetingdoc_dirpath))
 
-        # Accept only non-empty strings.
-        texts = [re.sub(r"[\xad\s]+", " ", p.text) for p in ps if p.text.strip()]
+    meetingdoc["agendaitems"] = _parse_agendaitems(meetingdoc_dirpath)
 
-        meeting_datetimes = []
-        for i, text in enumerate(texts):
-            timespecs = HTMLParser.RE_TIME.findall(text)
-            if not timespecs:
-                break
-            for timespec in timespecs:
-                (day, month, year,
-                 start_hour, start_minute,
-                 end_hour, end_minute) = [int(v) for v in timespec]
-
-                # Someone uses stupid format to denote that the meeting
-                # lasted past midnight.
-                end_hour %= 24
-
-                start = datetime.datetime(year, month, day, start_hour, start_minute)
-                end = datetime.datetime(year, month, day, end_hour, end_minute)
-                if start > end:
-                    end += datetime.timedelta(1)
-
-                meeting_datetimes.append((start, end))
-
-        # The place of the meeting is easy, it always follows the last
-        # datetime field.
-        meeting_place = texts[i]
-
-        return {
-            "meeting_datetimes": meeting_datetimes,
-            "meeting_place": meeting_place,
-        }
-
-    def parse(self, meetingdoc_dirpath):
-        policymaker_dirpath = os.path.join(meetingdoc_dirpath, "..", "..")
-        policymaker_absdirpath = os.path.abspath(policymaker_dirpath)
-        policymaker_abbreviation = os.path.basename(policymaker_absdirpath)
-
-        meetingdoc = {
-            "policymaker_abbreviation": policymaker_abbreviation,
-        }
-
-        meetingdoc.update(self.parse_meeting_info(meetingdoc_dirpath))
-
-        meetingdoc["agendaitems"] = self.parse_agendaitems(meetingdoc_dirpath)
-
-        return meetingdoc
+    return meetingdoc
