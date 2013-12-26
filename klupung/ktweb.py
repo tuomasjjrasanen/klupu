@@ -128,7 +128,7 @@ def _parse_agendaitem_resolution(agendaitem_soup):
     for p in agendaitem_soup.html.body("p"):
         match = re.match(ur"^[\s\xa0\xad]*Päätös[\s\xa0\xad]+(.*)", p.text, re.DOTALL)
         if match:
-            resolution = re.sub(r"[\s\xa0\xad]+", " ", match.group(1))
+            resolution = re.sub(r"[\s\xa0\xad]+", " ", match.group(1)).strip()
     return resolution
 
 def _parse_agendaitem_preparers(agendaitem_soup):
