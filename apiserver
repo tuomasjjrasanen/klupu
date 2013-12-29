@@ -1,0 +1,7 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+import klupung
+
+app = klupung.create_app("sqlite:///klupung.db")
+app.run(debug=True)

@@ -50,4 +50,4 @@ Setup and running
 
 Run in development mode::
 
-  python api.py
+  ./apiserver

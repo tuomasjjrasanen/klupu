@@ -11,7 +11,7 @@ class _ForeignKeysListener(sqlalchemy.interfaces.PoolListener):
     def connect(self, dbapi_con, con_record):
         db_cursor = dbapi_con.execute("pragma foreign_keys=ON")
 
-def init_session(db_uri):
+def create_session(db_uri):
     global _engine
     global session
     global Base
@@ -30,6 +30,6 @@ def init_session(db_uri):
 
     return True
 
-def init_db():
+def create_tables():
     import klupung.models
     Base.metadata.create_all(bind=_engine)
