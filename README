@@ -27,7 +27,7 @@ Dependencies
 
 * `Python 2.7 <http://python.org/download/releases/2.7/>`_
 * `Flask <http://flask.pocoo.org/>`_
-* `Flask-SQLAlchemy <http://pythonhosted.org/Flask-SQLAlchemy/>`_
+* `SQLAlchemy <http://www.sqlalchemy.org/>`_
 
 Recommended tools
 =================
