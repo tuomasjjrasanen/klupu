@@ -93,7 +93,7 @@ def _download_page(url, encoding="utf-8"):
 
     return filepath, clean_soup
 
-def download_meetingdoc_dir(meetingdoc_url, download_interval=1):
+def download_meetingdoc(meetingdoc_url, download_interval=1):
     index_filepath, index_soup = _download_page(meetingdoc_url,
                                                 encoding="iso-8859-1")
     last_download_time = time.time()

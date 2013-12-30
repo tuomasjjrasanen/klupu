@@ -26,5 +26,5 @@ policymaker_url = "http://www3.jkl.fi/paatokset/karltk.htm"
 meetingdoc_urls = klupung.ktweb.query_meetingdoc_urls(policymaker_url)
 
 for meetingdoc_url in meetingdoc_urls:
-    meetingdoc_dir = klupung.ktweb.download_meetingdoc_dir(meetingdoc_url)
+    meetingdoc_dir = klupung.ktweb.download_meetingdoc(meetingdoc_url)
     print(meetingdoc_dir)
