@@ -260,9 +260,12 @@ def parse_meetingdoc(meetingdoc_dirpath):
     policymaker_absdirpath = os.path.abspath(policymaker_dirpath)
     policymaker_abbreviation = os.path.basename(policymaker_absdirpath)
 
+    origin_id = "/".join(meetingdoc_dirpath.split(os.path.sep)[-3:])
+
     meetingdoc = {
         "policymaker_abbreviation": policymaker_abbreviation,
         "origin_url": origin_url,
+        "origin_id": origin_id,
     }
 
     meetingdoc.update(_parse_meeting_info(meetingdoc_dirpath))

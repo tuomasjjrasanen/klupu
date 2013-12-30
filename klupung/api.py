@@ -82,7 +82,7 @@ def _meeting_document_resource(meeting_document):
         "last_modified_time": None,
         "meeting": meeting_resource(meeting_document.meeting),
         "organisation": None,
-        "origin_id": None,
+        "origin_id": meeting_document.origin_id,
         "origin_url": meeting_document.origin_url,
         "publish_time": None,
         "type": "minutes",

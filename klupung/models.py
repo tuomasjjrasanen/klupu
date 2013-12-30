@@ -67,10 +67,14 @@ class MeetingDocument(klupung.db.Base):
                                    sqlalchemy.ForeignKey("meeting.id"),
                                    nullable=False)
     origin_url = sqlalchemy.Column(sqlalchemy.Text)
+    origin_id = sqlalchemy.Column(sqlalchemy.String(40),
+                                  unique=True,
+                                  nullable=False)
 
     # Relationships
     meeting = sqlalchemy.orm.relationship("Meeting")
 
-    def __init__(self, origin_url, meeting_id):
+    def __init__(self, origin_url, meeting_id, origin_id):
         self.origin_url = origin_url
         self.meeting_id = meeting_id
+        self.origin_id = origin_id
