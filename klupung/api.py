@@ -80,7 +80,7 @@ def _meeting_document_resource(meeting_document):
     return {
         "id": meeting_document.id,
         "last_modified_time": None,
-        "meeting": meeting_resource(meeting_document.meeting),
+        "meeting": _meeting_resource(meeting_document.meeting),
         "organisation": None,
         "origin_id": meeting_document.origin_id,
         "origin_url": meeting_document.origin_url,
