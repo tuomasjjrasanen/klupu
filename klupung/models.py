@@ -41,8 +41,8 @@ class Meeting(klupung.db.Base):
     # Columns
     id = sqlalchemy.Column(sqlalchemy.Integer,
                            primary_key=True)
-    date = sqlalchemy.Column(sqlalchemy.Date,
-                             nullable=False)
+    start_datetime = sqlalchemy.Column(sqlalchemy.DateTime,
+                                       nullable=False)
     policymaker_id = sqlalchemy.Column(sqlalchemy.Integer,
                                        sqlalchemy.ForeignKey("policymaker.id"),
                                        nullable=False)
@@ -51,8 +51,8 @@ class Meeting(klupung.db.Base):
     meeting_documents = sqlalchemy.orm.relationship("MeetingDocument")
     policymaker = sqlalchemy.orm.relationship("Policymaker")
 
-    def __init__(self, date, policymaker_id):
-        self.date = date
+    def __init__(self, start_datetime, policymaker_id):
+        self.start_datetime = start_datetime
         self.policymaker_id = policymaker_id
 
 class MeetingDocument(klupung.db.Base):

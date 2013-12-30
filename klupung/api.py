@@ -51,13 +51,13 @@ def _policymaker_route(policymaker_id=None):
 def _meeting_resource(meeting):
     return {
         "id": meeting.id,
-        "date": str(meeting.date),
+        "date": str(meeting.start_datetime.date()),
         "minutes": True,
         "number": 1,
         "policymaker": flask.url_for("._policymaker_route",
                                      policymaker_id=meeting.policymaker.id),
         "policymaker_name": None,
-        "year": meeting.date.year,
+        "year": meeting.start_datetime.year,
         "resource_uri": flask.url_for("._meeting_route", meeting_id=meeting.id),
         }
 
