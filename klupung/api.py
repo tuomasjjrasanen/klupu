@@ -15,6 +15,8 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import datetime
+import re
+import unicodedata
 
 import flask
 
@@ -22,13 +24,23 @@ import klupung.models
 
 v0 = flask.Blueprint("v0", __name__, url_prefix="/api/v0")
 
+_PUNCT_RE = re.compile(r'[\t !"#$%&\'()*\-/<=>?@\[\\\]^_`{|},.]+')
+
+def _slugify(text, delim=u'-'):
+    result = []
+    for word in _PUNCT_RE.split(text.lower()):
+        word = unicodedata.normalize('NFKD', word).encode('ascii', 'ignore')
+        if word:
+            result.append(word)
+    return unicode(delim.join(result))
+
 def _policymaker_resource(policymaker):
     return {
         "id": policymaker.id,
         "abbreviation": policymaker.abbreviation,
         "name": None,
         "origin_id": None,
-        "slug": None,
+        "slug": _slugify(policymaker.abbreviation),
         "summary": None,
         "resource_uri": flask.url_for("._policymaker_route",
                                       policymaker_id=policymaker.id),
