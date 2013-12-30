@@ -18,5 +18,5 @@
 
 import klupung
 
-app = klupung.create_app("sqlite:///klupung.db")
+app = klupung.create_app("sqlite:////tmp/klupung.db")
 app.run(debug=True)

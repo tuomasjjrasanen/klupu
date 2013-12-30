@@ -15,14 +15,15 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import flask
+import flask.ext.sqlalchemy
+
+db = flask.ext.sqlalchemy.SQLAlchemy()
 
 def create_app(db_uri):
     app = flask.Flask(__name__)
+    app.config['SQLALCHEMY_DATABASE_URI'] = db_uri
 
-    # Database session must be initialized before models, because models
-    # rely on SQLAlchemy ORM session.
-    import klupung.db
-    klupung.db.create_session(db_uri)
+    db.init_app(app)
 
     import klupung.api
     app.register_blueprint(klupung.api.v0)

@@ -14,65 +14,62 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-import sqlalchemy
-import sqlalchemy.orm
+import klupung
 
-import klupung.db
-
-class Policymaker(klupung.db.Base):
+class Policymaker(klupung.db.Model):
     __tablename__ = "policymaker"
 
     # Columns
-    id = sqlalchemy.Column(sqlalchemy.Integer,
+    id = klupung.db.Column(klupung.db.Integer,
                            primary_key=True)
-    abbreviation = sqlalchemy.Column(sqlalchemy.String(20),
+    abbreviation = klupung.db.Column(klupung.db.String(20),
                                      unique=True,
                                      nullable=False)
 
     # Relationships
-    meetings = sqlalchemy.orm.relationship("Meeting")
+    meetings = klupung.db.relationship("Meeting")
 
     def __init__(self, abbreviation):
         self.abbreviation = abbreviation
 
-class Meeting(klupung.db.Base):
+class Meeting(klupung.db.Model):
     __tablename__ = "meeting"
 
     # Columns
-    id = sqlalchemy.Column(sqlalchemy.Integer,
+    id = klupung.db.Column(klupung.db.Integer,
                            primary_key=True)
-    start_datetime = sqlalchemy.Column(sqlalchemy.DateTime,
+    start_datetime = klupung.db.Column(klupung.db.DateTime,
                                        nullable=False)
-    policymaker_id = sqlalchemy.Column(sqlalchemy.Integer,
-                                       sqlalchemy.ForeignKey("policymaker.id"),
+    policymaker_id = klupung.db.Column(klupung.db.Integer,
+                                       klupung.db.ForeignKey("policymaker.id"),
                                        nullable=False)
 
     # Relationships
-    meeting_documents = sqlalchemy.orm.relationship("MeetingDocument")
-    policymaker = sqlalchemy.orm.relationship("Policymaker")
+    meeting_documents = klupung.db.relationship("MeetingDocument")
+    policymaker = klupung.db.relationship("Policymaker")
     __table_args__ = (
-        sqlalchemy.UniqueConstraint("policymaker_id", "start_datetime"),
+        klupung.db.UniqueConstraint("policymaker_id", "start_datetime"),
         )
 
     def __init__(self, start_datetime, policymaker_id):
         self.start_datetime = start_datetime
         self.policymaker_id = policymaker_id
 
-class MeetingDocument(klupung.db.Base):
+class MeetingDocument(klupung.db.Model):
     __tablename__ = "meeting_document"
 
     # Columns
-    id = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True)
-    meeting_id = sqlalchemy.Column(sqlalchemy.Integer,
-                                   sqlalchemy.ForeignKey("meeting.id"),
+    id = klupung.db.Column(klupung.db.Integer, primary_key=True)
+    meeting_id = klupung.db.Column(klupung.db.Integer,
+                                   klupung.db.ForeignKey("meeting.id"),
                                    nullable=False)
-    origin_url = sqlalchemy.Column(sqlalchemy.Text)
-    origin_id = sqlalchemy.Column(sqlalchemy.String(40),
+    origin_url = klupung.db.Column(klupung.db.Text)
+    origin_id = klupung.db.Column(klupung.db.String(40),
                                   unique=True,
                                   nullable=False)
 
     # Relationships
-    meeting = sqlalchemy.orm.relationship("Meeting")
+    meeting = klupung.db.relationship("Meeting")
 
     def __init__(self, origin_url, meeting_id, origin_id):
         self.origin_url = origin_url
