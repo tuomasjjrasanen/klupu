@@ -49,3 +49,7 @@ def create_session(db_uri):
 def create_tables():
     import klupung.models
     Base.metadata.create_all(bind=_engine)
+
+def query_first(model_class, **filter_kwargs):
+    query = session.query(model_class)
+    return query.filter_by(**filter_kwargs).first()

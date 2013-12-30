@@ -21,6 +21,10 @@ from __future__ import absolute_import
 import os
 import sys
 
+import klupung.db
+klupung.db.create_session("sqlite:///klupung.db")
+import klupung.models
+
 import klupung.ktweb
 
 for dirpath, dirnames, filenames in os.walk(sys.argv[1]):
@@ -29,4 +33,31 @@ for dirpath, dirnames, filenames in os.walk(sys.argv[1]):
         continue
 
     meetingdoc = klupung.ktweb.parse_meetingdoc(dirpath)
-    print(meetingdoc)
+    policymaker_abbrev = meetingdoc["policymaker_abbreviation"]
+    policymaker = klupung.db.query_first(klupung.models.Policymaker,
+                                         abbreviation=policymaker_abbrev)
+    if policymaker is None:
+        policymaker = klupung.models.Policymaker(policymaker_abbrev)
+        klupung.db.session.add(policymaker)
+        klupung.db.session.commit()
+
+    meeting_start_datetime, _ = meetingdoc["meeting_datetimes"][0]
+    meeting = klupung.db.query_first(klupung.models.Meeting,
+                                     policymaker_id=policymaker.id,
+                                     start_datetime=meeting_start_datetime)
+    if meeting is None:
+        meeting = klupung.models.Meeting(meeting_start_datetime,
+                                         policymaker.id)
+        klupung.db.session.add(meeting)
+        klupung.db.session.commit()
+
+    meeting_document = klupung.db.query_first(klupung.models.MeetingDocument,
+                                              origin_id=meetingdoc["origin_id"])
+    if meeting_document is None:
+
+        meeting_document = klupung.models.MeetingDocument(
+            meetingdoc["origin_url"],
+            meeting.id,
+            meetingdoc["origin_id"])
+        klupung.db.session.add(meeting_document)
+        klupung.db.session.commit()
