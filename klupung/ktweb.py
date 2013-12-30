@@ -34,9 +34,11 @@ from urlparse import urljoin, urlsplit
 
 import bs4
 
+_COVER_PAGE_FILENAME = "htmtxt0.htm"
+
 def is_meetingdoc_dir(dirpath):
     for dirpath, dirnames, filenames in os.walk(dirpath):
-        if not "htmtxt0.htm" in filenames:
+        if not _COVER_PAGE_FILENAME in filenames:
             return False
         break
     return True
@@ -199,7 +201,7 @@ def _parse_agendaitems(meetingdoc_dirpath):
 
     agendaitem_filepath_pattern = os.path.join(meetingdoc_dirpath, "htmtxt*.htm")
     for agendaitem_filepath in glob.iglob(agendaitem_filepath_pattern):
-        if os.path.basename(agendaitem_filepath) == "htmtxt0.htm":
+        if os.path.basename(agendaitem_filepath) == _COVER_PAGE_FILENAME:
             continue
         agendaitem = _parse_agendaitem(agendaitem_filepath)
         retval.append(agendaitem)
@@ -207,7 +209,7 @@ def _parse_agendaitems(meetingdoc_dirpath):
     return retval
 
 def _parse_meeting_info(meetingdoc_dirpath):
-    cover_page_filepath = os.path.join(meetingdoc_dirpath, "htmtxt0.htm")
+    cover_page_filepath = os.path.join(meetingdoc_dirpath, _COVER_PAGE_FILENAME)
     cover_page_soup = _make_soup(cover_page_filepath)
 
     # Find the marker element. Datetimes and such are nearby...
