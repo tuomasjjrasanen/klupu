@@ -50,6 +50,9 @@ class Meeting(klupung.db.Base):
     # Relationships
     meeting_documents = sqlalchemy.orm.relationship("MeetingDocument")
     policymaker = sqlalchemy.orm.relationship("Policymaker")
+    __table_args__ = (
+        sqlalchemy.UniqueConstraint("policymaker_id", "start_datetime"),
+        )
 
     def __init__(self, start_datetime, policymaker_id):
         self.start_datetime = start_datetime
