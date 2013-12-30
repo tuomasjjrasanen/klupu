@@ -34,6 +34,13 @@ from urlparse import urljoin, urlsplit
 
 import bs4
 
+def is_meetingdoc_dir(dirpath):
+    for dirpath, dirnames, filenames in os.walk(dirpath):
+        if not "htmtxt0.htm" in filenames:
+            return False
+        break
+    return True
+
 def _make_soup(filepath, encoding="utf-8"):
     with open(filepath, encoding=encoding, errors="replace") as f:
         return bs4.BeautifulSoup(f, from_encoding=encoding)

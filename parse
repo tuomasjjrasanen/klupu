@@ -30,8 +30,8 @@ app = klupung.create_app("sqlite:////tmp/klupung.db")
 app.test_request_context().push()
 
 for dirpath, dirnames, filenames in os.walk(sys.argv[1]):
-    # Continue if the dir is not a meeting document dir.
-    if "htmtxt0.htm" not in filenames:
+
+    if not klupung.ktweb.is_meetingdoc_dir(dirpath):
         continue
 
     meetingdoc = klupung.ktweb.parse_meetingdoc(dirpath)
