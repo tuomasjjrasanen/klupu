@@ -40,9 +40,7 @@ def _policymakers_route():
 
 @v0.route("/policymaker/<int:policymaker_id>/")
 def _policymaker_route(policymaker_id=None):
-    policymaker = klupung.models.Policymaker.query.get(policymaker_id)
-    if not policymaker:
-        return flask.make_response("invalid policymaker id", 404)
+    policymaker = klupung.models.Policymaker.query.get_or_404(policymaker_id)
 
     resource = _policymaker_resource(policymaker)
 
@@ -67,9 +65,7 @@ def _meetings_route():
 
 @v0.route("/meeting/<int:meeting_id>/")
 def _meeting_route(meeting_id=None):
-    meeting = klupung.models.Meeting.query.get(meeting_id)
-    if not meeting:
-        return flask.make_response("invalid meeting id", 404)
+    meeting = klupung.models.Meeting.query.get_or_404(meeting_id)
 
     resource = _meeting_resource(meeting)
 
@@ -97,9 +93,7 @@ def _meeting_documents_route():
 
 @v0.route("/meeting_document/<int:meeting_document_id>/")
 def _meeting_document_route(meeting_document_id=None):
-    meeting_document = klupung.models.MeetingDocument.query.get(meeting_document_id)
-    if not meeting_document:
-        return flask.make_response("invalid meeting document id", 404)
+    meeting_document = klupung.models.MeetingDocument.query.get_or_404(meeting_document_id)
 
     resource = _meeting_document_resource(meeting_document)
 
