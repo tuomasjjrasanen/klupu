@@ -1,0 +1,44 @@
+#!/usr/bin/env python
+# KlupuNG
+# Copyright (C) 2013 Koodilehto Osk <http://koodilehto.fi>.
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+# Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program. If not, see <http://www.gnu.org/licenses/>.
+
+from __future__ import print_function
+from __future__ import division
+from __future__ import absolute_import
+
+import locale
+import sys
+
+import klupung
+import klupung.models
+
+if len(sys.argv) != 3:
+    print("invalid number of arguments", file=sys.stderr)
+    print("Usage: %s ABBREVIATION NAME" % sys.argv[0], file=sys.stderr)
+    sys.exit(1)
+
+encoding = locale.getpreferredencoding()
+
+app = klupung.create_app("sqlite:////tmp/klupung.db")
+app.test_request_context().push()
+
+abbreviation = unicode(sys.argv[1].decode(encoding))
+name = unicode(sys.argv[2].decode(encoding))
+
+p = klupung.models.Policymaker(abbreviation, name)
+
+klupung.db.session.add(p)
+klupung.db.session.commit()
