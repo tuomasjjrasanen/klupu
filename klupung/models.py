@@ -25,12 +25,16 @@ class Policymaker(klupung.db.Model):
     abbreviation = klupung.db.Column(klupung.db.String(20),
                                      unique=True,
                                      nullable=False)
+    name = klupung.db.Column(klupung.db.String(50),
+                             unique=True,
+                             nullable=False)
 
     # Relationships
     meetings = klupung.db.relationship("Meeting")
 
-    def __init__(self, abbreviation):
+    def __init__(self, abbreviation, name):
         self.abbreviation = abbreviation
+        self.name = name
 
 class Meeting(klupung.db.Model):
     __tablename__ = "meeting"

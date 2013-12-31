@@ -78,7 +78,7 @@ def _policymaker_resource(policymaker):
     return {
         "id": policymaker.id,
         "abbreviation": policymaker.abbreviation,
-        "name": None,
+        "name": policymaker.name,
         "origin_id": None,
         "slug": _slugify(policymaker.abbreviation),
         "summary": None,
@@ -134,7 +134,7 @@ def _meeting_resource(meeting):
         "number": 1,
         "policymaker": flask.url_for("._policymaker_route",
                                      policymaker_id=meeting.policymaker.id),
-        "policymaker_name": None,
+        "policymaker_name": meeting.policymaker.name,
         "year": meeting.start_datetime.year,
         "resource_uri": flask.url_for("._meeting_route", meeting_id=meeting.id),
         }
