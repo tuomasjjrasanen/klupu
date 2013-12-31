@@ -280,3 +280,26 @@ def _videos_route():
         }
 
     return flask.jsonify(**resource)
+
+@v0.route("/district/")
+def _districts_route():
+    limit, error_response = _get_uint_arg("limit", 20)
+    if error_response:
+        return error_response
+
+    offset, error_response = _get_uint_arg("offset", 0)
+    if error_response:
+        return error_response
+
+    resource = {
+        "meta": {
+            "limit": limit,
+            "next": None,
+            "offset": offset,
+            "previous": None,
+            "total_count": 0
+            },
+        "objects": [],
+        }
+
+    return flask.jsonify(**resource)
