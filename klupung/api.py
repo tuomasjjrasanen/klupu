@@ -100,8 +100,18 @@ def _policymakers_route():
     if error_response:
         return error_response
 
-    policymakers = klupung.models.Policymaker.query \
-        .limit(limit).offset(offset).all()
+    desc = False
+    column_name = order_by
+    if order_by.startswith("-"):
+        column_name = order_by[1:]
+        desc = True
+
+    order_by_criterion = getattr(klupung.models.Policymaker, column_name)
+    if desc:
+        order_by_criterion = klupung.db.desc(order_by_criterion)
+
+    policymakers = klupung.models.Policymaker.query.order_by(
+        order_by_criterion).limit(limit).offset(offset).all()
 
     total_count = klupung.models.Policymaker.query.count()
 
