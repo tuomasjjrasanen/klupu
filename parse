@@ -38,10 +38,6 @@ for dirpath, dirnames, filenames in os.walk(sys.argv[1]):
     policymaker_abbrev = meetingdoc["policymaker_abbreviation"]
     policymaker = klupung.models.Policymaker.query.filter_by(
         abbreviation=policymaker_abbrev).first()
-    if policymaker is None:
-        policymaker = klupung.models.Policymaker(policymaker_abbrev)
-        klupung.db.session.add(policymaker)
-        klupung.db.session.commit()
 
     meeting_start_datetime, _ = meetingdoc["meeting_datetimes"][0]
     meeting = klupung.models.Meeting.query.filter_by(
