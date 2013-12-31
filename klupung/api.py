@@ -17,6 +17,7 @@
 import datetime
 import re
 import unicodedata
+import urllib
 
 import flask
 
@@ -34,6 +35,45 @@ def _slugify(text, delim=u'-'):
             result.append(word)
     return unicode(delim.join(result))
 
+def _get_uint_arg(name, default):
+    arg = flask.request.args.get(name, "")
+    arg = arg if arg else default
+    error_msg = "Invalid value '%s' for argument '%s', " \
+        "expected a positive integer." % (arg, name)
+    error_response = flask.make_response(flask.jsonify(error=error_msg), 400)
+    try:
+        value = int(arg)
+    except ValueError:
+        return None, error_response
+    else:
+        if value < 0:
+            return None, error_response
+    return value, None
+
+def _get_choice_arg(name, choices):
+    arg = flask.request.args.get(name, "")
+    arg = arg if arg else choices[0]
+    error_msg = "Invalid value '%s' for argument '%s', expected %s." % \
+        (arg, name, " or ".join([repr(s) for s in choices]))
+    if arg not in choices:
+        return None, flask.make_response(flask.jsonify(error=error_msg), 400)
+    return arg, None
+
+def _next_url(limit, offset, total_count):
+    if limit + offset >= total_count:
+        return None
+    next_url_args = flask.request.args.to_dict()
+    next_url_args["offset"] = offset + limit
+    return "%s?%s" % (flask.request.path, urllib.urlencode(next_url_args))
+
+def _prev_url(limit, offset):
+    if offset <= 0:
+        return None
+
+    prev_url_args = flask.request.args.to_dict()
+    prev_url_args["offset"] = max(offset - limit, 0)
+    return "%s?%s" % (flask.request.path, urllib.urlencode(prev_url_args))
+
 def _policymaker_resource(policymaker):
     return {
         "id": policymaker.id,
@@ -48,7 +88,35 @@ def _policymaker_resource(policymaker):
 
 @v0.route("/policymaker/")
 def _policymakers_route():
-    return "list of policymakers"
+    limit, error_response = _get_uint_arg("limit", 20)
+    if error_response:
+        return error_response
+
+    offset, error_response = _get_uint_arg("offset", 0)
+    if error_response:
+        return error_response
+
+    order_by, error_response = _get_choice_arg("order_by", ("name", "-name"))
+    if error_response:
+        return error_response
+
+    policymakers = klupung.models.Policymaker.query \
+        .limit(limit).offset(offset).all()
+
+    total_count = klupung.models.Policymaker.query.count()
+
+    resource = {
+        "meta": {
+            "limit": limit,
+            "next": _next_url(limit, offset, total_count),
+            "offset": offset,
+            "previous": _prev_url(limit, offset),
+            "total_count": total_count,
+            },
+        "objects": [_policymaker_resource(p) for p in policymakers],
+        }
+
+    return flask.jsonify(**resource)
 
 @v0.route("/policymaker/<int:policymaker_id>/")
 def _policymaker_route(policymaker_id=None):
@@ -105,7 +173,8 @@ def _meeting_documents_route():
 
 @v0.route("/meeting_document/<int:meeting_document_id>/")
 def _meeting_document_route(meeting_document_id=None):
-    meeting_document = klupung.models.MeetingDocument.query.get_or_404(meeting_document_id)
+    meeting_document = klupung.models.MeetingDocument.query.get_or_404(
+        meeting_document_id)
 
     resource = _meeting_document_resource(meeting_document)
 
