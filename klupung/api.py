@@ -151,7 +151,52 @@ def _meeting_resource(meeting):
 
 @v0.route("/meeting/")
 def _meetings_route():
-    return "list of meetings"
+    limit, error_response = _get_uint_arg("limit", 20)
+    if error_response:
+        return error_response
+
+    offset, error_response = _get_uint_arg("offset", 0)
+    if error_response:
+        return error_response
+
+    order_by, error_response = _get_choice_arg("order_by",
+                                               ("date", "-date",
+                                                "policymaker", "-policymaker"))
+    if error_response:
+        return error_response
+
+    desc = False
+    column_name = order_by
+    if order_by.startswith("-"):
+        column_name = order_by[1:]
+        desc = True
+
+    column_name = {
+        "date": "start_datetime",
+        "policymaker": "policymaker_id",
+        }[column_name]
+
+    order_by_criterion = getattr(klupung.models.Meeting, column_name)
+    if desc:
+        order_by_criterion = klupung.db.desc(order_by_criterion)
+
+    meetings = klupung.models.Meeting.query.order_by(
+        order_by_criterion).limit(limit).offset(offset).all()
+
+    total_count = klupung.models.Meeting.query.count()
+
+    resource = {
+        "meta": {
+            "limit": limit,
+            "next": _next_url(limit, offset, total_count),
+            "offset": offset,
+            "previous": _prev_url(limit, offset),
+            "total_count": total_count,
+            },
+        "objects": [_meeting_resource(m) for m in meetings],
+        }
+
+    return flask.jsonify(**resource)
 
 @v0.route("/meeting/<int:meeting_id>/")
 def _meeting_route(meeting_id=None):
