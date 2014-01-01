@@ -99,14 +99,17 @@ def _get_collection_resource(model_class=None, resource_function=None, sortable_
     objects = []
 
     if model_class is not None:
-        order.field = sortable_columns[order.field]
+        query = model_class.query
+        if sortable_columns:
+            order.field = sortable_columns[order.field]
 
-        column = getattr(model_class, order.field)
-        if order.is_descending:
-            column = klupung.db.desc(column)
+            column = getattr(model_class, order.field)
+            if order.is_descending:
+                column = klupung.db.desc(column)
 
-        results = model_class.query.order_by(
-            column).limit(limit).offset(offset).all()
+            query = query.order_by(column)
+
+        results = query.limit(limit).offset(offset).all()
 
         total_count = model_class.query.count()
 
@@ -214,7 +217,9 @@ def _meeting_document_resource(meeting_document):
 
 @v0.route("/meeting_document/")
 def _meeting_documents_route():
-    return "list of meeting documents"
+    resource = _get_collection_resource(klupung.models.MeetingDocument,
+                                        _meeting_document_resource)
+    return flask.jsonify(**resource)
 
 @v0.route("/meeting_document/<int:meeting_document_id>/")
 def _meeting_document_route(meeting_document_id=None):
