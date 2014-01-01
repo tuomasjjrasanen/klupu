@@ -90,7 +90,7 @@ def _get_collection_args(sortable_fields=()):
 
     return limit, offset, order, None
 
-def _get_collection_resource(model_class=None, resource_function=None, sortable_columns={}):
+def _get_collection_resource(model_class=None, resource_mapper=None, sortable_columns={}):
     limit, offset, order, e = _get_collection_args(sortable_fields=sortable_columns.keys())
     if e:
         return e
@@ -101,9 +101,9 @@ def _get_collection_resource(model_class=None, resource_function=None, sortable_
     if model_class is not None:
         query = model_class.query
         if sortable_columns:
-            order.field = sortable_columns[order.field]
+            column_name = sortable_columns[order.field]
 
-            column = getattr(model_class, order.field)
+            column = getattr(model_class, column_name)
             if order.is_descending:
                 column = klupung.db.desc(column)
 
@@ -113,7 +113,7 @@ def _get_collection_resource(model_class=None, resource_function=None, sortable_
 
         total_count = model_class.query.count()
 
-        objects = [resource_function(r) for r in results]
+        objects = [resource_mapper(r) for r in results]
 
     resource = {
         "meta": {
@@ -127,6 +127,13 @@ def _get_collection_resource(model_class=None, resource_function=None, sortable_
         }
 
     return resource
+
+def jsonified_resource(model_class=None, resource_mapper=None, model_id=None, sortable_columns={}):
+    if model_id is None:
+        resource = _get_collection_resource(model_class, resource_mapper, sortable_columns)
+    else:
+        resource = resource_mapper(model_class.query.get_or_404(model_id))
+    return flask.jsonify(**resource)
 
 def _next_url(limit, offset, total_count):
     if limit + offset >= total_count:
@@ -143,7 +150,7 @@ def _prev_url(limit, offset):
     prev_url_args["offset"] = max(offset - limit, 0)
     return "%s?%s" % (flask.request.path, urllib.urlencode(prev_url_args))
 
-def _policymaker_resource(policymaker):
+def PolicymakerResource(policymaker):
     return {
         "id": policymaker.id,
         "abbreviation": policymaker.abbreviation,
@@ -151,101 +158,74 @@ def _policymaker_resource(policymaker):
         "origin_id": policymaker.abbreviation,
         "slug": _slugify(policymaker.abbreviation),
         "summary": None,
-        "resource_uri": flask.url_for("._policymaker_route",
+        "resource_uri": flask.url_for(".policymaker_route",
                                       policymaker_id=policymaker.id),
         }
 
-@v0.route("/policymaker/")
-def _policymakers_route():
-    resource = _get_collection_resource(klupung.models.Policymaker,
-                                        _policymaker_resource,
-                                        {"name": "name"})
-    return flask.jsonify(**resource)
-
-@v0.route("/policymaker/<int:policymaker_id>/")
-def _policymaker_route(policymaker_id=None):
-    policymaker = klupung.models.Policymaker.query.get_or_404(policymaker_id)
-
-    resource = _policymaker_resource(policymaker)
-
-    return flask.jsonify(**resource)
-
-def _meeting_resource(meeting):
+def MeetingResource(meeting):
     return {
         "id": meeting.id,
         "date": str(meeting.start_datetime.date()),
         "minutes": True,
         "number": 1,
-        "policymaker": flask.url_for("._policymaker_route",
+        "policymaker": flask.url_for(".policymaker_route",
                                      policymaker_id=meeting.policymaker.id),
         "policymaker_name": meeting.policymaker.name,
         "year": meeting.start_datetime.year,
-        "resource_uri": flask.url_for("._meeting_route", meeting_id=meeting.id),
+        "resource_uri": flask.url_for(".meeting_route", meeting_id=meeting.id),
         }
 
-@v0.route("/meeting/")
-def _meetings_route():
-    resource = _get_collection_resource(klupung.models.Meeting,
-                                        _meeting_resource,
-                                        {"date": "start_datetime",
-                                         "policymaker": "policymaker_id"})
-    return flask.jsonify(**resource)
-
-@v0.route("/meeting/<int:meeting_id>/")
-def _meeting_route(meeting_id=None):
-    meeting = klupung.models.Meeting.query.get_or_404(meeting_id)
-
-    resource = _meeting_resource(meeting)
-
-    return flask.jsonify(**resource)
-
-
-def _meeting_document_resource(meeting_document):
+def MeetingDocumentResource(meeting_document):
     return {
         "id": meeting_document.id,
         "last_modified_time": None,
-        "meeting": _meeting_resource(meeting_document.meeting),
+        "meeting": MeetingResource(meeting_document.meeting),
         "organisation": None,
         "origin_id": meeting_document.origin_id,
         "origin_url": meeting_document.origin_url,
         "publish_time": None,
         "type": "minutes",
         "xml_uri": None,
-        "resource_uri": flask.url_for("._meeting_document_route",
+        "resource_uri": flask.url_for(".meeting_document_route",
                                       meeting_document_id=meeting_document.id)
         }
 
+@v0.route("/policymaker/")
+@v0.route("/policymaker/<int:policymaker_id>/")
+def policymaker_route(policymaker_id=None):
+    return jsonified_resource(klupung.models.Policymaker,
+                              PolicymakerResource,
+                              policymaker_id,
+                              {"name": "name"})
+
+@v0.route("/meeting/")
+@v0.route("/meeting/<int:meeting_id>/")
+def meeting_route(meeting_id=None):
+    return jsonified_resource(klupung.models.Meeting,
+                              MeetingResource,
+                              meeting_id,
+                              {"date": "start_datetime",
+                               "policymaker": "policymaker_id"})
+
 @v0.route("/meeting_document/")
-def _meeting_documents_route():
-    resource = _get_collection_resource(klupung.models.MeetingDocument,
-                                        _meeting_document_resource)
-    return flask.jsonify(**resource)
-
 @v0.route("/meeting_document/<int:meeting_document_id>/")
-def _meeting_document_route(meeting_document_id=None):
-    meeting_document = klupung.models.MeetingDocument.query.get_or_404(
-        meeting_document_id)
-
-    resource = _meeting_document_resource(meeting_document)
-
-    return flask.jsonify(**resource)
+def meeting_document_route(meeting_document_id=None):
+    return jsonified_resource(klupung.models.MeetingDocument,
+                              MeetingDocumentResource,
+                              meeting_document_id)
 
 @v0.route("/category/")
-def _categories_route():
-    resource = _get_collection_resource()
-    return flask.jsonify(**resource)
+def category_route():
+    return jsonified_resource()
 
 @v0.route("/video/")
-def _videos_route():
-    resource = _get_collection_resource()
-    return flask.jsonify(**resource)
+def video_route():
+    return jsonified_resource()
 
 @v0.route("/district/")
-def _districts_route():
-    resource = _get_collection_resource()
-    return flask.jsonify(**resource)
+def district_route():
+    return jsonified_resource()
 
 @v0.route("/attachment/")
-def _attachments_route():
-    resource = _get_collection_resource()
-    return flask.jsonify(**resource)
+def attachment_route():
+    return jsonified_resource()
