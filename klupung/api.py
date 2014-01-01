@@ -27,6 +27,19 @@ v0 = flask.Blueprint("v0", __name__, url_prefix="/api/v0")
 
 _PUNCT_RE = re.compile(r'[\t !"#$%&\'()*\-/<=>?@\[\\\]^_`{|},.]+')
 
+class Error(Exception):
+
+    def __init__(self, code, message):
+        self.code = code
+        self.message = message
+
+class InvalidArgumentError(Error):
+
+    def __init__(self, arg, name, expected=""):
+        message = "Invalid value '%s' for argument '%s', " \
+            "expected %s." % (arg, name, expected)
+        Error.__init__(self, 400, message)
+
 def _slugify(text, delim=u'-'):
     result = []
     for word in _PUNCT_RE.split(text.lower()):
@@ -38,45 +51,35 @@ def _slugify(text, delim=u'-'):
 def _get_uint_arg(name, default):
     arg = flask.request.args.get(name, "")
     arg = arg if arg else default
-    error_msg = "Invalid value '%s' for argument '%s', " \
-        "expected a positive integer." % (arg, name)
-    error_response = flask.make_response(flask.jsonify(error=error_msg), 400)
     try:
         value = int(arg)
     except ValueError:
-        return None, error_response
+        raise InvalidArgumentError(arg, name, expected="a positive integer")
     else:
         if value < 0:
-            return None, error_response
-    return value, None
+            raise InvalidArgumentError(arg, name, expected="a positive integer")
+    return value
 
 def _get_choice_arg(name, choices):
     arg = flask.request.args.get(name, "")
     arg = arg if arg else choices[0]
-    error_msg = "Invalid value '%s' for argument '%s', expected %s." % \
-        (arg, name, " or ".join([repr(s) for s in choices]))
     if arg not in choices:
-        return None, flask.make_response(flask.jsonify(error=error_msg), 400)
-    return arg, None
+        raise InvalidArgumentError(arg, name,
+                                   expected=" or ".join([repr(s) for s in choices]))
+    return arg
 
 def _get_collection_args(sortable_fields=()):
-    limit, error_response = _get_uint_arg("limit", 20)
-    if error_response:
-        return None, None, None, error_response
+    limit = _get_uint_arg("limit", 20)
     limit = min(limit, 1000)
 
-    offset, error_response = _get_uint_arg("offset", 0)
-    if error_response:
-        return None, None, None, error_response
+    offset = _get_uint_arg("offset", 0)
 
     if not sortable_fields:
-        return limit, offset, None, None
+        return limit, offset, None
 
-    field, error_response = _get_choice_arg("order_by",
-                                            sortable_fields
-                                            + ["-%s" % s for s in sortable_fields])
-    if error_response:
-        return None, None, None, error_response
+    field = _get_choice_arg("order_by",
+                            sortable_fields
+                            + ["-%s" % s for s in sortable_fields])
 
     class Order(object):
         pass
@@ -88,12 +91,10 @@ def _get_collection_args(sortable_fields=()):
         order.field = order.field[1:]
         order.is_descending = True
 
-    return limit, offset, order, None
+    return limit, offset, order
 
 def _get_collection_resource(model_class=None, resource_mapper=None, sortable_columns={}):
-    limit, offset, order, e = _get_collection_args(sortable_fields=sortable_columns.keys())
-    if e:
-        return e
+    limit, offset, order = _get_collection_args(sortable_fields=sortable_columns.keys())
 
     total_count = 0
     objects = []
@@ -229,3 +230,7 @@ def district_route():
 @v0.route("/attachment/")
 def attachment_route():
     return jsonified_resource()
+
+@v0.errorhandler(Error)
+def errorhandler(error):
+    return flask.jsonify(error=error.message), error.code
