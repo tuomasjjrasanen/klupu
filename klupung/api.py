@@ -63,6 +63,7 @@ def _get_collection_args(sortable_fields=()):
     limit, error_response = _get_uint_arg("limit", 20)
     if error_response:
         return None, None, None, error_response
+    limit = min(limit, 1000)
 
     offset, error_response = _get_uint_arg("offset", 0)
     if error_response:
