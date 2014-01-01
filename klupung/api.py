@@ -68,88 +68,61 @@ def _get_choice_arg(name, choices):
                                    expected=" or ".join([repr(s) for s in choices]))
     return arg
 
-def _get_collection_args(sortable_fields=()):
-    limit = _get_uint_arg("limit", 20)
-    limit = min(limit, 1000)
+def jsonified_resource(model_class=None, resource_mapper=None, model_id=None, sortable_columns={}):
+    if model_id is not None:
+        resource = resource_mapper(model_class.query.get_or_404(model_id))
+        return flask.jsonify(**resource)
 
+    limit = min(_get_uint_arg("limit", 20), 1000)
     offset = _get_uint_arg("offset", 0)
-
-    if not sortable_fields:
-        return limit, offset, None
-
-    field = _get_choice_arg("order_by",
-                            sortable_fields
-                            + ["-%s" % s for s in sortable_fields])
-
-    class Order(object):
-        pass
-
-    order = Order()
-    order.is_descending = False
-    order.field = field
-    if order.field.startswith("-"):
-        order.field = order.field[1:]
-        order.is_descending = True
-
-    return limit, offset, order
-
-def _get_collection_resource(model_class=None, resource_mapper=None, sortable_columns={}):
-    limit, offset, order = _get_collection_args(sortable_fields=sortable_columns.keys())
 
     total_count = 0
     objects = []
 
     if model_class is not None:
         query = model_class.query
+
         if sortable_columns:
-            column_name = sortable_columns[order.field]
-
+            field = _get_choice_arg("order_by",
+                                    sortable_columns.keys()
+                                    + ["-%s" % s for s in sortable_columns.keys()])
+            is_descending = field.startswith("-")
+            field = field.lstrip("-")
+            column_name = sortable_columns[field]
             column = getattr(model_class, column_name)
-            if order.is_descending:
+            if is_descending:
                 column = klupung.db.desc(column)
-
             query = query.order_by(column)
 
-        results = query.limit(limit).offset(offset).all()
-
+        models = query.limit(limit).offset(offset).all()
         total_count = model_class.query.count()
+        objects = [resource_mapper(m) for m in models]
 
-        objects = [resource_mapper(r) for r in results]
+    next_path = None
+    prev_path = None
+
+    if limit + offset < total_count:
+        next_path_args = flask.request.args.to_dict()
+        next_path_args["offset"] = offset + limit
+        next_path = "%s?%s" % (flask.request.path, urllib.urlencode(next_path_args))
+
+    if offset > 0:
+        prev_path_args = flask.request.args.to_dict()
+        prev_path_args["offset"] = max(offset - limit, 0)
+        prev_path = "%s?%s" % (flask.request.path, urllib.urlencode(prev_path_args))
 
     resource = {
         "meta": {
             "limit": limit,
-            "next": _next_url(limit, offset, total_count),
+            "next": next_path,
             "offset": offset,
-            "previous": _prev_url(limit, offset),
+            "previous": prev_path,
             "total_count": total_count,
             },
         "objects": objects,
         }
 
-    return resource
-
-def jsonified_resource(model_class=None, resource_mapper=None, model_id=None, sortable_columns={}):
-    if model_id is None:
-        resource = _get_collection_resource(model_class, resource_mapper, sortable_columns)
-    else:
-        resource = resource_mapper(model_class.query.get_or_404(model_id))
     return flask.jsonify(**resource)
-
-def _next_url(limit, offset, total_count):
-    if limit + offset >= total_count:
-        return None
-    next_url_args = flask.request.args.to_dict()
-    next_url_args["offset"] = offset + limit
-    return "%s?%s" % (flask.request.path, urllib.urlencode(next_url_args))
-
-def _prev_url(limit, offset):
-    if offset <= 0:
-        return None
-
-    prev_url_args = flask.request.args.to_dict()
-    prev_url_args["offset"] = max(offset - limit, 0)
-    return "%s?%s" % (flask.request.path, urllib.urlencode(prev_url_args))
 
 def PolicymakerResource(policymaker):
     return {
