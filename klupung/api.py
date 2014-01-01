@@ -74,7 +74,7 @@ def _get_collection_args(sortable_fields=()):
 
     field, error_response = _get_choice_arg("order_by",
                                             sortable_fields
-                                            + tuple(["-%s" % s for s in sortable_fields]))
+                                            + ["-%s" % s for s in sortable_fields])
     if error_response:
         return None, None, None, error_response
 
@@ -89,6 +89,41 @@ def _get_collection_args(sortable_fields=()):
         order.is_descending = True
 
     return limit, offset, order, None
+
+def _get_collection_resource(model_class=None, resource_function=None, sortable_columns={}):
+    limit, offset, order, e = _get_collection_args(sortable_fields=sortable_columns.keys())
+    if e:
+        return e
+
+    total_count = 0
+    objects = []
+
+    if model_class is not None:
+        order.field = sortable_columns[order.field]
+
+        column = getattr(model_class, order.field)
+        if order.is_descending:
+            column = klupung.db.desc(column)
+
+        results = model_class.query.order_by(
+            column).limit(limit).offset(offset).all()
+
+        total_count = model_class.query.count()
+
+        objects = [resource_function(r) for r in results]
+
+    resource = {
+        "meta": {
+            "limit": limit,
+            "next": _next_url(limit, offset, total_count),
+            "offset": offset,
+            "previous": _prev_url(limit, offset),
+            "total_count": total_count,
+            },
+        "objects": objects,
+        }
+
+    return resource
 
 def _next_url(limit, offset, total_count):
     if limit + offset >= total_count:
@@ -119,30 +154,9 @@ def _policymaker_resource(policymaker):
 
 @v0.route("/policymaker/")
 def _policymakers_route():
-    limit, offset, order, e = _get_collection_args(sortable_fields=("name",))
-    if e:
-        return e
-
-    column = getattr(klupung.models.Policymaker, order.field)
-    if order.is_descending:
-        column = klupung.db.desc(column)
-
-    policymakers = klupung.models.Policymaker.query.order_by(
-        column).limit(limit).offset(offset).all()
-
-    total_count = klupung.models.Policymaker.query.count()
-
-    resource = {
-        "meta": {
-            "limit": limit,
-            "next": _next_url(limit, offset, total_count),
-            "offset": offset,
-            "previous": _prev_url(limit, offset),
-            "total_count": total_count,
-            },
-        "objects": [_policymaker_resource(p) for p in policymakers],
-        }
-
+    resource = _get_collection_resource(klupung.models.Policymaker,
+                                        _policymaker_resource,
+                                        {"name": "name"})
     return flask.jsonify(**resource)
 
 @v0.route("/policymaker/<int:policymaker_id>/")
@@ -168,35 +182,10 @@ def _meeting_resource(meeting):
 
 @v0.route("/meeting/")
 def _meetings_route():
-    limit, offset, order, e = _get_collection_args(sortable_fields=("date", "policymaker"))
-    if e:
-        return e
-
-    order.field = {
-        "date": "start_datetime",
-        "policymaker": "policymaker_id",
-        }[order.field]
-
-    column = getattr(klupung.models.Meeting, order.field)
-    if order.is_descending:
-        column = klupung.db.desc(column)
-
-    meetings = klupung.models.Meeting.query.order_by(
-        column).limit(limit).offset(offset).all()
-
-    total_count = klupung.models.Meeting.query.count()
-
-    resource = {
-        "meta": {
-            "limit": limit,
-            "next": _next_url(limit, offset, total_count),
-            "offset": offset,
-            "previous": _prev_url(limit, offset),
-            "total_count": total_count,
-            },
-        "objects": [_meeting_resource(m) for m in meetings],
-        }
-
+    resource = _get_collection_resource(klupung.models.Meeting,
+                                        _meeting_resource,
+                                        {"date": "start_datetime",
+                                         "policymaker": "policymaker_id"})
     return flask.jsonify(**resource)
 
 @v0.route("/meeting/<int:meeting_id>/")
@@ -238,76 +227,20 @@ def _meeting_document_route(meeting_document_id=None):
 
 @v0.route("/category/")
 def _categories_route():
-    limit, offset, _, e = _get_collection_args()
-    if e:
-        return e
-
-    resource = {
-        "meta": {
-            "limit": limit,
-            "next": None,
-            "offset": offset,
-            "previous": None,
-            "total_count": 0
-            },
-        "objects": [],
-        }
-
+    resource = _get_collection_resource()
     return flask.jsonify(**resource)
 
 @v0.route("/video/")
 def _videos_route():
-    limit, offset, _, e = _get_collection_args()
-    if e:
-        return e
-
-    resource = {
-        "meta": {
-            "limit": limit,
-            "next": None,
-            "offset": offset,
-            "previous": None,
-            "total_count": 0
-            },
-        "objects": [],
-        }
-
+    resource = _get_collection_resource()
     return flask.jsonify(**resource)
 
 @v0.route("/district/")
 def _districts_route():
-    limit, offset, _, e = _get_collection_args()
-    if e:
-        return e
-
-    resource = {
-        "meta": {
-            "limit": limit,
-            "next": None,
-            "offset": offset,
-            "previous": None,
-            "total_count": 0
-            },
-        "objects": [],
-        }
-
+    resource = _get_collection_resource()
     return flask.jsonify(**resource)
 
 @v0.route("/attachment/")
 def _attachments_route():
-    limit, offset, _, e = _get_collection_args()
-    if e:
-        return e
-
-    resource = {
-        "meta": {
-            "limit": limit,
-            "next": None,
-            "offset": offset,
-            "previous": None,
-            "total_count": 0
-            },
-        "objects": [],
-        }
-
+    resource = _get_collection_resource()
     return flask.jsonify(**resource)
