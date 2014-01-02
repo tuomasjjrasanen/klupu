@@ -109,11 +109,11 @@ def _jsonified_resource(model_class=None, resource_mapper=None, model_id=None, s
 
     resource = {
         "meta": {
-            "limit": limit,
-            "next": next_path,
-            "offset": offset,
-            "previous": prev_path,
-            "total_count": total_count,
+            "limit"       : limit,
+            "next"        : next_path,
+            "offset"      : offset,
+            "previous"    : prev_path,
+            "total_count" : total_count,
             },
         "objects": objects,
         }
@@ -122,43 +122,44 @@ def _jsonified_resource(model_class=None, resource_mapper=None, model_id=None, s
 
 def _policymaker_resource(policymaker):
     return {
-        "id": policymaker.id,
+        "id"          : policymaker.id,
         "abbreviation": policymaker.abbreviation,
-        "name": policymaker.name,
-        "origin_id": policymaker.abbreviation,
-        "slug": _slugify(policymaker.abbreviation),
-        "summary": None,
+        "name"        : policymaker.name,
+        "origin_id"   : policymaker.abbreviation,
+        "slug"        : _slugify(policymaker.abbreviation),
+        "summary"     : None,
         "resource_uri": flask.url_for("._policymaker_route",
                                       policymaker_id=policymaker.id),
         }
 
 def _meeting_resource(meeting):
     return {
-        "id": meeting.id,
-        "date": str(meeting.start_datetime.date()),
-        "minutes": True,
-        "number": 1,
-        "policymaker": flask.url_for("._policymaker_route",
-                                     policymaker_id=meeting.policymaker.id),
+        "id"              : meeting.id,
+        "date"            : str(meeting.start_datetime.date()),
+        "minutes"         : True,
+        "number"          : 1,
+        "policymaker"     : flask.url_for("._policymaker_route",
+                                          policymaker_id=meeting.policymaker.id),
         "policymaker_name": meeting.policymaker.name,
-        "year": meeting.start_datetime.year,
-        "resource_uri": flask.url_for("._meeting_route", meeting_id=meeting.id),
+        "year"            : meeting.start_datetime.year,
+        "resource_uri"    : flask.url_for("._meeting_route",
+                                          meeting_id=meeting.id),
         }
 
 def _meeting_document_resource(meeting_document):
     return {
-        "id": meeting_document.id,
-        "last_modified_time": None,
-        "meeting": _meeting_resource(meeting_document.meeting),
-        "organisation": None,
-        "origin_id": meeting_document.origin_id,
-        "origin_url": meeting_document.origin_url,
-        "publish_time": None,
-        "type": "minutes",
-        "xml_uri": None,
-        "resource_uri": flask.url_for("._meeting_document_route",
-                                      meeting_document_id=meeting_document.id)
-        }
+        "id"                 : meeting_document.id,
+        "last_modified_time" : None,
+        "meeting"            : _meeting_resource(meeting_document.meeting),
+        "organisation"       : None,
+        "origin_id"          : meeting_document.origin_id,
+        "origin_url"         : meeting_document.origin_url,
+        "publish_time"       : None,
+        "type"               : "minutes",
+        "xml_uri"            : None,
+        "resource_uri"       : flask.url_for("._meeting_document_route",
+                                             meeting_document_id=meeting_document.id)
+    }
 
 @v0.route("/policymaker/")
 @v0.route("/policymaker/<int:policymaker_id>/")
