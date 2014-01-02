@@ -26,12 +26,14 @@ import klupung.models
 v0 = flask.Blueprint("v0", __name__, url_prefix="/api/v0")
 
 class Error(Exception):
+    """Common base class for all API-related exceptions."""
 
     def __init__(self, code, message):
         self.code = code
         self.message = message
 
 class InvalidArgumentError(Error):
+    """Raised when a client has provided an invalid query argument."""
 
     def __init__(self, arg, name, expected=""):
         message = "Invalid value '%s' for argument '%s', " \
@@ -41,6 +43,7 @@ class InvalidArgumentError(Error):
 _SLUG_PUNCT_RE = re.compile(r'[\t !"#$%&\'()*\-/<=>?@\[\\\]^_`{|},.]+')
 
 def _slugify(text, delim=u'-'):
+    """Return an unicode slug of the text"""
     result = []
     for word in _SLUG_PUNCT_RE.split(text.lower()):
         word = unicodedata.normalize('NFKD', word).encode('ascii', 'ignore')
@@ -49,6 +52,14 @@ def _slugify(text, delim=u'-'):
     return unicode(delim.join(result))
 
 def _get_uint_arg(name, default):
+    """Return `int` value of argument `name` from the current request
+
+    If the current request does not have argument `name`, `default`
+    value is returned instead. Raises `InvalidArgumentError` if the
+    value (or `default` value if it is used) is not a positive integer.
+
+    """
+
     arg = flask.request.args.get(name, "")
     arg = arg if arg else default
     try:
@@ -61,6 +72,14 @@ def _get_uint_arg(name, default):
     return value
 
 def _get_choice_arg(name, choices):
+    """Return `str` value of argument `name` from the current request
+
+    If the current request does not have argument `name`, the first item
+    from `choices` sequence is returned. Raises `InvalidArgumentError`
+    if the value is not listed in `choices`.
+
+    """
+
     arg = flask.request.args.get(name, "")
     arg = arg if arg else choices[0]
     if arg not in choices:
