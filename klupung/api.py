@@ -26,8 +26,6 @@ import flask
 ## Local imports
 import klupung.models
 
-v0 = flask.Blueprint("v0", __name__, url_prefix="/api/v0")
-
 class Error(Exception):
     """Common base class for all API-related exceptions."""
 
@@ -182,6 +180,8 @@ def _get_meeting_document_resource(meeting_document):
         "resource_uri"       : flask.url_for("._meeting_document_route",
                                              meeting_document_id=meeting_document.id)
     }
+
+v0 = flask.Blueprint("v0", __name__, url_prefix="/api/v0")
 
 @v0.route("/policymaker/")
 @v0.route("/policymaker/<int:policymaker_id>/")
