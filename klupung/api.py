@@ -68,7 +68,7 @@ def _get_choice_arg(name, choices):
                                    expected=" or ".join([repr(s) for s in choices]))
     return arg
 
-def jsonified_resource(model_class=None, resource_mapper=None, model_id=None, sortable_columns={}):
+def jsonified_resource(model_class=None, resource_mapper=None, model_id=None, sortable_fields=()):
     if model_id is not None:
         resource = resource_mapper(model_class.query.get_or_404(model_id))
         return flask.jsonify(**resource)
@@ -80,23 +80,19 @@ def jsonified_resource(model_class=None, resource_mapper=None, model_id=None, so
     objects = []
 
     if model_class is not None:
-        query = model_class.query
-
-        if sortable_columns:
-            field = _get_choice_arg("order_by",
-                                    sortable_columns.keys()
-                                    + ["-%s" % s for s in sortable_columns.keys()])
-            is_descending = field.startswith("-")
-            field = field.lstrip("-")
-            column_name = sortable_columns[field]
-            column = getattr(model_class, column_name)
-            if is_descending:
-                column = klupung.db.desc(column)
-            query = query.order_by(column)
-
-        models = query.limit(limit).offset(offset).all()
+        models = model_class.query.limit(limit).offset(offset).all()
         total_count = model_class.query.count()
         objects = [resource_mapper(m) for m in models]
+
+    if sortable_fields:
+        choices = []
+        for field in sortable_fields:
+            choices.append(field)
+            choices.append("-%s" % field)
+        order_by_arg = _get_choice_arg("order_by", choices)
+        is_descending = order_by_arg.startswith("-")
+        field = order_by_arg.lstrip("-")
+        objects.sort(key=lambda o: o[field], reverse=is_descending)
 
     next_path = None
     prev_path = None
@@ -170,7 +166,7 @@ def policymaker_route(policymaker_id=None):
     return jsonified_resource(klupung.models.Policymaker,
                               PolicymakerResource,
                               policymaker_id,
-                              {"name": "name"})
+                              ["name"])
 
 @v0.route("/meeting/")
 @v0.route("/meeting/<int:meeting_id>/")
@@ -178,8 +174,7 @@ def meeting_route(meeting_id=None):
     return jsonified_resource(klupung.models.Meeting,
                               MeetingResource,
                               meeting_id,
-                              {"date": "start_datetime",
-                               "policymaker": "policymaker_id"})
+                              ["date", "policymaker"])
 
 @v0.route("/meeting_document/")
 @v0.route("/meeting_document/<int:meeting_document_id>/")
