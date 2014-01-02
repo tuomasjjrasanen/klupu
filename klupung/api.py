@@ -14,13 +14,16 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
+## Standard library imports
 import datetime
 import re
 import unicodedata
 import urllib
 
+## 3rd party imports
 import flask
 
+## Local imports
 import klupung.models
 
 v0 = flask.Blueprint("v0", __name__, url_prefix="/api/v0")
@@ -87,9 +90,9 @@ def _get_choice_arg(name, choices):
                                    expected=" or ".join([repr(s) for s in choices]))
     return arg
 
-def _jsonified_resource(model_class=None, resource_mapper=None, model_id=None, sortable_fields=()):
+def _jsonified_resource(model_class=None, get_resource=None, model_id=None, sortable_fields=()):
     if model_id is not None:
-        resource = resource_mapper(model_class.query.get_or_404(model_id))
+        resource = get_resource(model_class.query.get_or_404(model_id))
         return flask.jsonify(**resource)
 
     limit = min(_get_uint_arg("limit", 20), 1000)
@@ -101,7 +104,7 @@ def _jsonified_resource(model_class=None, resource_mapper=None, model_id=None, s
     if model_class is not None:
         models = model_class.query.limit(limit).offset(offset).all()
         total_count = model_class.query.count()
-        objects = [resource_mapper(m) for m in models]
+        objects = [get_resource(m) for m in models]
 
     if sortable_fields:
         choices = []
@@ -139,7 +142,7 @@ def _jsonified_resource(model_class=None, resource_mapper=None, model_id=None, s
 
     return flask.jsonify(**resource)
 
-def _policymaker_resource(policymaker):
+def _get_policymaker_resource(policymaker):
     return {
         "id"          : policymaker.id,
         "abbreviation": policymaker.abbreviation,
@@ -151,7 +154,7 @@ def _policymaker_resource(policymaker):
                                       policymaker_id=policymaker.id),
         }
 
-def _meeting_resource(meeting):
+def _get_meeting_resource(meeting):
     return {
         "id"              : meeting.id,
         "date"            : str(meeting.start_datetime.date()),
@@ -165,11 +168,11 @@ def _meeting_resource(meeting):
                                           meeting_id=meeting.id),
         }
 
-def _meeting_document_resource(meeting_document):
+def _get_meeting_document_resource(meeting_document):
     return {
         "id"                 : meeting_document.id,
         "last_modified_time" : None,
-        "meeting"            : _meeting_resource(meeting_document.meeting),
+        "meeting"            : _get_meeting_resource(meeting_document.meeting),
         "organisation"       : None,
         "origin_id"          : meeting_document.origin_id,
         "origin_url"         : meeting_document.origin_url,
@@ -183,25 +186,28 @@ def _meeting_document_resource(meeting_document):
 @v0.route("/policymaker/")
 @v0.route("/policymaker/<int:policymaker_id>/")
 def _policymaker_route(policymaker_id=None):
-    return _jsonified_resource(klupung.models.Policymaker,
-                              _policymaker_resource,
-                              policymaker_id,
-                              ["name"])
+    return _jsonified_resource(
+        model_class=klupung.models.Policymaker,
+        get_resource=_get_policymaker_resource,
+        model_id=policymaker_id,
+        sortable_fields=["name"])
 
 @v0.route("/meeting/")
 @v0.route("/meeting/<int:meeting_id>/")
 def _meeting_route(meeting_id=None):
-    return _jsonified_resource(klupung.models.Meeting,
-                              _meeting_resource,
-                              meeting_id,
-                              ["date", "policymaker"])
+    return _jsonified_resource(
+        model_class=klupung.models.Meeting,
+        get_resource=_get_meeting_resource,
+        model_id=meeting_id,
+        sortable_fields=["date", "policymaker"])
 
 @v0.route("/meeting_document/")
 @v0.route("/meeting_document/<int:meeting_document_id>/")
 def _meeting_document_route(meeting_document_id=None):
-    return _jsonified_resource(klupung.models.MeetingDocument,
-                              _meeting_document_resource,
-                              meeting_document_id)
+    return _jsonified_resource(
+        model_class=klupung.models.MeetingDocument,
+        get_resource=_get_meeting_document_resource,
+        model_id=meeting_document_id)
 
 @v0.route("/category/")
 def _category_route():
