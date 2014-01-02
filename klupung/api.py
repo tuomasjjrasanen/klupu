@@ -68,7 +68,7 @@ def _get_choice_arg(name, choices):
                                    expected=" or ".join([repr(s) for s in choices]))
     return arg
 
-def jsonified_resource(model_class=None, resource_mapper=None, model_id=None, sortable_fields=()):
+def _jsonified_resource(model_class=None, resource_mapper=None, model_id=None, sortable_fields=()):
     if model_id is not None:
         resource = resource_mapper(model_class.query.get_or_404(model_id))
         return flask.jsonify(**resource)
@@ -120,7 +120,7 @@ def jsonified_resource(model_class=None, resource_mapper=None, model_id=None, so
 
     return flask.jsonify(**resource)
 
-def PolicymakerResource(policymaker):
+def _policymaker_resource(policymaker):
     return {
         "id": policymaker.id,
         "abbreviation": policymaker.abbreviation,
@@ -128,77 +128,77 @@ def PolicymakerResource(policymaker):
         "origin_id": policymaker.abbreviation,
         "slug": _slugify(policymaker.abbreviation),
         "summary": None,
-        "resource_uri": flask.url_for(".policymaker_route",
+        "resource_uri": flask.url_for("._policymaker_route",
                                       policymaker_id=policymaker.id),
         }
 
-def MeetingResource(meeting):
+def _meeting_resource(meeting):
     return {
         "id": meeting.id,
         "date": str(meeting.start_datetime.date()),
         "minutes": True,
         "number": 1,
-        "policymaker": flask.url_for(".policymaker_route",
+        "policymaker": flask.url_for("._policymaker_route",
                                      policymaker_id=meeting.policymaker.id),
         "policymaker_name": meeting.policymaker.name,
         "year": meeting.start_datetime.year,
-        "resource_uri": flask.url_for(".meeting_route", meeting_id=meeting.id),
+        "resource_uri": flask.url_for("._meeting_route", meeting_id=meeting.id),
         }
 
-def MeetingDocumentResource(meeting_document):
+def _meeting_document_resource(meeting_document):
     return {
         "id": meeting_document.id,
         "last_modified_time": None,
-        "meeting": MeetingResource(meeting_document.meeting),
+        "meeting": _meeting_resource(meeting_document.meeting),
         "organisation": None,
         "origin_id": meeting_document.origin_id,
         "origin_url": meeting_document.origin_url,
         "publish_time": None,
         "type": "minutes",
         "xml_uri": None,
-        "resource_uri": flask.url_for(".meeting_document_route",
+        "resource_uri": flask.url_for("._meeting_document_route",
                                       meeting_document_id=meeting_document.id)
         }
 
 @v0.route("/policymaker/")
 @v0.route("/policymaker/<int:policymaker_id>/")
-def policymaker_route(policymaker_id=None):
-    return jsonified_resource(klupung.models.Policymaker,
-                              PolicymakerResource,
+def _policymaker_route(policymaker_id=None):
+    return _jsonified_resource(klupung.models.Policymaker,
+                              _policymaker_resource,
                               policymaker_id,
                               ["name"])
 
 @v0.route("/meeting/")
 @v0.route("/meeting/<int:meeting_id>/")
-def meeting_route(meeting_id=None):
-    return jsonified_resource(klupung.models.Meeting,
-                              MeetingResource,
+def _meeting_route(meeting_id=None):
+    return _jsonified_resource(klupung.models.Meeting,
+                              _meeting_resource,
                               meeting_id,
                               ["date", "policymaker"])
 
 @v0.route("/meeting_document/")
 @v0.route("/meeting_document/<int:meeting_document_id>/")
-def meeting_document_route(meeting_document_id=None):
-    return jsonified_resource(klupung.models.MeetingDocument,
-                              MeetingDocumentResource,
+def _meeting_document_route(meeting_document_id=None):
+    return _jsonified_resource(klupung.models.MeetingDocument,
+                              _meeting_document_resource,
                               meeting_document_id)
 
 @v0.route("/category/")
-def category_route():
-    return jsonified_resource()
+def _category_route():
+    return _jsonified_resource()
 
 @v0.route("/video/")
-def video_route():
-    return jsonified_resource()
+def _video_route():
+    return _jsonified_resource()
 
 @v0.route("/district/")
-def district_route():
-    return jsonified_resource()
+def _district_route():
+    return _jsonified_resource()
 
 @v0.route("/attachment/")
-def attachment_route():
-    return jsonified_resource()
+def _attachment_route():
+    return _jsonified_resource()
 
 @v0.errorhandler(Error)
-def errorhandler(error):
+def _errorhandler(error):
     return flask.jsonify(error=error.message), error.code
