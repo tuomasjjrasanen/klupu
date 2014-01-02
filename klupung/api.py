@@ -25,8 +25,6 @@ import klupung.models
 
 v0 = flask.Blueprint("v0", __name__, url_prefix="/api/v0")
 
-_PUNCT_RE = re.compile(r'[\t !"#$%&\'()*\-/<=>?@\[\\\]^_`{|},.]+')
-
 class Error(Exception):
 
     def __init__(self, code, message):
@@ -40,9 +38,11 @@ class InvalidArgumentError(Error):
             "expected %s." % (arg, name, expected)
         Error.__init__(self, 400, message)
 
+_SLUG_PUNCT_RE = re.compile(r'[\t !"#$%&\'()*\-/<=>?@\[\\\]^_`{|},.]+')
+
 def _slugify(text, delim=u'-'):
     result = []
-    for word in _PUNCT_RE.split(text.lower()):
+    for word in _SLUG_PUNCT_RE.split(text.lower()):
         word = unicodedata.normalize('NFKD', word).encode('ascii', 'ignore')
         if word:
             result.append(word)
