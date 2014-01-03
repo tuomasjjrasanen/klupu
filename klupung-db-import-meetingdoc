@@ -32,6 +32,8 @@ arg_parser.add_argument("db_uri", metavar="DB_URI",
                         help="database URI, e.g. 'sqlite:///klupung.db'")
 arg_parser.add_argument("meetingdoc_dir", metavar="DIR",
                         help="meeting document directory")
+arg_parser.add_argument("-q", "--quiet", default=False, action="store_true",
+                        help="Do not print any output")
 
 args = arg_parser.parse_args()
 
@@ -41,6 +43,9 @@ app.test_request_context().push()
 if not klupung.ktweb.is_meetingdoc_dir(args.meetingdoc_dir):
     arg_parser.error("%r is not a meeting document directory" %
                      args.meetingdoc_dir)
+
+if not args.quiet:
+    print("parsing meeting document directory '%s'" % args.meetingdoc_dir)
 
 meetingdoc = klupung.ktweb.parse_meetingdoc(args.meetingdoc_dir)
 policymaker_abbrev = meetingdoc["policymaker_abbreviation"]
