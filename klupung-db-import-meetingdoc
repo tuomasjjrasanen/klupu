@@ -52,7 +52,7 @@ policymaker_abbrev = meetingdoc["policymaker_abbreviation"]
 policymaker = klupung.models.Policymaker.query.filter_by(
     abbreviation=policymaker_abbrev).first()
 
-meeting_start_datetime, _ = meetingdoc["meeting_datetimes"][0]
+meeting_start_datetime = meetingdoc["start_datetime"]
 meeting = klupung.models.Meeting.query.filter_by(
     policymaker_id=policymaker.id,
     start_datetime=meeting_start_datetime).first()

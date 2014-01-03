@@ -130,7 +130,6 @@ def query_meetingdoc_urls(url):
 
 _RE_PERSON = re.compile(ur"([A-ZÖÄÅ][a-zöäå]*(?:-[A-ZÖÄÅ][a-zöäå]*)*(?: [A-ZÖÄÅ][a-zöäå]*(?:-[A-ZÖÄÅ][a-zöäå]*)*)+)")
 _RE_DNRO = re.compile(r"Dnro (\d+[\s\xa0\xad]?/\d+)")
-_RE_TIME = re.compile(ur"(?:[a-zA-Z]+ )?(\d\d?)\.(\d\d?)\.(\d{4})[ ]?,? (?:kello|klo)[\s\xa0\xad]?(\d\d?)\.(\d\d)[\s\xa0\xad]*[–-][\s\xa0\xad]*(\d\d?)\.(\d\d)")
 _RE_WS = re.compile(r"[\s\xa0\xad]+")
 
 def _trimws(text):
@@ -208,6 +207,26 @@ def _parse_agendaitems(meetingdoc_dirpath):
 
     return retval
 
+def _parse_start_datetime(text):
+    pattern = r"(?P<weekday>[a-zA-Z]+)?" \
+              r"[ ]*" \
+              r"(?P<day>[0-9]{1,2})\.(?P<month>[0-9]{1,2})\.(?P<year>[0-9]{4})" \
+              r"[, ]+(?:kello|klo)[ ]*" \
+              r"(?P<hour>[0-9]{1,2})\.(?P<minute>[0-9]{2})" \
+              r".*"
+
+    match = re.match(pattern, text)
+    if not match:
+        return None
+
+    day = int(match.group("day"))
+    month = int(match.group("month"))
+    year = int(match.group("year"))
+    hour = int(match.group("hour"))
+    minute = int(match.group("minute"))
+
+    return datetime.datetime(year, month, day, hour, minute)
+
 def _parse_meeting_info(meetingdoc_dirpath):
     cover_page_filepath = os.path.join(meetingdoc_dirpath, _COVER_PAGE_FILENAME)
     cover_page_soup = _make_soup(cover_page_filepath)
@@ -227,34 +246,27 @@ def _parse_meeting_info(meetingdoc_dirpath):
         if text:
             texts.append(text)
 
-    meeting_datetimes = []
-    for i, text in enumerate(texts):
-        timespecs = _RE_TIME.findall(text)
-        if not timespecs:
+    start_datetime = None
+    for text in texts:
+        start_datetime = _parse_start_datetime(text)
+        if start_datetime is not None:
+            # Assume the very first match is the starting time.
             break
-        for timespec in timespecs:
-            (day, month, year,
-             start_hour, start_minute,
-             end_hour, end_minute) = [int(v) for v in timespec]
 
-            # Someone uses stupid format to denote that the meeting
-            # lasted past midnight.
-            end_hour %= 24
-
-            start = datetime.datetime(year, month, day, start_hour, start_minute)
-            end = datetime.datetime(year, month, day, end_hour, end_minute)
-            if start > end:
-                end += datetime.timedelta(1)
-
-            meeting_datetimes.append((start, end))
-
-    # The place of the meeting is easy, it always follows the last
-    # datetime field.
-    meeting_place = texts[i]
+    if start_datetime is None:
+        # Fallback to bullet-proof method: get the start time from the
+        # directory path. However, it is not as accurate because it is
+        # often just a template value.
+        year = int(os.path.basename(os.path.dirname(meetingdoc_dirpath)))
+        dirname = os.path.basename(meetingdoc_dirpath)
+        day = int(dirname[:2])
+        month = int(dirname[2:4])
+        hour = int(dirname[4:6])
+        minute = int(dirname[6:8])
+        start_datetime = datetime.datetime(year, month, day, hour, minute)
 
     return {
-        "meeting_datetimes": meeting_datetimes,
-        "meeting_place": meeting_place,
+        "start_datetime": start_datetime,
     }
 
 def parse_meetingdoc(meetingdoc_dirpath):
