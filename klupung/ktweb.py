@@ -268,8 +268,19 @@ def _parse_cover_page(meetingdoc_dirpath):
         minute = int(dirname[6:8])
         start_datetime = datetime.datetime(year, month, day, hour, minute)
 
+    publish_datetime = None
+    publish_datetime_marker_re = re.compile(ur"PÖYTÄKIRJA YLEISESTI")
+    publish_datetime_markers = cover_page_soup(text=publish_datetime_marker_re)
+    if publish_datetime_markers:
+        publish_datetime_marker = publish_datetime_markers[0]
+        tds = publish_datetime_marker.parent.parent.parent.parent("td")
+        texts = tds[1](text=re.compile(r"[0-9]{1,2}\.[0-9]{1,2}\.[0-9]{4}"))
+        if texts:
+            publish_datetime = datetime.datetime.strptime(texts[0], "%d.%m.%Y")
+
     return {
         "start_datetime": start_datetime,
+        "publish_datetime": publish_datetime,
     }
 
 def parse_meetingdoc(meetingdoc_dirpath):

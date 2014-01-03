@@ -71,11 +71,13 @@ class MeetingDocument(klupung.db.Model):
     origin_id = klupung.db.Column(klupung.db.String(40),
                                   unique=True,
                                   nullable=False)
+    publish_datetime = klupung.db.Column(klupung.db.DateTime)
 
     # Relationships
     meeting = klupung.db.relationship("Meeting")
 
-    def __init__(self, origin_url, meeting_id, origin_id):
+    def __init__(self, origin_url, meeting_id, origin_id, publish_datetime):
         self.origin_url = origin_url
         self.meeting_id = meeting_id
         self.origin_id = origin_id
+        self.publish_datetime = publish_datetime

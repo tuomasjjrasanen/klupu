@@ -69,6 +69,7 @@ if meeting_document is None:
     meeting_document = klupung.models.MeetingDocument(
         meetingdoc["origin_url"],
         meeting.id,
-        meetingdoc["origin_id"])
+        meetingdoc["origin_id"],
+        meetingdoc["publish_datetime"])
     klupung.db.session.add(meeting_document)
     klupung.db.session.commit()

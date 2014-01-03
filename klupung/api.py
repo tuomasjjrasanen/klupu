@@ -174,7 +174,7 @@ def _get_meeting_document_resource(meeting_document):
         "organisation"       : None,
         "origin_id"          : meeting_document.origin_id,
         "origin_url"         : meeting_document.origin_url,
-        "publish_time"       : None,
+        "publish_time"       : str(meeting_document.publish_datetime),
         "type"               : "minutes",
         "xml_uri"            : None,
         "resource_uri"       : flask.url_for("._meeting_document_route",
