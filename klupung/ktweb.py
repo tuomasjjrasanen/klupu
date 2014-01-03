@@ -231,28 +231,27 @@ def _parse_start_datetime(text):
 
     return datetime.datetime(year, month, day, hour, minute)
 
-def _parse_meeting_info(meetingdoc_dirpath):
+def _parse_cover_page(meetingdoc_dirpath):
     cover_page_filepath = os.path.join(meetingdoc_dirpath, _COVER_PAGE_FILENAME)
     cover_page_soup = _make_soup(cover_page_filepath)
 
-    # Find the marker element. Datetimes and such are nearby...
-    markertag = cover_page_soup(text=re.compile("KOKOUSTIEDOT"))[0]
+    # Find the meeting info marker. Datetimes and such are nearby...
+    meeting_info_markertag = cover_page_soup(text=re.compile("KOKOUSTIEDOT"))[0]
+
+    meeting_info_texts = []
 
     # Filters p-elements which might contain the actual payload
     # (datetimes and place). Looks a bit scary but seems to work
     # really well in practice.
-    ps = markertag.parent.parent.parent.parent("td")[1]("p")
-
-    # Accept only non-empty strings.
-    texts = []
-    for p in ps:
-        text = _trimws(p.text)
-        if text:
-            texts.append(text)
+    for p in meeting_info_markertag.parent.parent.parent.parent("td")[1]("p"):
+        meeting_info_text = _trimws(p.text)
+        if meeting_info_text:
+            # Accept only non-empty strings.
+            meeting_info_texts.append(meeting_info_text)
 
     start_datetime = None
-    for text in texts:
-        start_datetime = _parse_start_datetime(text)
+    for meeting_info_text in meeting_info_texts:
+        start_datetime = _parse_start_datetime(meeting_info_text)
         if start_datetime is not None:
             # Assume the very first match is the starting time.
             break
@@ -293,7 +292,7 @@ def parse_meetingdoc(meetingdoc_dirpath):
         "origin_id": origin_id,
     }
 
-    meetingdoc.update(_parse_meeting_info(meetingdoc_dirpath))
+    meetingdoc.update(_parse_cover_page(meetingdoc_dirpath))
 
     meetingdoc["agendaitems"] = _parse_agendaitems(meetingdoc_dirpath)
 
