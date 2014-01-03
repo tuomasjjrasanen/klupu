@@ -172,23 +172,27 @@ def _parse_agendaitem_dnro(agendaitem_soup):
 
     return dnro
 
-def _parse_agendaitem_subject(agendaitem_soup):
-    indexed_subject = agendaitem_soup.html.body("p", {"class": "Asiaotsikko"})[0].text
-    match = re.match(r"^(\d+)[\s\xa0\xad]+", indexed_subject)
-    index = int(match.group(1))
-    subject = _trimws(indexed_subject[match.end():])
-    return index, subject
+def _parse_agendaitem_subject(agendaitem_soup, number):
+    for p in agendaitem_soup.html.body("p"):
+        text = _trimws(p.text)
+        match = re.match(r"%d " % number, text)
+        if match:
+            return text[match.end():]
+    return None
 
 def _parse_agendaitem(agendaitem_filepath):
     agendaitem_soup = _make_soup(agendaitem_filepath)
 
-    index, subject = _parse_agendaitem_subject(agendaitem_soup)
+    agendaitem_filename = os.path.basename(agendaitem_filepath)
+    number = int(re.match(r"htmtxt([0-9]+)\.htm", agendaitem_filename).group(1))
+
+    subject = _parse_agendaitem_subject(agendaitem_soup, number)
     dnro = _parse_agendaitem_dnro(agendaitem_soup)
     preparers = _parse_agendaitem_preparers(agendaitem_soup)
     resolution = _parse_agendaitem_resolution(agendaitem_soup)
 
     return {
-        "index": index,
+        "number": number,
         "dnro": dnro,
         "preparers": preparers,
         "subject": subject,
