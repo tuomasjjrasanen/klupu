@@ -19,24 +19,30 @@ from __future__ import print_function
 from __future__ import division
 from __future__ import absolute_import
 
+import argparse
 import locale
-import sys
 
 import klupung
 import klupung.models
 
-if len(sys.argv) != 3:
-    print("invalid number of arguments", file=sys.stderr)
-    print("Usage: %s ABBREVIATION NAME" % sys.argv[0], file=sys.stderr)
-    sys.exit(1)
+arg_parser = argparse.ArgumentParser(
+    description="Insert policymaker models to the database.")
+
+arg_parser.add_argument("db_uri", metavar="DB_URI",
+                        help="database URI, e.g. 'sqlite:///klupung.db'")
+arg_parser.add_argument("abbreviation", metavar="ABBREVIATION",
+                        help="policymaker abbreviation")
+arg_parser.add_argument("name", metavar="NAME", help="policymaker name")
+
+args = arg_parser.parse_args()
 
 encoding = locale.getpreferredencoding()
 
-app = klupung.create_app("sqlite:////tmp/klupung.db")
+app = klupung.create_app(args.db_uri)
 app.test_request_context().push()
 
-abbreviation = unicode(sys.argv[1].decode(encoding))
-name = unicode(sys.argv[2].decode(encoding))
+abbreviation = unicode(args.abbreviation.decode(encoding))
+name = unicode(args.name.decode(encoding))
 
 p = klupung.models.Policymaker(abbreviation, name)
 

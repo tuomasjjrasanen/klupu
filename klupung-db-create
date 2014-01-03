@@ -16,7 +16,21 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import print_function
+from __future__ import division
+from __future__ import absolute_import
+
+import argparse
+
 import klupung
 
-app = klupung.create_app("sqlite:////tmp/klupung.db")
+arg_parser = argparse.ArgumentParser(description="Create database.")
+
+arg_parser.add_argument("db_uri", metavar="DB_URI",
+                        help="database URI, e.g. 'sqlite:///klupung.db'")
+
+args = arg_parser.parse_args()
+
+app = klupung.create_app(args.db_uri)
+
 klupung.db.create_all(app=app)
