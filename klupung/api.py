@@ -169,7 +169,7 @@ def _get_meeting_resource(meeting):
 def _get_meeting_document_resource(meeting_document):
     return {
         "id"                 : meeting_document.id,
-        "last_modified_time" : None,
+        "last_modified_time" : str(meeting_document.publish_datetime),
         "meeting"            : _get_meeting_resource(meeting_document.meeting),
         "organisation"       : None,
         "origin_id"          : meeting_document.origin_id,
