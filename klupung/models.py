@@ -16,6 +16,39 @@
 
 import klupung
 
+class Category(klupung.db.Model):
+    __tablename__ = "category"
+
+    # Columns
+    id = klupung.db.Column(klupung.db.Integer,
+                           primary_key=True)
+    name = klupung.db.Column(klupung.db.String(100),
+                             nullable=False)
+    level = klupung.db.Column(klupung.db.Integer,
+                              nullable=False)
+    origin_id = klupung.db.Column(klupung.db.String(50),
+                                  nullable=False)
+    parent_id = klupung.db.Column(klupung.db.Integer,
+                                  klupung.db.ForeignKey("category.id"),
+                                  nullable=True) # Top-level category
+                                                 # does not have a
+                                                 # parent category.
+
+    # # Relationships
+    # parent = klupung.db.relationship("Category")
+
+    __table_args__ = (
+        klupung.db.UniqueConstraint("origin_id"),
+        )
+
+    def __init__(self,  name, origin_id, parent_id=None):
+        self.name = name
+        self.origin_id = origin_id
+        self.parent_id = parent_id
+        self.level = 0
+        if self.parent_id is not None:
+            self.level = klupung.models.Category.query.filter_by(id=parent_id).first().level + 1
+
 class Meeting(klupung.db.Model):
     __tablename__ = "meeting"
 
