@@ -16,26 +16,6 @@
 
 import klupung
 
-class Policymaker(klupung.db.Model):
-    __tablename__ = "policymaker"
-
-    # Columns
-    id = klupung.db.Column(klupung.db.Integer,
-                           primary_key=True)
-    abbreviation = klupung.db.Column(klupung.db.String(20),
-                                     unique=True,
-                                     nullable=False)
-    name = klupung.db.Column(klupung.db.String(50),
-                             unique=True,
-                             nullable=False)
-
-    # Relationships
-    meetings = klupung.db.relationship("Meeting")
-
-    def __init__(self, abbreviation, name):
-        self.abbreviation = abbreviation
-        self.name = name
-
 class Meeting(klupung.db.Model):
     __tablename__ = "meeting"
 
@@ -81,3 +61,23 @@ class MeetingDocument(klupung.db.Model):
         self.meeting_id = meeting_id
         self.origin_id = origin_id
         self.publish_datetime = publish_datetime
+
+class Policymaker(klupung.db.Model):
+    __tablename__ = "policymaker"
+
+    # Columns
+    id = klupung.db.Column(klupung.db.Integer,
+                           primary_key=True)
+    abbreviation = klupung.db.Column(klupung.db.String(20),
+                                     unique=True,
+                                     nullable=False)
+    name = klupung.db.Column(klupung.db.String(50),
+                             unique=True,
+                             nullable=False)
+
+    # Relationships
+    meetings = klupung.db.relationship("Meeting")
+
+    def __init__(self, abbreviation, name):
+        self.abbreviation = abbreviation
+        self.name = name
