@@ -140,6 +140,22 @@ def _jsonified_resource(model_class=None, get_resource=None, model_id=None, sort
 
     return flask.jsonify(**resource)
 
+def _get_category_resource(category):
+    parent_uri = None
+    if category.parent_id is not None:
+        parent_uri = flask.url_for("._category_route",
+                                   category_id=category.parent_id)
+
+    return {
+        "id": category.id,
+        "level": category.level,
+        "name": category.name,
+        "origin_id": category.origin_id,
+        "parent": parent_uri,
+        "resource_uri": flask.url_for("._category_route",
+                                      category_id=category.id),
+        }
+
 def _get_policymaker_resource(policymaker):
     return {
         "id"          : policymaker.id,
@@ -210,8 +226,12 @@ def _meeting_document_route(meeting_document_id=None):
         model_id=meeting_document_id)
 
 @v0.route("/category/")
-def _category_route():
-    return _jsonified_resource()
+@v0.route("/category/<int:category_id>")
+def _category_route(category_id=None):
+    return _jsonified_resource(
+        model_class=klupung.models.Category,
+        get_resource=_get_category_resource,
+        model_id=category_id)
 
 @v0.route("/video/")
 def _video_route():
