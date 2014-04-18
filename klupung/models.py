@@ -49,6 +49,41 @@ class Category(klupung.db.Model):
         if self.parent_id is not None:
             self.level = klupung.models.Category.query.filter_by(id=parent_id).first().level + 1
 
+class Issue(klupung.db.Model):
+    __tablename__ = "issue"
+
+    # Columns
+    id = klupung.db.Column(klupung.db.Integer,
+                           primary_key=True)
+    register_id = klupung.db.Column(klupung.db.String,
+                                    unique=True,
+                                    nullable=False)
+    subject = klupung.db.Column(klupung.db.String(500),
+                                nullable=False)
+    summary = klupung.db.Column(klupung.db.String(1000),
+                                nullable=False)
+    category_id = klupung.db.Column(klupung.db.Integer,
+                                    klupung.db.ForeignKey("category.id"),
+                                    nullable=False)
+    last_modified_time = klupung.db.Column(klupung.db.DateTime,
+                                           default=klupung.db.func.now(),
+                                           onupdate=klupung.db.func.now(),
+                                           nullable=False)
+    latest_decision_date = klupung.db.Column(klupung.db.DateTime)
+
+    # Relationships
+    category = klupung.db.relationship("Category")
+
+    __table_args__ = (
+        klupung.db.UniqueConstraint("register_id"),
+        )
+
+    def __init__(self, register_id, subject, summary, category_id):
+        self.register_id = register_id
+        self.subject = subject
+        self.summary = summary
+        self.category_id = category_id
+
 class Meeting(klupung.db.Model):
     __tablename__ = "meeting"
 
