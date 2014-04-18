@@ -156,6 +156,27 @@ def _get_category_resource(category):
                                       category_id=category.id),
         }
 
+def _get_issue_resource(issue):
+    return {
+        "category"            : flask.url_for("._category_route",
+                                              category_id=issue.category_id),
+        "category_name"       : issue.category.name,
+        "category_origin_id"  : issue.category.origin_id,
+        "districts"           : [],
+        "geometries"          : [],
+        "id"                  : issue.id,
+        "last_modified_time"  : "",
+        "latest_decision_date": "",
+        "reference_text"      : "",
+        "register_id"         : issue.register_id,
+        "slug"                : _slugify(issue.register_id),
+        "subject"             : issue.subject,
+        "summary"             : issue.summary,
+        "top_category_name"   : "",
+        "resource_uri"        : flask.url_for("._issue_route",
+                                              issue_id=issue.id),
+        }
+
 def _get_policymaker_resource(policymaker):
     return {
         "id"          : policymaker.id,
@@ -207,6 +228,16 @@ def _policymaker_route(policymaker_id=None):
         get_resource=_get_policymaker_resource,
         model_id=policymaker_id,
         sortable_fields=["name"])
+
+
+@v0.route("/issue/")
+@v0.route("/issue/<int:issue_id>/")
+def _issue_route(issue_id=None):
+    return _jsonified_resource(
+        model_class=klupung.models.Issue,
+        get_resource=_get_issue_resource,
+        model_id=issue_id,
+        sortable_fields=["last_modified_time", "latest_decision_date"])
 
 @v0.route("/meeting/")
 @v0.route("/meeting/<int:meeting_id>/")
