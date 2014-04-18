@@ -147,11 +147,11 @@ def _get_category_resource(category):
                                    category_id=category.parent_id)
 
     return {
-        "id": category.id,
-        "level": category.level,
-        "name": category.name,
-        "origin_id": category.origin_id,
-        "parent": parent_uri,
+        "id"          : category.id,
+        "level"       : category.level,
+        "name"        : category.name,
+        "origin_id"   : category.origin_id,
+        "parent"      : parent_uri,
         "resource_uri": flask.url_for("._category_route",
                                       category_id=category.id),
         }
