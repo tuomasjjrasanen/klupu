@@ -1,0 +1,99 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# KlupuNG
+# Copyright (C) 2014 Koodilehto Osk <http://koodilehto.fi>.
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+# Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program. If not, see <http://www.gnu.org/licenses/>.
+
+from __future__ import print_function
+from __future__ import division
+from __future__ import absolute_import
+
+import argparse
+import locale
+import os
+
+import klupung
+import klupung.models
+import klupung.ktweb
+
+def import_categories():
+    category = klupung.models.Category("Kaikki", "00")
+    klupung.db.session.add(category)
+    klupung.db.session.commit()
+
+def import_policymakers():
+    abbrevs = os.listdir("paatokset")
+    encoding = locale.getpreferredencoding()
+    for abbrev in [unicode(a.decode(encoding)) for a in abbrevs]:
+        policymaker = klupung.models.Policymaker(abbrev, abbrev)
+        klupung.db.session.add(policymaker)
+        klupung.db.session.commit()
+
+def import_meetingdoc(meetingdoc_dir):
+    if not klupung.ktweb.is_meetingdoc_dir(meetingdoc_dir):
+        arg_parser.error("%r is not a meeting document directory" %
+                         meetingdoc_dir)
+
+    print("parsing meeting document directory '%s'" % meetingdoc_dir)
+
+    meetingdoc = klupung.ktweb.parse_meetingdoc(meetingdoc_dir)
+    policymaker_abbrev = meetingdoc["policymaker_abbreviation"]
+    policymaker = klupung.models.Policymaker.query.filter_by(
+        abbreviation=policymaker_abbrev).first()
+
+    meeting_start_datetime = meetingdoc["start_datetime"]
+    meeting = klupung.models.Meeting.query.filter_by(
+        policymaker_id=policymaker.id,
+        start_datetime=meeting_start_datetime).first()
+    if meeting is None:
+        meeting = klupung.models.Meeting(meeting_start_datetime,
+                                         policymaker.id)
+        klupung.db.session.add(meeting)
+        klupung.db.session.commit()
+
+    meeting_document = klupung.models.MeetingDocument.query.filter_by(
+        origin_id=meetingdoc["origin_id"]).first()
+    if meeting_document is None:
+
+        meeting_document = klupung.models.MeetingDocument(
+            meetingdoc["origin_url"],
+            meeting.id,
+            meetingdoc["origin_id"],
+            meetingdoc["publish_datetime"])
+        klupung.db.session.add(meeting_document)
+        klupung.db.session.commit()
+
+def import_meetingdocs():
+    for dirpath, dirnames, _ in os.walk("paatokset"):
+        if len(dirpath.split("/")) == 4:
+            import_meetingdoc(dirpath)
+            del dirnames[:]
+
+arg_parser = argparse.ArgumentParser(description="Populate database.")
+
+arg_parser.add_argument("db_uri", metavar="DB_URI",
+                        help="database URI, e.g. 'sqlite:////path/to/db.sqlite3'")
+
+args = arg_parser.parse_args()
+
+app = klupung.create_app(args.db_uri)
+
+app.test_request_context().push()
+
+klupung.db.create_all(app=app)
+
+import_categories()
+import_policymakers()
+import_meetingdocs()
