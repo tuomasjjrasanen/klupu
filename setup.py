@@ -9,8 +9,9 @@ from distutils.core import setup
 setup(name='klupung',
       version='0.1.0',
       description='Klupu Next Generation',
-      author='Tuomas Räsänen',
-      author_email='tuomasjjrasanen@tjjr.fi',
+      long_description="Open Ahjo -compatible RESTful HTTP API server",
+      author='Koodilehto Osk',
+      author_email='klupung@koodilehto.fi',
       license='AGPLv3+',
       packages=['klupung'],
       scripts=[
@@ -19,4 +20,5 @@ setup(name='klupung',
         "bin/klupung-stupid-apiserver",
         ],
       platforms=['Linux'],
+      url="http://koodilehto.fi/projects/klupung",
 )
