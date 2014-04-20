@@ -16,6 +16,79 @@
 
 import klupung
 
+class AgendaItem(klupung.db.Model):
+    RESOLUTIONS = (
+        RESOLUTION_PASSED,
+        RESOLUTION_PASSED_VOTED,
+        RESOLUTION_PASSED_REVISED,
+        RESOLUTION_PASSED_MODIFIED,
+        RESOLUTION_REJECTED,
+        RESOLUTION_NOTED,
+        RESOLUTION_RETURNED,
+        RESOLUTION_REMOVED,
+        RESOLUTION_TABLED,
+        RESOLUTION_ELECTION,
+        ) = (
+        "PASSED_UNCHANGED",
+        "PASSED_VOTED",
+        "PASSED_REVISED",
+        "PASSED_MODIFIED",
+        "REJECTED",
+        "NOTED",
+        "RETURNED",
+        "REMOVED",
+        "TABLED",
+        "ELECTION"
+        )
+
+    __tablename__ = "agenda_item"
+
+    # Columns
+    id = klupung.db.Column(klupung.db.Integer,
+                           primary_key=True)
+    subject = klupung.db.Column(klupung.db.String(500),
+                                nullable=False)
+    issue_id = klupung.db.Column(klupung.db.Integer,
+                                 klupung.db.ForeignKey("issue.id"))
+    meeting_id = klupung.db.Column(klupung.db.Integer,
+                                   klupung.db.ForeignKey("meeting.id"),
+                                   nullable=False)
+    index = klupung.db.Column(klupung.db.Integer,
+                              nullable=False)
+    introducer = klupung.db.Column(klupung.db.String(100))
+    preparer = klupung.db.Column(klupung.db.String(100))
+    last_modified_time = klupung.db.Column(klupung.db.DateTime,
+                                           default=klupung.db.func.now(),
+                                           onupdate=klupung.db.func.now(),
+                                           nullable=False)
+    origin_last_modified_time = klupung.db.Column(klupung.db.DateTime,
+                                                  nullable=False)
+    permalink = klupung.db.Column(klupung.db.String(500),
+                                  nullable=False)
+    resolution = klupung.db.Column(klupung.db.Enum(*RESOLUTIONS),
+                                   nullable=False)
+
+    # Relationships
+    issue = klupung.db.relationship("Issue", backref="agenda_items")
+    meeting = klupung.db.relationship("Meeting", backref="agenda_items")
+
+    __table_args__ = (
+        klupung.db.CheckConstraint(index >= 0, name="check_index_positive"),
+        klupung.db.UniqueConstraint("meeting_id", "issue_id"),
+        klupung.db.UniqueConstraint("meeting_id", "index"),
+        )
+
+    def __init__(self, subject, issue_id, meeting_id, index, introducer,
+                 preparer, permalink, resolution):
+        self.subject = subject
+        self.issue_id = issue_id
+        self.meeting_id = meeting_id
+        self.index = index
+        self.introducer = introducer
+        self.preparer = preparer
+        self.permalink = permalink
+        self.resolution = resolution
+
 class Category(klupung.db.Model):
     __tablename__ = "category"
 

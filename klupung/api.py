@@ -140,6 +140,28 @@ def _jsonified_resource(model_class=None, get_resource=None, model_id=None, sort
 
     return flask.jsonify(**resource)
 
+def _get_agenda_item_resource(agenda_item):
+    return {
+        "attachments"                : [],
+        "classification_code"        : "",
+        "classification_description" : "",
+        "content"                    : agenda_item.content,
+        "from_minutes"               : True,
+        "id"                         : agenda_item.id,
+        "index"                      : agenda_item.index,
+        "introducer"                 : agenda_item.introducer,
+        "issue"                      : _get_issue_resource(agenda_item.issue),
+        "last_modified_time"         : agenda_item.last_modified_time,
+        "meeting"                    :  _get_meeting_resource(agenda_item.meeting),
+        "origin_last_modified_time"  : agenda_item.origin_last_modified_time,
+        "permalink"                  : agenda_item.permalink,
+        "preparer"                   : agenda_item.preparer,
+        "resolution"                 : agenda_item.resolution,
+        "resource_uri"               : flask.url_for("._agenda_item_route",
+                                                     agenda_item_id=agenda_item.id),
+        "subject"                    : agenda_item.subject,
+        }
+
 def _get_category_resource(category):
     parent_uri = None
     if category.parent_id is not None:
@@ -220,6 +242,18 @@ def _get_meeting_document_resource(meeting_document):
 
 v0 = flask.Blueprint("v0", __name__, url_prefix="/api/v0")
 
+@v0.route("/agenda_item/")
+@v0.route("/agenda_item/<int:agenda_item_id>/")
+def _agenda_item_route(agenda_item_id=None):
+    return _jsonified_resource(
+        model_class=klupung.models.AgendaItem,
+        get_resource=_get_agenda_item_resource,
+        model_id=agenda_item_id,
+        sortable_fields=["last_modified_time",
+                         "origin_last_modified_time",
+                         "meeting",
+                         "index"])
+
 @v0.route("/policymaker/")
 @v0.route("/policymaker/<int:policymaker_id>/")
 def _policymaker_route(policymaker_id=None):
@@ -228,7 +262,6 @@ def _policymaker_route(policymaker_id=None):
         get_resource=_get_policymaker_resource,
         model_id=policymaker_id,
         sortable_fields=["name"])
-
 
 @v0.route("/issue/")
 @v0.route("/issue/<int:issue_id>/")
