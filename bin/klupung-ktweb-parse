@@ -63,11 +63,10 @@ def import_meeting_document(meeting_document_dir):
         klupung.db.session.add(meeting)
         klupung.db.session.commit()
 
-    meeting_document = klupung.models.Meeting_Documentument.query.filter_by(
+    meeting_document = klupung.models.MeetingDocument.query.filter_by(
         origin_id=meeting_document["origin_id"]).first()
     if meeting_document is None:
-
-        meeting_document = klupung.models.Meeting_Documentument(
+        meeting_document = klupung.models.MeetingDocument(
             meeting_document["origin_url"],
             meeting.id,
             meeting_document["origin_id"],
