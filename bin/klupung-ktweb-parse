@@ -48,12 +48,12 @@ def import_meeting_document(meeting_document_dir):
 
     print("parsing meeting document directory '%s'" % meeting_document_dir)
 
-    meeting_document = klupung.ktweb.parse_meeting_document(meeting_document_dir)
-    policymaker_abbrev = meeting_document["policymaker_abbreviation"]
+    meeting_document_data = klupung.ktweb.parse_meeting_document(meeting_document_dir)
+    policymaker_abbrev = meeting_document_data["policymaker_abbreviation"]
     policymaker = klupung.models.Policymaker.query.filter_by(
         abbreviation=policymaker_abbrev).first()
 
-    meeting_start_datetime = meeting_document["start_datetime"]
+    meeting_start_datetime = meeting_document_data["start_datetime"]
     meeting = klupung.models.Meeting.query.filter_by(
         policymaker_id=policymaker.id,
         start_datetime=meeting_start_datetime).first()
@@ -64,13 +64,13 @@ def import_meeting_document(meeting_document_dir):
         klupung.db.session.commit()
 
     meeting_document = klupung.models.MeetingDocument.query.filter_by(
-        origin_id=meeting_document["origin_id"]).first()
+        origin_id=meeting_document_data["origin_id"]).first()
     if meeting_document is None:
         meeting_document = klupung.models.MeetingDocument(
-            meeting_document["origin_url"],
+            meeting_document_data["origin_url"],
             meeting.id,
-            meeting_document["origin_id"],
-            meeting_document["publish_datetime"])
+            meeting_document_data["origin_id"],
+            meeting_document_data["publish_datetime"])
         klupung.db.session.add(meeting_document)
         klupung.db.session.commit()
 
