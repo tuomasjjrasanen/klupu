@@ -36,7 +36,7 @@ import bs4
 
 _COVER_PAGE_FILENAME = "htmtxt0.htm"
 
-def is_meetingdoc_dir(dirpath):
+def is_meeting_document_dir(dirpath):
     for dirpath, dirnames, filenames in os.walk(dirpath):
         if not _COVER_PAGE_FILENAME in filenames:
             return False
@@ -93,13 +93,13 @@ def _download_page(url, encoding="utf-8"):
 
     return filepath, clean_soup
 
-def download_meetingdoc(meetingdoc_url, download_interval=1):
-    index_filepath, index_soup = _download_page(meetingdoc_url,
+def download_meeting_document(meeting_document_url, download_interval=1):
+    index_filepath, index_soup = _download_page(meeting_document_url,
                                                 encoding="iso-8859-1")
     last_download_time = time.time()
 
-    meetingdoc_dir = os.path.dirname(index_filepath)
-    _print_to_file(os.path.join(meetingdoc_dir, "origin_url"), meetingdoc_url)
+    meeting_document_dir = os.path.dirname(index_filepath)
+    _print_to_file(os.path.join(meeting_document_dir, "origin_url"), meeting_document_url)
 
     for tr in index_soup("table")[0]("tr"):
         a = tr("a")[0]
@@ -107,15 +107,15 @@ def download_meetingdoc(meetingdoc_url, download_interval=1):
         match = re.match(r"(.*)frmtxt(\d+)\.htm", href)
         if not match or match.group(2) == "9999":
             continue
-        agenda_item_url = urljoin(meetingdoc_url,
-                                 "%shtmtxt%s.htm" % (match.groups()))
+        agenda_item_url = urljoin(meeting_document_url,
+                                  "%shtmtxt%s.htm" % (match.groups()))
         pause = max(last_download_time - time.time() + download_interval, 0)
         time.sleep(pause)
         _download_page(agenda_item_url, encoding="windows-1252")
 
-    return meetingdoc_dir
+    return meeting_document_dir
 
-def query_meetingdoc_urls(url):
+def query_meeting_document_urls(url):
     response = urlopen(url)
     dirty_soup = bs4.BeautifulSoup(response, from_encoding="windows-1252")
     clean_soup = _cleanup_soup(dirty_soup)
@@ -197,12 +197,12 @@ def _parse_agenda_item(agenda_item_filepath):
         "preparers": preparers,
         "subject": subject,
         "resolution": resolution,
-    }
+        }
 
-def _parse_agenda_items(meetingdoc_dirpath):
+def _parse_agenda_items(meeting_document_dirpath):
     retval = []
 
-    agenda_item_filepath_pattern = os.path.join(meetingdoc_dirpath, "htmtxt*.htm")
+    agenda_item_filepath_pattern = os.path.join(meeting_document_dirpath, "htmtxt*.htm")
     for agenda_item_filepath in glob.iglob(agenda_item_filepath_pattern):
         if os.path.basename(agenda_item_filepath) == _COVER_PAGE_FILENAME:
             continue
@@ -213,11 +213,11 @@ def _parse_agenda_items(meetingdoc_dirpath):
 
 def _parse_start_datetime(text):
     pattern = r"(?P<weekday>[a-zA-Z]+)?" \
-              r"[ ]*" \
-              r"(?P<day>[0-9]{1,2})\.(?P<month>[0-9]{1,2})\.(?P<year>[0-9]{4})" \
-              r"[, ]+(?:kello|klo)[ ]*" \
-              r"(?P<hour>[0-9]{1,2})\.(?P<minute>[0-9]{2})" \
-              r".*"
+        r"[ ]*" \
+        r"(?P<day>[0-9]{1,2})\.(?P<month>[0-9]{1,2})\.(?P<year>[0-9]{4})" \
+        r"[, ]+(?:kello|klo)[ ]*" \
+        r"(?P<hour>[0-9]{1,2})\.(?P<minute>[0-9]{2})" \
+        r".*"
 
     match = re.match(pattern, text)
     if not match:
@@ -231,8 +231,8 @@ def _parse_start_datetime(text):
 
     return datetime.datetime(year, month, day, hour, minute)
 
-def _parse_cover_page(meetingdoc_dirpath):
-    cover_page_filepath = os.path.join(meetingdoc_dirpath, _COVER_PAGE_FILENAME)
+def _parse_cover_page(meeting_document_dirpath):
+    cover_page_filepath = os.path.join(meeting_document_dirpath, _COVER_PAGE_FILENAME)
     cover_page_soup = _make_soup(cover_page_filepath)
 
     # Find the meeting info marker. Datetimes and such are nearby...
@@ -260,8 +260,8 @@ def _parse_cover_page(meetingdoc_dirpath):
         # Fallback to bullet-proof method: get the start time from the
         # directory path. However, it is not as accurate because it is
         # often just a template value.
-        year = int(os.path.basename(os.path.dirname(meetingdoc_dirpath)))
-        dirname = os.path.basename(meetingdoc_dirpath)
+        year = int(os.path.basename(os.path.dirname(meeting_document_dirpath)))
+        dirname = os.path.basename(meeting_document_dirpath)
         day = int(dirname[:2])
         month = int(dirname[2:4])
         hour = int(dirname[4:6])
@@ -281,30 +281,30 @@ def _parse_cover_page(meetingdoc_dirpath):
     return {
         "start_datetime": start_datetime,
         "publish_datetime": publish_datetime,
-    }
+        }
 
-def parse_meetingdoc(meetingdoc_dirpath):
-    origin_url_filepath = os.path.join(meetingdoc_dirpath, "origin_url")
+def parse_meeting_document(meeting_document_dirpath):
+    origin_url_filepath = os.path.join(meeting_document_dirpath, "origin_url")
     if os.path.exists(origin_url_filepath):
         with open(origin_url_filepath) as f:
             origin_url = f.readline().strip()
     else:
         origin_url = ""
 
-    policymaker_dirpath = os.path.join(meetingdoc_dirpath, "..", "..")
+    policymaker_dirpath = os.path.join(meeting_document_dirpath, "..", "..")
     policymaker_absdirpath = os.path.abspath(policymaker_dirpath)
     policymaker_abbreviation = os.path.basename(policymaker_absdirpath)
 
-    origin_id = "/".join(meetingdoc_dirpath.split(os.path.sep)[-3:])
+    origin_id = "/".join(meeting_document_dirpath.split(os.path.sep)[-3:])
 
-    meetingdoc = {
+    meeting_document = {
         "policymaker_abbreviation": policymaker_abbreviation,
         "origin_url": origin_url,
         "origin_id": origin_id,
-    }
+        }
 
-    meetingdoc.update(_parse_cover_page(meetingdoc_dirpath))
+    meeting_document.update(_parse_cover_page(meeting_document_dirpath))
 
-    meetingdoc["agenda_items"] = _parse_agenda_items(meetingdoc_dirpath)
+    meeting_document["agenda_items"] = _parse_agenda_items(meeting_document_dirpath)
 
-    return meetingdoc
+    return meeting_document

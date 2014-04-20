@@ -41,19 +41,19 @@ def import_policymakers():
         klupung.db.session.add(policymaker)
         klupung.db.session.commit()
 
-def import_meetingdoc(meetingdoc_dir):
-    if not klupung.ktweb.is_meetingdoc_dir(meetingdoc_dir):
+def import_meeting_document(meeting_document_dir):
+    if not klupung.ktweb.is_meeting_document_dir(meeting_document_dir):
         arg_parser.error("%r is not a meeting document directory" %
-                         meetingdoc_dir)
+                         meeting_document_dir)
 
-    print("parsing meeting document directory '%s'" % meetingdoc_dir)
+    print("parsing meeting document directory '%s'" % meeting_document_dir)
 
-    meetingdoc = klupung.ktweb.parse_meetingdoc(meetingdoc_dir)
-    policymaker_abbrev = meetingdoc["policymaker_abbreviation"]
+    meeting_document = klupung.ktweb.parse_meeting_document(meeting_document_dir)
+    policymaker_abbrev = meeting_document["policymaker_abbreviation"]
     policymaker = klupung.models.Policymaker.query.filter_by(
         abbreviation=policymaker_abbrev).first()
 
-    meeting_start_datetime = meetingdoc["start_datetime"]
+    meeting_start_datetime = meeting_document["start_datetime"]
     meeting = klupung.models.Meeting.query.filter_by(
         policymaker_id=policymaker.id,
         start_datetime=meeting_start_datetime).first()
@@ -63,22 +63,22 @@ def import_meetingdoc(meetingdoc_dir):
         klupung.db.session.add(meeting)
         klupung.db.session.commit()
 
-    meeting_document = klupung.models.MeetingDocument.query.filter_by(
-        origin_id=meetingdoc["origin_id"]).first()
+    meeting_document = klupung.models.Meeting_Documentument.query.filter_by(
+        origin_id=meeting_document["origin_id"]).first()
     if meeting_document is None:
 
-        meeting_document = klupung.models.MeetingDocument(
-            meetingdoc["origin_url"],
+        meeting_document = klupung.models.Meeting_Documentument(
+            meeting_document["origin_url"],
             meeting.id,
-            meetingdoc["origin_id"],
-            meetingdoc["publish_datetime"])
+            meeting_document["origin_id"],
+            meeting_document["publish_datetime"])
         klupung.db.session.add(meeting_document)
         klupung.db.session.commit()
 
-def import_meetingdocs():
+def import_meeting_documents():
     for dirpath, dirnames, _ in os.walk("paatokset"):
         if len(dirpath.split("/")) == 4:
-            import_meetingdoc(dirpath)
+            import_meeting_document(dirpath)
             del dirnames[:]
 
 arg_parser = argparse.ArgumentParser(description="Populate database.")
@@ -96,4 +96,4 @@ klupung.db.create_all(app=app)
 
 import_categories()
 import_policymakers()
-import_meetingdocs()
+import_meeting_documents()
