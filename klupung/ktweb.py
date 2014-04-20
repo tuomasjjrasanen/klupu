@@ -107,11 +107,11 @@ def download_meetingdoc(meetingdoc_url, download_interval=1):
         match = re.match(r"(.*)frmtxt(\d+)\.htm", href)
         if not match or match.group(2) == "9999":
             continue
-        agendaitem_url = urljoin(meetingdoc_url,
+        agenda_item_url = urljoin(meetingdoc_url,
                                  "%shtmtxt%s.htm" % (match.groups()))
         pause = max(last_download_time - time.time() + download_interval, 0)
         time.sleep(pause)
-        _download_page(agendaitem_url, encoding="windows-1252")
+        _download_page(agenda_item_url, encoding="windows-1252")
 
     return meetingdoc_dir
 
@@ -135,24 +135,24 @@ _RE_WS = re.compile(r"[\s\xa0\xad]+")
 def _trimws(text):
     return _RE_WS.sub(" ", text).strip()
 
-def _parse_agendaitem_resolution(agendaitem_soup):
+def _parse_agenda_item_resolution(agenda_item_soup):
     resolution = None
-    for p in agendaitem_soup.html.body("p"):
+    for p in agenda_item_soup.html.body("p"):
         match = re.match(ur"^[\s\xa0\xad]*Päätös[\s\xa0\xad]+(.*)", p.text, re.DOTALL)
         if match:
             resolution = _trimws(match.group(1))
     return resolution
 
-def _parse_agendaitem_preparers(agendaitem_soup):
+def _parse_agenda_item_preparers(agenda_item_soup):
     preparers = []
-    for text in [_trimws(p.text) for p in agendaitem_soup("p")]:
+    for text in [_trimws(p.text) for p in agenda_item_soup("p")]:
         if text.startswith("Asian valmisteli"):
             preparers.extend(_RE_PERSON.findall(text))
             break
     return preparers
 
-def _parse_agendaitem_dnro(agendaitem_soup):
-    ps = agendaitem_soup.html.body("p")
+def _parse_agenda_item_dnro(agenda_item_soup):
+    ps = agenda_item_soup.html.body("p")
     dnros = []
     for text in [_trimws(p.text) for p in ps]:
         dnro_match = _RE_DNRO.match(text)
@@ -172,24 +172,24 @@ def _parse_agendaitem_dnro(agendaitem_soup):
 
     return dnro
 
-def _parse_agendaitem_subject(agendaitem_soup, number):
-    for p in agendaitem_soup.html.body("p"):
+def _parse_agenda_item_subject(agenda_item_soup, number):
+    for p in agenda_item_soup.html.body("p"):
         text = _trimws(p.text)
         match = re.match(r"%d " % number, text)
         if match:
             return text[match.end():]
     return None
 
-def _parse_agendaitem(agendaitem_filepath):
-    agendaitem_soup = _make_soup(agendaitem_filepath)
+def _parse_agenda_item(agenda_item_filepath):
+    agenda_item_soup = _make_soup(agenda_item_filepath)
 
-    agendaitem_filename = os.path.basename(agendaitem_filepath)
-    number = int(re.match(r"htmtxt([0-9]+)\.htm", agendaitem_filename).group(1))
+    agenda_item_filename = os.path.basename(agenda_item_filepath)
+    number = int(re.match(r"htmtxt([0-9]+)\.htm", agenda_item_filename).group(1))
 
-    subject = _parse_agendaitem_subject(agendaitem_soup, number)
-    dnro = _parse_agendaitem_dnro(agendaitem_soup)
-    preparers = _parse_agendaitem_preparers(agendaitem_soup)
-    resolution = _parse_agendaitem_resolution(agendaitem_soup)
+    subject = _parse_agenda_item_subject(agenda_item_soup, number)
+    dnro = _parse_agenda_item_dnro(agenda_item_soup)
+    preparers = _parse_agenda_item_preparers(agenda_item_soup)
+    resolution = _parse_agenda_item_resolution(agenda_item_soup)
 
     return {
         "number": number,
@@ -199,15 +199,15 @@ def _parse_agendaitem(agendaitem_filepath):
         "resolution": resolution,
     }
 
-def _parse_agendaitems(meetingdoc_dirpath):
+def _parse_agenda_items(meetingdoc_dirpath):
     retval = []
 
-    agendaitem_filepath_pattern = os.path.join(meetingdoc_dirpath, "htmtxt*.htm")
-    for agendaitem_filepath in glob.iglob(agendaitem_filepath_pattern):
-        if os.path.basename(agendaitem_filepath) == _COVER_PAGE_FILENAME:
+    agenda_item_filepath_pattern = os.path.join(meetingdoc_dirpath, "htmtxt*.htm")
+    for agenda_item_filepath in glob.iglob(agenda_item_filepath_pattern):
+        if os.path.basename(agenda_item_filepath) == _COVER_PAGE_FILENAME:
             continue
-        agendaitem = _parse_agendaitem(agendaitem_filepath)
-        retval.append(agendaitem)
+        agenda_item = _parse_agenda_item(agenda_item_filepath)
+        retval.append(agenda_item)
 
     return retval
 
@@ -305,6 +305,6 @@ def parse_meetingdoc(meetingdoc_dirpath):
 
     meetingdoc.update(_parse_cover_page(meetingdoc_dirpath))
 
-    meetingdoc["agendaitems"] = _parse_agendaitems(meetingdoc_dirpath)
+    meetingdoc["agenda_items"] = _parse_agenda_items(meetingdoc_dirpath)
 
     return meetingdoc
