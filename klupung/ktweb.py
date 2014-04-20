@@ -151,6 +151,14 @@ def _parse_agenda_item_preparers(agenda_item_soup):
             break
     return preparers
 
+def _parse_agenda_item_introducers(agenda_item_soup):
+    introducers = []
+    for text in [_trimws(p.text) for p in agenda_item_soup("p")]:
+        if text.startswith("Asian esitteli"):
+            introducers.extend(_RE_PERSON.findall(text))
+            break
+    return introducers
+
 def _parse_agenda_item_dnro(agenda_item_soup):
     ps = agenda_item_soup.html.body("p")
     dnros = []
@@ -189,12 +197,14 @@ def _parse_agenda_item(agenda_item_filepath):
     subject = _parse_agenda_item_subject(agenda_item_soup, number)
     dnro = _parse_agenda_item_dnro(agenda_item_soup)
     preparers = _parse_agenda_item_preparers(agenda_item_soup)
+    introducers = _parse_agenda_item_introducers(agenda_item_soup)
     resolution = _parse_agenda_item_resolution(agenda_item_soup)
 
     return {
         "number": number,
         "dnro": dnro,
         "preparers": preparers,
+        "introducers": introducers,
         "subject": subject,
         "resolution": resolution,
         }
