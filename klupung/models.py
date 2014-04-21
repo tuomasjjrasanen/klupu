@@ -302,8 +302,8 @@ class Policymaker(klupung.db.Model):
         )
 
     __table_args__ = (
-        klupung.db.Constraint("abbreviation"),
-        klupung.db.Constraint("name"),
+        klupung.db.UniqueConstraint("abbreviation"),
+        klupung.db.UniqueConstraint("name"),
         )
 
     def __init__(self, abbreviation, name):
