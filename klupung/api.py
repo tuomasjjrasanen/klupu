@@ -145,7 +145,7 @@ def _get_agenda_item_resource(agenda_item):
         "attachments"                : [],
         "classification_code"        : "",
         "classification_description" : "",
-        "content"                    : agenda_item.content,
+        "content"                    : [],
         "from_minutes"               : True,
         "id"                         : agenda_item.id,
         "index"                      : agenda_item.index,
