@@ -31,7 +31,6 @@ import klupung.ktweb
 def import_categories():
     category = klupung.models.Category("Kaikki", "00")
     klupung.db.session.add(category)
-    klupung.db.session.commit()
 
 def import_policymakers():
     abbrevs = os.listdir("paatokset")
@@ -39,20 +38,11 @@ def import_policymakers():
     for abbrev in [unicode(a.decode(encoding)) for a in abbrevs]:
         policymaker = klupung.models.Policymaker(abbrev, abbrev)
         klupung.db.session.add(policymaker)
-        klupung.db.session.commit()
 
-def import_meeting_document(meeting_document_dir):
-    if not klupung.ktweb.is_meeting_document_dir(meeting_document_dir):
-        arg_parser.error("%r is not a meeting document directory" %
-                         meeting_document_dir)
-
-    print("parsing meeting document directory '%s'" % meeting_document_dir)
-
-    meeting_document_data = klupung.ktweb.parse_meeting_document(meeting_document_dir)
-    policymaker_abbrev = meeting_document_data["policymaker_abbreviation"]
+def import_meeting(meeting_document_data):
     policymaker = klupung.models.Policymaker.query.filter_by(
-        abbreviation=policymaker_abbrev).first()
-
+        abbreviation=meeting_document_data["policymaker_abbreviation"],
+        ).first()
     meeting_start_datetime = meeting_document_data["start_datetime"]
     meeting = klupung.models.Meeting.query.filter_by(
         policymaker_id=policymaker.id,
@@ -61,8 +51,9 @@ def import_meeting_document(meeting_document_dir):
         meeting = klupung.models.Meeting(meeting_start_datetime,
                                          policymaker.id)
         klupung.db.session.add(meeting)
-        klupung.db.session.commit()
+    return meeting
 
+def import_meeting_document(meeting_document_data, meeting):
     meeting_document = klupung.models.MeetingDocument.query.filter_by(
         origin_id=meeting_document_data["origin_id"]).first()
     if meeting_document is None:
@@ -72,57 +63,68 @@ def import_meeting_document(meeting_document_dir):
             meeting_document_data["origin_id"],
             meeting_document_data["publish_datetime"])
         klupung.db.session.add(meeting_document)
+
+def import_agenda_item(meeting_document_data, agenda_item_data, meeting):
+    agenda_item = klupung.models.AgendaItem.query.filter_by(
+        meeting_id=meeting.id,
+        index=agenda_item_data["number"]).first()
+    if agenda_item is None:
+        issue = klupung.models.Issue.query.filter_by(
+            register_id=agenda_item_data["dnro"]).first()
+        if issue is None and agenda_item_data["dnro"] is not None:
+            category = klupung.models.Category.query.filter_by(
+                origin_id="00").first()
+            issue = klupung.models.Issue(
+                agenda_item_data["dnro"],
+                agenda_item_data["subject"],
+                agenda_item_data["subject"],
+                category.id)
+            klupung.db.session.add(issue)
+        agenda_item = klupung.models.AgendaItem(
+            agenda_item_data["subject"],
+            issue.id if issue is not None else None,
+            meeting.id,
+            agenda_item_data["number"],
+            ", ".join(agenda_item_data["introducers"]),
+            ", ".join(agenda_item_data["preparers"]),
+            "permalink",
+            klupung.models.AgendaItem.RESOLUTION_PASSED,
+            meeting_document_data["publish_datetime"])
+        klupung.db.session.add(agenda_item)
+
+if __name__ == "__main__":
+    arg_parser = argparse.ArgumentParser(description="Populate database.")
+
+    arg_parser.add_argument("db_uri", metavar="DB_URI",
+                            help="database URI, e.g. 'sqlite:////path/to/db.sqlite3'")
+    args = arg_parser.parse_args()
+
+    app = klupung.create_app(args.db_uri)
+
+    app.test_request_context().push()
+
+    klupung.db.create_all(app=app)
+
+    import_categories()
+    import_policymakers()
+    klupung.db.session.commit()
+
+    for dirpath, dirnames, _ in os.walk("paatokset"):
+
+        if len(dirpath.split("/")) != 4:
+            # Ignore all but potential meeting doc dirs.
+            continue
+
+        meeting_document_data = klupung.ktweb.parse_meeting_document(dirpath)
+
+        meeting = import_meeting(meeting_document_data)
         klupung.db.session.commit()
 
-    for agenda_item_data in meeting_document_data["agenda_items"]:
-        agenda_item = klupung.models.AgendaItem.query.filter_by(
-            meeting_id=meeting.id,
-            index=agenda_item_data["number"]).first()
-        if agenda_item is None:
-            issue = klupung.models.Issue.query.filter_by(
-                register_id=agenda_item_data["dnro"]).first()
-            if issue is None and agenda_item_data["dnro"] is not None:
-                category = klupung.models.Category.query.filter_by(
-                    origin_id="00").first()
-                issue = klupung.models.Issue(
-                    agenda_item_data["dnro"],
-                    agenda_item_data["subject"],
-                    agenda_item_data["subject"],
-                    category.id)
-                klupung.db.session.add(issue)
-                klupung.db.session.commit()
-            agenda_item = klupung.models.AgendaItem(
-                agenda_item_data["subject"],
-                issue.id if issue is not None else None,
-                meeting.id,
-                agenda_item_data["number"],
-                ", ".join(agenda_item_data["introducers"]),
-                ", ".join(agenda_item_data["preparers"]),
-                meeting_document_data["publish_datetime"],
-                "permalink",
-                klupung.models.AgendaItem.RESOLUTION_PASSED)
-            klupung.db.session.add(agenda_item)
+        import_meeting_document(meeting_document_data, meeting)
+        klupung.db.session.commit()
+
+        for agenda_item_data in meeting_document_data["agenda_items"]:
+            import_agenda_item(meeting_document_data, agenda_item_data, meeting)
             klupung.db.session.commit()
 
-def import_meeting_documents():
-    for dirpath, dirnames, _ in os.walk("paatokset"):
-        if len(dirpath.split("/")) == 4:
-            import_meeting_document(dirpath)
-            del dirnames[:]
-
-arg_parser = argparse.ArgumentParser(description="Populate database.")
-
-arg_parser.add_argument("db_uri", metavar="DB_URI",
-                        help="database URI, e.g. 'sqlite:////path/to/db.sqlite3'")
-
-args = arg_parser.parse_args()
-
-app = klupung.create_app(args.db_uri)
-
-app.test_request_context().push()
-
-klupung.db.create_all(app=app)
-
-import_categories()
-import_policymakers()
-import_meeting_documents()
+        del dirnames[:]
