@@ -44,33 +44,61 @@ class AgendaItem(klupung.db.Model):
     __tablename__ = "agenda_item"
 
     # Columns
-    id = klupung.db.Column(klupung.db.Integer,
-                           primary_key=True)
-    subject = klupung.db.Column(klupung.db.String(500),
-                                nullable=False)
-    issue_id = klupung.db.Column(klupung.db.Integer,
-                                 klupung.db.ForeignKey("issue.id"))
-    meeting_id = klupung.db.Column(klupung.db.Integer,
-                                   klupung.db.ForeignKey("meeting.id"),
-                                   nullable=False)
-    index = klupung.db.Column(klupung.db.Integer,
-                              nullable=False)
-    introducer = klupung.db.Column(klupung.db.String(100))
-    preparer = klupung.db.Column(klupung.db.String(100))
-    last_modified_time = klupung.db.Column(klupung.db.DateTime,
-                                           default=klupung.db.func.now(),
-                                           onupdate=klupung.db.func.now(),
-                                           nullable=False)
-    origin_last_modified_time = klupung.db.Column(klupung.db.DateTime,
-                                                  nullable=False)
-    permalink = klupung.db.Column(klupung.db.String(500),
-                                  nullable=False)
-    resolution = klupung.db.Column(klupung.db.Enum(*RESOLUTIONS),
-                                   nullable=False)
+    id = klupung.db.Column(
+        klupung.db.Integer,
+        primary_key=True,
+        )
+    subject = klupung.db.Column(
+        klupung.db.String(500),
+        nullable=False,
+        )
+    issue_id = klupung.db.Column(
+        klupung.db.Integer,
+        klupung.db.ForeignKey("issue.id"),
+        )
+    meeting_id = klupung.db.Column(
+        klupung.db.Integer,
+        klupung.db.ForeignKey("meeting.id"),
+        nullable=False,
+        )
+    index = klupung.db.Column(
+        klupung.db.Integer,
+        nullable=False,
+        )
+    introducer = klupung.db.Column(
+        klupung.db.String(100),
+        )
+    preparer = klupung.db.Column(
+        klupung.db.String(100),
+        )
+    last_modified_time = klupung.db.Column(
+        klupung.db.DateTime,
+        default=klupung.db.func.now(),
+        onupdate=klupung.db.func.now(),
+        nullable=False,
+        )
+    origin_last_modified_time = klupung.db.Column(
+        klupung.db.DateTime,
+        nullable=False,
+        )
+    permalink = klupung.db.Column(
+        klupung.db.String(500),
+        nullable=False,
+        )
+    resolution = klupung.db.Column(
+        klupung.db.Enum(*RESOLUTIONS),
+        nullable=False,
+        )
 
     # Relationships
-    issue = klupung.db.relationship("Issue", backref="agenda_items")
-    meeting = klupung.db.relationship("Meeting", backref="agenda_items")
+    issue = klupung.db.relationship(
+        "Issue",
+        backref="agenda_items",
+        )
+    meeting = klupung.db.relationship(
+        "Meeting",
+        backref="agenda_items",
+        )
 
     __table_args__ = (
         klupung.db.CheckConstraint(index >= 0, name="check_index_positive"),
@@ -93,22 +121,28 @@ class Category(klupung.db.Model):
     __tablename__ = "category"
 
     # Columns
-    id = klupung.db.Column(klupung.db.Integer,
-                           primary_key=True)
-    name = klupung.db.Column(klupung.db.String(100),
-                             nullable=False)
-    level = klupung.db.Column(klupung.db.Integer,
-                              nullable=False)
-    origin_id = klupung.db.Column(klupung.db.String(50),
-                                  nullable=False)
-    parent_id = klupung.db.Column(klupung.db.Integer,
-                                  klupung.db.ForeignKey("category.id"),
-                                  nullable=True) # Top-level category
-                                                 # does not have a
-                                                 # parent category.
-
-    # # Relationships
-    # parent = klupung.db.relationship("Category")
+    id = klupung.db.Column(
+        klupung.db.Integer,
+        primary_key=True,
+        )
+    name = klupung.db.Column(
+        klupung.db.String(100),
+        nullable=False,
+        )
+    level = klupung.db.Column(
+        klupung.db.Integer,
+        nullable=False,
+        )
+    origin_id = klupung.db.Column(
+        klupung.db.String(50),
+        nullable=False,
+        )
+    parent_id = klupung.db.Column(
+        klupung.db.Integer,
+        klupung.db.ForeignKey("category.id"),
+        nullable=True, # Top-level category does not have a parent
+                       # category.
+        )
 
     __table_args__ = (
         klupung.db.UniqueConstraint("origin_id"),
@@ -126,25 +160,41 @@ class Issue(klupung.db.Model):
     __tablename__ = "issue"
 
     # Columns
-    id = klupung.db.Column(klupung.db.Integer,
-                           primary_key=True)
-    register_id = klupung.db.Column(klupung.db.String,
-                                    nullable=False)
-    subject = klupung.db.Column(klupung.db.String(500),
-                                nullable=False)
-    summary = klupung.db.Column(klupung.db.String(1000),
-                                nullable=False)
-    category_id = klupung.db.Column(klupung.db.Integer,
-                                    klupung.db.ForeignKey("category.id"),
-                                    nullable=False)
-    last_modified_time = klupung.db.Column(klupung.db.DateTime,
-                                           default=klupung.db.func.now(),
-                                           onupdate=klupung.db.func.now(),
-                                           nullable=False)
-    latest_decision_date = klupung.db.Column(klupung.db.DateTime)
+    id = klupung.db.Column(
+        klupung.db.Integer,
+        primary_key=True,
+        )
+    register_id = klupung.db.Column(
+        klupung.db.String,
+        nullable=False,
+        )
+    subject = klupung.db.Column(
+        klupung.db.String(500),
+        nullable=False,
+        )
+    summary = klupung.db.Column(
+        klupung.db.String(1000),
+        nullable=False,
+        )
+    category_id = klupung.db.Column(
+        klupung.db.Integer,
+        klupung.db.ForeignKey("category.id"),
+        nullable=False,
+        )
+    last_modified_time = klupung.db.Column(
+        klupung.db.DateTime,
+        default=klupung.db.func.now(),
+        onupdate=klupung.db.func.now(),
+        nullable=False,
+        )
+    latest_decision_date = klupung.db.Column(
+        klupung.db.DateTime,
+        )
 
     # Relationships
-    category = klupung.db.relationship("Category")
+    category = klupung.db.relationship(
+        "Category",
+        )
 
     __table_args__ = (
         klupung.db.UniqueConstraint("register_id"),
@@ -160,17 +210,28 @@ class Meeting(klupung.db.Model):
     __tablename__ = "meeting"
 
     # Columns
-    id = klupung.db.Column(klupung.db.Integer,
-                           primary_key=True)
-    start_datetime = klupung.db.Column(klupung.db.DateTime,
-                                       nullable=False)
-    policymaker_id = klupung.db.Column(klupung.db.Integer,
-                                       klupung.db.ForeignKey("policymaker.id"),
-                                       nullable=False)
+    id = klupung.db.Column(
+        klupung.db.Integer,
+        primary_key=True,
+        )
+    start_datetime = klupung.db.Column(
+        klupung.db.DateTime,
+        nullable=False,
+        )
+    policymaker_id = klupung.db.Column(
+        klupung.db.Integer,
+        klupung.db.ForeignKey("policymaker.id"),
+        nullable=False,
+        )
 
     # Relationships
-    meeting_documents = klupung.db.relationship("MeetingDocument")
-    policymaker = klupung.db.relationship("Policymaker")
+    meeting_documents = klupung.db.relationship(
+        "MeetingDocument",
+        )
+    policymaker = klupung.db.relationship(
+        "Policymaker",
+        )
+
     __table_args__ = (
         klupung.db.UniqueConstraint("policymaker_id", "start_datetime"),
         )
@@ -183,17 +244,30 @@ class MeetingDocument(klupung.db.Model):
     __tablename__ = "meeting_document"
 
     # Columns
-    id = klupung.db.Column(klupung.db.Integer, primary_key=True)
-    meeting_id = klupung.db.Column(klupung.db.Integer,
-                                   klupung.db.ForeignKey("meeting.id"),
-                                   nullable=False)
-    origin_url = klupung.db.Column(klupung.db.Text)
-    origin_id = klupung.db.Column(klupung.db.String(40),
-                                  nullable=False)
-    publish_datetime = klupung.db.Column(klupung.db.DateTime)
+    id = klupung.db.Column(
+        klupung.db.Integer,
+        primary_key=True,
+        )
+    meeting_id = klupung.db.Column(
+        klupung.db.Integer,
+        klupung.db.ForeignKey("meeting.id"),
+        nullable=False,
+        )
+    origin_url = klupung.db.Column(
+        klupung.db.Text,
+        )
+    origin_id = klupung.db.Column(
+        klupung.db.String(40),
+        nullable=False,
+        )
+    publish_datetime = klupung.db.Column(
+        klupung.db.DateTime,
+        )
 
     # Relationships
-    meeting = klupung.db.relationship("Meeting")
+    meeting = klupung.db.relationship(
+        "Meeting",
+        )
 
     __table_args__ = (
         klupung.db.UniqueConstraint("origin_id"),
@@ -209,15 +283,23 @@ class Policymaker(klupung.db.Model):
     __tablename__ = "policymaker"
 
     # Columns
-    id = klupung.db.Column(klupung.db.Integer,
-                           primary_key=True)
-    abbreviation = klupung.db.Column(klupung.db.String(20),
-                                     nullable=False)
-    name = klupung.db.Column(klupung.db.String(50),
-                             nullable=False)
+    id = klupung.db.Column(
+        klupung.db.Integer,
+        primary_key=True,
+        )
+    abbreviation = klupung.db.Column(
+        klupung.db.String(20),
+        nullable=False,
+        )
+    name = klupung.db.Column(
+        klupung.db.String(50),
+        nullable=False,
+        )
 
     # Relationships
-    meetings = klupung.db.relationship("Meeting")
+    meetings = klupung.db.relationship(
+        "Meeting",
+        )
 
     __table_args__ = (
         klupung.db.Constraint("abbreviation"),
