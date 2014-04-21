@@ -78,7 +78,7 @@ class AgendaItem(klupung.db.Model):
         )
 
     def __init__(self, subject, issue_id, meeting_id, index, introducer,
-                 preparer, permalink, resolution):
+                 preparer, permalink, resolution, origin_last_modified_time):
         self.subject = subject
         self.issue_id = issue_id
         self.meeting_id = meeting_id
@@ -87,6 +87,7 @@ class AgendaItem(klupung.db.Model):
         self.preparer = preparer
         self.permalink = permalink
         self.resolution = resolution
+        self.origin_last_modified_time = origin_last_modified_time
 
 class Category(klupung.db.Model):
     __tablename__ = "category"
