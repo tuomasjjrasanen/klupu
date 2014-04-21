@@ -74,6 +74,36 @@ def import_meeting_document(meeting_document_dir):
         klupung.db.session.add(meeting_document)
         klupung.db.session.commit()
 
+    for agenda_item_data in meeting_document_data["agenda_items"]:
+        agenda_item = klupung.models.AgendaItem.query.filter_by(
+            meeting_id=meeting.id,
+            index=agenda_item_data["number"]).first()
+        if agenda_item is None:
+            issue = klupung.models.Issue.query.filter_by(
+                register_id=agenda_item_data["dnro"]).first()
+            if issue is None and agenda_item_data["dnro"] is not None:
+                category = klupung.models.Category.query.filter_by(
+                    origin_id="00").first()
+                issue = klupung.models.Issue(
+                    agenda_item_data["dnro"],
+                    agenda_item_data["subject"],
+                    agenda_item_data["subject"],
+                    category.id)
+                klupung.db.session.add(issue)
+                klupung.db.session.commit()
+            agenda_item = klupung.models.AgendaItem(
+                agenda_item_data["subject"],
+                issue.id if issue is not None else None,
+                meeting.id,
+                agenda_item_data["number"],
+                ", ".join(agenda_item_data["introducers"]),
+                ", ".join(agenda_item_data["preparers"]),
+                meeting_document_data["publish_datetime"],
+                "permalink",
+                klupung.models.AgendaItem.RESOLUTION_PASSED)
+            klupung.db.session.add(agenda_item)
+            klupung.db.session.commit()
+
 def import_meeting_documents():
     for dirpath, dirnames, _ in os.walk("paatokset"):
         if len(dirpath.split("/")) == 4:
