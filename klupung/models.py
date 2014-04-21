@@ -129,7 +129,6 @@ class Issue(klupung.db.Model):
     id = klupung.db.Column(klupung.db.Integer,
                            primary_key=True)
     register_id = klupung.db.Column(klupung.db.String,
-                                    unique=True,
                                     nullable=False)
     subject = klupung.db.Column(klupung.db.String(500),
                                 nullable=False)
@@ -190,12 +189,15 @@ class MeetingDocument(klupung.db.Model):
                                    nullable=False)
     origin_url = klupung.db.Column(klupung.db.Text)
     origin_id = klupung.db.Column(klupung.db.String(40),
-                                  unique=True,
                                   nullable=False)
     publish_datetime = klupung.db.Column(klupung.db.DateTime)
 
     # Relationships
     meeting = klupung.db.relationship("Meeting")
+
+    __table_args__ = (
+        klupung.db.UniqueConstraint("origin_id"),
+        )
 
     def __init__(self, origin_url, meeting_id, origin_id, publish_datetime):
         self.origin_url = origin_url
@@ -210,14 +212,17 @@ class Policymaker(klupung.db.Model):
     id = klupung.db.Column(klupung.db.Integer,
                            primary_key=True)
     abbreviation = klupung.db.Column(klupung.db.String(20),
-                                     unique=True,
                                      nullable=False)
     name = klupung.db.Column(klupung.db.String(50),
-                             unique=True,
                              nullable=False)
 
     # Relationships
     meetings = klupung.db.relationship("Meeting")
+
+    __table_args__ = (
+        klupung.db.Constraint("abbreviation"),
+        klupung.db.Constraint("name"),
+        )
 
     def __init__(self, abbreviation, name):
         self.abbreviation = abbreviation
