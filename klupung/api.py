@@ -150,7 +150,7 @@ def _get_agenda_item_resource(agenda_item):
         "id"                         : agenda_item.id,
         "index"                      : agenda_item.index,
         "introducer"                 : agenda_item.introducer,
-        "issue"                      : _get_issue_resource(agenda_item.issue),
+        "issue"                      : _get_issue_resource(agenda_item.issue) if agenda_item.issue else {},
         "last_modified_time"         : agenda_item.last_modified_time,
         "meeting"                    :  _get_meeting_resource(agenda_item.meeting),
         "origin_last_modified_time"  : agenda_item.origin_last_modified_time,
