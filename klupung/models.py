@@ -74,7 +74,6 @@ class AgendaItem(klupung.db.Model):
 
     __table_args__ = (
         klupung.db.CheckConstraint(index >= 0, name="check_index_positive"),
-        klupung.db.UniqueConstraint("meeting_id", "issue_id"),
         klupung.db.UniqueConstraint("meeting_id", "index"),
         )
 
