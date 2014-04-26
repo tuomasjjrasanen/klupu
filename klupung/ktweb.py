@@ -88,18 +88,18 @@ def _download_clean_soup(url, encoding):
     clean_soup = _cleanup_soup(dirty_soup)
     return clean_soup
 
-def _download_page(url, encoding="utf-8"):
-    clean_soup = _download_clean_soup(url, encoding)
-
+def _download_page(url, encoding="utf-8", force=False):
     filepath = os.path.normpath("." + urlsplit(url).path)
+    if force or not os.path.exists(filepath):
+        clean_soup = _download_clean_soup(url, encoding)
+        _print_to_file(filepath, clean_soup)
+        return filepath, clean_soup
+    return filepath, None
 
-    _print_to_file(filepath, clean_soup)
-
-    return filepath, clean_soup
-
-def download_meeting_document(meeting_document_url, download_interval=1):
+def download_meeting_document(meeting_document_url, download_interval=1, force=False):
     index_filepath, index_soup = _download_page(meeting_document_url,
-                                                encoding="iso-8859-1")
+                                                encoding="iso-8859-1",
+                                                force=True) # Refresh indices always.
     last_download_time = time.time()
 
     meeting_document_dir = os.path.dirname(index_filepath)
@@ -115,7 +115,7 @@ def download_meeting_document(meeting_document_url, download_interval=1):
                                   "%shtmtxt%s.htm" % (match.groups()))
         pause = max(last_download_time - time.time() + download_interval, 0)
         time.sleep(pause)
-        _download_page(agenda_item_url, encoding="windows-1252")
+        _download_page(agenda_item_url, encoding="windows-1252", force=force)
 
     return meeting_document_dir
 
@@ -130,11 +130,12 @@ def query_meeting_document_urls(url):
 
     return retval
 
-def download_policymaker(policymaker_url, download_interval=1):
+def download_policymaker(policymaker_url, download_interval=1, force=False):
     meeting_document_urls = query_meeting_document_urls(policymaker_url)
     for meeting_document_url in meeting_document_urls:
         meeting_document_dir = download_meeting_document(meeting_document_url,
-                                                         download_interval)
+                                                         download_interval,
+                                                         force)
         yield meeting_document_dir
 
 _RE_PERSON = re.compile(ur"([A-ZÖÄÅ][a-zöäå]*(?:-[A-ZÖÄÅ][a-zöäå]*)*(?: [A-ZÖÄÅ][a-zöäå]*(?:-[A-ZÖÄÅ][a-zöäå]*)*)+)")

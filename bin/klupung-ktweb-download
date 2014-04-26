@@ -32,7 +32,14 @@ arg_parser.add_argument(
     metavar="POLICYMAKER_URL",
     help="policymaker URL, e.g. http://www3.jkl.fi/paatokset/rakympltk09.htm")
 
+arg_parser.add_argument(
+    "--force",
+    action="store_true",
+    default=False,
+    help="download all documents, even if they already exist")
+
 args = arg_parser.parse_args()
 
-for meetingdoc_dir in klupung.ktweb.download_policymaker(args.policymaker_url):
+for meetingdoc_dir in klupung.ktweb.download_policymaker(args.policymaker_url,
+                                                         force=args.force):
     print(meetingdoc_dir)
