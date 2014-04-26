@@ -82,10 +82,14 @@ def _print_to_file(filepath, printable):
     with open(filepath, "w") as f:
         print(printable, file=f)
 
-def _download_page(url, encoding="utf-8"):
+def _download_clean_soup(url, encoding):
     response = urlopen(url)
     dirty_soup = bs4.BeautifulSoup(response, from_encoding=encoding)
     clean_soup = _cleanup_soup(dirty_soup)
+    return clean_soup
+
+def _download_page(url, encoding="utf-8"):
+    clean_soup = _download_clean_soup(url, encoding)
 
     filepath = os.path.normpath("." + urlsplit(url).path)
 
@@ -116,9 +120,7 @@ def download_meeting_document(meeting_document_url, download_interval=1):
     return meeting_document_dir
 
 def query_meeting_document_urls(url):
-    response = urlopen(url)
-    dirty_soup = bs4.BeautifulSoup(response, from_encoding="windows-1252")
-    clean_soup = _cleanup_soup(dirty_soup)
+    clean_soup = _download_clean_soup(url, "windows-1252")
 
     retval = []
     for h3 in clean_soup("h3"):
