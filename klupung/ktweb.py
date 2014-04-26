@@ -128,6 +128,13 @@ def query_meeting_document_urls(url):
 
     return retval
 
+def download_policymaker(policymaker_url, download_interval=1):
+    meeting_document_urls = query_meeting_document_urls(policymaker_url)
+    for meeting_document_url in meeting_document_urls:
+        meeting_document_dir = download_meeting_document(meeting_document_url,
+                                                         download_interval)
+        yield meeting_document_dir
+
 _RE_PERSON = re.compile(ur"([A-ZÖÄÅ][a-zöäå]*(?:-[A-ZÖÄÅ][a-zöäå]*)*(?: [A-ZÖÄÅ][a-zöäå]*(?:-[A-ZÖÄÅ][a-zöäå]*)*)+)")
 _RE_DNRO = re.compile(r"Dnro (\d+[\s\xa0\xad]?/\d+)")
 _RE_WS = re.compile(r"[\s\xa0\xad]+")

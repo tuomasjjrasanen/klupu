@@ -31,7 +31,5 @@ arg_parser.add_argument("policymaker_url", metavar="POLICYMAKER_URL",
 
 args = arg_parser.parse_args()
 
-meeting_document_urls = klupung.ktweb.query_meeting_document_urls(args.policymaker_url)
-for meeting_document_url in meeting_document_urls:
-    meeting_document_dir = klupung.ktweb.download_meeting_document(meeting_document_url)
+for meeting_document_dir in klupung.ktweb.download_policymaker(args.policymaker_url):
     print(meeting_document_dir)
