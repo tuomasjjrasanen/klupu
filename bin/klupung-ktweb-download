@@ -28,7 +28,8 @@ arg_parser = argparse.ArgumentParser(
     description="Download KTWeb meeting documents from given policymaker URLs")
 
 arg_parser.add_argument(
-    "policymaker_url",
+    "policymaker_urls",
+    nargs="+",
     metavar="POLICYMAKER_URL",
     help="policymaker URL, e.g. http://www3.jkl.fi/paatokset/rakympltk09.htm")
 
@@ -46,7 +47,8 @@ arg_parser.add_argument(
 
 args = arg_parser.parse_args()
 
-for meetingdoc_dir in klupung.ktweb.download_policymaker(args.policymaker_url,
-                                                         min_interval=args.min_request_interval,
-                                                         force=args.force):
-    print(meetingdoc_dir)
+for policymaker_url in args.policymaker_urls:
+    for meetingdoc_dir in klupung.ktweb.download_policymaker(policymaker_url,
+                                                             min_interval=args.min_request_interval,
+                                                             force=args.force):
+        print(meetingdoc_dir)
