@@ -82,25 +82,37 @@ def _print_to_file(filepath, printable):
     with open(filepath, "w") as f:
         print(printable, file=f)
 
-def _download_clean_soup(url, encoding):
+_last_download_time = None
+
+def _download_clean_soup(url, encoding="utf-8", min_interval=1):
+    global _last_download_time
+
+    if _last_download_time is not None:
+        pause = max(_last_download_time - time.time() + min_interval, 0)
+        time.sleep(pause)
+
     response = urlopen(url)
+    _last_download_time = time.time()
+
     dirty_soup = bs4.BeautifulSoup(response, from_encoding=encoding)
     clean_soup = _cleanup_soup(dirty_soup)
     return clean_soup
 
-def _download_page(url, encoding="utf-8", force=False):
+def _download_page(url, encoding="utf-8", force=False, min_interval=1):
     filepath = os.path.normpath("." + urlsplit(url).path)
     if force or not os.path.exists(filepath):
-        clean_soup = _download_clean_soup(url, encoding)
+        clean_soup = _download_clean_soup(url,
+                                          encoding=encoding,
+                                          min_interval=min_interval)
         _print_to_file(filepath, clean_soup)
         return filepath, clean_soup
     return filepath, None
 
-def download_meeting_document(meeting_document_url, download_interval=1, force=False):
+def download_meeting_document(meeting_document_url, min_interval=1, force=False):
     index_filepath, index_soup = _download_page(meeting_document_url,
                                                 encoding="iso-8859-1",
-                                                force=True) # Refresh indices always.
-    last_download_time = time.time()
+                                                force=True, # Refresh indices always.
+                                                min_interval=min_interval)
 
     meeting_document_dir = os.path.dirname(index_filepath)
     _print_to_file(os.path.join(meeting_document_dir, "origin_url"), meeting_document_url)
@@ -113,14 +125,12 @@ def download_meeting_document(meeting_document_url, download_interval=1, force=F
             continue
         agenda_item_url = urljoin(meeting_document_url,
                                   "%shtmtxt%s.htm" % (match.groups()))
-        pause = max(last_download_time - time.time() + download_interval, 0)
-        time.sleep(pause)
         _download_page(agenda_item_url, encoding="windows-1252", force=force)
 
     return meeting_document_dir
 
 def query_meeting_document_urls(url):
-    clean_soup = _download_clean_soup(url, "windows-1252")
+    clean_soup = _download_clean_soup(url, encoding="windows-1252")
 
     retval = []
     for h3 in clean_soup("h3"):
@@ -130,12 +140,12 @@ def query_meeting_document_urls(url):
 
     return retval
 
-def download_policymaker(policymaker_url, download_interval=1, force=False):
+def download_policymaker(policymaker_url, min_interval=1, force=False):
     meeting_document_urls = query_meeting_document_urls(policymaker_url)
     for meeting_document_url in meeting_document_urls:
         meeting_document_dir = download_meeting_document(meeting_document_url,
-                                                         download_interval,
-                                                         force)
+                                                         min_interval=min_interval,
+                                                         force=force)
         yield meeting_document_dir
 
 _RE_PERSON = re.compile(ur"([A-ZÖÄÅ][a-zöäå]*(?:-[A-ZÖÄÅ][a-zöäå]*)*(?: [A-ZÖÄÅ][a-zöäå]*(?:-[A-ZÖÄÅ][a-zöäå]*)*)+)")
