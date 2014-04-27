@@ -38,8 +38,15 @@ arg_parser.add_argument(
     default=False,
     help="download all documents, even if they already exist")
 
+arg_parser.add_argument(
+    "--min-request-interval",
+    type=float,
+    default=1.0,
+    help="minimum HTTP request interval in seconds, default=1.0")
+
 args = arg_parser.parse_args()
 
 for meetingdoc_dir in klupung.ktweb.download_policymaker(args.policymaker_url,
+                                                         min_interval=args.min_request_interval,
                                                          force=args.force):
     print(meetingdoc_dir)
