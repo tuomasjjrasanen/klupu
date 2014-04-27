@@ -21,6 +21,7 @@ from __future__ import division
 from __future__ import absolute_import
 
 import argparse
+import os.path
 
 import klupung.ktweb
 
@@ -45,10 +46,16 @@ arg_parser.add_argument(
     default=1.0,
     help="minimum HTTP request interval in seconds, default=1.0")
 
+arg_parser.add_argument(
+    "--download-dir",
+    default=os.path.abspath(os.path.curdir),
+    help="download all files and directories to this directory, default=%(default)s")
+
 args = arg_parser.parse_args()
 
 for policymaker_url in args.policymaker_urls:
     for meetingdoc_dir in klupung.ktweb.download_policymaker(policymaker_url,
                                                              min_interval=args.min_request_interval,
-                                                             force=args.force):
+                                                             force=args.force,
+                                                             download_dir=args.download_dir):
         print(meetingdoc_dir)

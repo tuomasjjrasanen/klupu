@@ -98,8 +98,8 @@ def _download_clean_soup(url, encoding="utf-8", min_interval=1):
     clean_soup = _cleanup_soup(dirty_soup)
     return clean_soup
 
-def _download_page(url, encoding="utf-8", force=False, min_interval=1):
-    filepath = os.path.normpath("." + urlsplit(url).path)
+def _download_page(url, encoding="utf-8", force=False, min_interval=1, download_dir=os.path.curdir):
+    filepath = os.path.normpath(download_dir + urlsplit(url).path)
     if force or not os.path.exists(filepath):
         clean_soup = _download_clean_soup(url,
                                           encoding=encoding,
@@ -108,11 +108,12 @@ def _download_page(url, encoding="utf-8", force=False, min_interval=1):
         return filepath, clean_soup
     return filepath, None
 
-def download_meeting_document(meeting_document_url, min_interval=1, force=False):
+def download_meeting_document(meeting_document_url, min_interval=1, force=False, download_dir=os.path.curdir):
     index_filepath, index_soup = _download_page(meeting_document_url,
                                                 encoding="iso-8859-1",
                                                 force=True, # Refresh indices always.
-                                                min_interval=min_interval)
+                                                min_interval=min_interval,
+                                                download_dir=download_dir)
 
     meeting_document_dir = os.path.dirname(index_filepath)
     _print_to_file(os.path.join(meeting_document_dir, "origin_url"), meeting_document_url)
@@ -125,7 +126,7 @@ def download_meeting_document(meeting_document_url, min_interval=1, force=False)
             continue
         agenda_item_url = urljoin(meeting_document_url,
                                   "%shtmtxt%s.htm" % (match.groups()))
-        _download_page(agenda_item_url, encoding="windows-1252", force=force)
+        _download_page(agenda_item_url, encoding="windows-1252", force=force, download_dir=download_dir)
 
     return meeting_document_dir
 
@@ -140,12 +141,13 @@ def query_meeting_document_urls(url):
 
     return retval
 
-def download_policymaker(policymaker_url, min_interval=1, force=False):
+def download_policymaker(policymaker_url, min_interval=1, force=False, download_dir=os.path.curdir):
     meeting_document_urls = query_meeting_document_urls(policymaker_url)
     for meeting_document_url in meeting_document_urls:
         meeting_document_dir = download_meeting_document(meeting_document_url,
                                                          min_interval=min_interval,
-                                                         force=force)
+                                                         force=force,
+                                                         download_dir=download_dir)
         yield meeting_document_dir
 
 _RE_PERSON = re.compile(ur"([A-ZÖÄÅ][a-zöäå]*(?:-[A-ZÖÄÅ][a-zöäå]*)*(?: [A-ZÖÄÅ][a-zöäå]*(?:-[A-ZÖÄÅ][a-zöäå]*)*)+)")
