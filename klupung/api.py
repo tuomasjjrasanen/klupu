@@ -303,7 +303,7 @@ def _policymaker_route(policymaker_id):
         model_id=policymaker_id)
 
 @v0.route("/issue/")
-@auto.doc
+@auto.doc()
 def _issues_route():
     """Return a list of issues.
 
