@@ -25,6 +25,7 @@ import glob
 import os
 import os.path
 import re
+import tempfile
 import time
 
 from codecs import open
@@ -73,14 +74,38 @@ def _cleanup_soup(soup):
 def _print_to_file(filepath, printable):
     # Make the target directory with all the leading components, do not
     # care whether the the directory exists or not.
+    dirpath = os.path.dirname(filepath)
     try:
-        os.makedirs(os.path.dirname(filepath))
+        os.makedirs(dirpath)
     except OSError as e:
         if e.errno != errno.EEXIST:
             raise e
 
-    with open(filepath, "w") as f:
-        print(printable, file=f)
+    # Write the contents to a temporary file first, because the
+    # existence of the real filepath can be used as an indicator to not
+    # re-download and re-write the file again but just read its current
+    # value. Writing to a temporary file and then renaming it to its
+    # final name guarantees that the contents of the final path is
+    # always complete.
+    tmp_file = tempfile.NamedTemporaryFile(dir=dirpath, delete=False)
+    try:
+        print(printable, file=tmp_file)
+        tmp_file.close()
+    except:
+        # Something went wrong when writing to the file. Signal
+        # interrupted, fs failed, anything.
+        try:
+            tmp_file.close()
+        finally:
+            os.remove(tmp_file.name)
+        raise
+    else:
+        try:
+            # File written, now let's move it to its final path.
+            os.rename(tmp_file.name, filepath)
+        except:
+            os.remove(tmp_file.name)
+            raise
 
 _last_download_time = None
 
