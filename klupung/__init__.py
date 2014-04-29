@@ -16,6 +16,7 @@
 
 import flask
 import flask.ext.sqlalchemy
+import flask.ext.autodoc
 
 db = flask.ext.sqlalchemy.SQLAlchemy()
 
@@ -26,6 +27,8 @@ def create_app(db_uri):
     db.init_app(app)
 
     import klupung.api
+    klupung.api.auto.init_app(app)
+
     app.register_blueprint(klupung.api.v0)
 
     return app

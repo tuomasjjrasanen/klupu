@@ -22,6 +22,7 @@ import urllib
 
 ## 3rd party imports
 import flask
+import flask.ext.autodoc
 
 ## Local imports
 import klupung.models
@@ -243,73 +244,192 @@ def _get_meeting_document_resource(meeting_document):
                                              meeting_document_id=meeting_document.id)
     }
 
+auto = flask.ext.autodoc.Autodoc()
 v0 = flask.Blueprint("v0", __name__, url_prefix="/api/v0")
 
+@v0.route("/")
+def _index():
+    return auto.html()
+
 @v0.route("/agenda_item/")
-@v0.route("/agenda_item/<int:agenda_item_id>/")
-def _agenda_item_route(agenda_item_id=None):
+@auto.doc()
+def _agenda_items_route():
+    """Return a list of agenda items of a meeting.
+
+    GET parameters:
+        limit    - the maximum number of objects to return
+        offset   - the number of objects to skip from the beginning of the result set
+        order_by - the name of field by which the results are ordered
+    """
     return _jsonified_resource(
         model_class=klupung.models.AgendaItem,
         get_resource=_get_agenda_item_resource,
-        model_id=agenda_item_id,
         sortable_fields=["last_modified_time",
                          "origin_last_modified_time",
                          "meeting",
                          "index"])
 
+@v0.route("/agenda_item/<int:agenda_item_id>/")
+@auto.doc()
+def _agenda_item_route(agenda_item_id):
+    """Return an agenda item of a meeting by an id."""
+    return _jsonified_resource(
+        model_class=klupung.models.AgendaItem,
+        get_resource=_get_agenda_item_resource,
+        model_id=agenda_item_id)
+
 @v0.route("/policymaker/")
-@v0.route("/policymaker/<int:policymaker_id>/")
-def _policymaker_route(policymaker_id=None):
+@auto.doc()
+def _policymakers_route():
+    """Return a list of policymakers.
+
+    GET parameters:
+        limit    - the maximum number of objects to return
+        offset   - the number of objects to skip from the beginning of the result set
+        order_by - the name of field by which the results are ordered
+    """
     return _jsonified_resource(
         model_class=klupung.models.Policymaker,
         get_resource=_get_policymaker_resource,
-        model_id=policymaker_id,
         sortable_fields=["name"])
 
+@v0.route("/policymaker/<int:policymaker_id>/")
+@auto.doc()
+def _policymaker_route(policymaker_id):
+    """Return a policymaker by an id."""
+    return _jsonified_resource(
+        model_class=klupung.models.Policymaker,
+        get_resource=_get_policymaker_resource,
+        model_id=policymaker_id)
+
 @v0.route("/issue/")
-@v0.route("/issue/<int:issue_id>/")
-def _issue_route(issue_id=None):
+@auto.doc
+def _issues_route():
+    """Return a list of issues.
+
+    GET parameters:
+        limit    - the maximum number of objects to return
+        offset   - the number of objects to skip from the beginning of the result set
+        order_by - the name of field by which the results are ordered
+    """
     return _jsonified_resource(
         model_class=klupung.models.Issue,
         get_resource=_get_issue_resource,
-        model_id=issue_id,
         sortable_fields=["last_modified_time", "latest_decision_date"])
 
+@v0.route("/issue/<int:issue_id>/")
+@auto.doc()
+def _issue_route(issue_id):
+    """Return an issue by an id."""
+    return _jsonified_resource(
+        model_class=klupung.models.Issue,
+        get_resource=_get_issue_resource,
+        model_id=issue_id)
+
 @v0.route("/meeting/")
-@v0.route("/meeting/<int:meeting_id>/")
-def _meeting_route(meeting_id=None):
+@auto.doc()
+def _meetings_route():
+    """Return a list of meetings.
+
+    GET parameters:
+        limit    - the maximum number of objects to return
+        offset   - the number of objects to skip from the beginning of the result set
+        order_by - the name of field by which the results are ordered
+    """
     return _jsonified_resource(
         model_class=klupung.models.Meeting,
         get_resource=_get_meeting_resource,
-        model_id=meeting_id,
         sortable_fields=["date", "policymaker"])
 
+@v0.route("/meeting/<int:meeting_id>/")
+@auto.doc()
+def _meeting_route(meeting_id):
+    """Return a meeting by an id."""
+    return _jsonified_resource(
+        model_class=klupung.models.Meeting,
+        get_resource=_get_meeting_resource,
+        model_id=meeting_id)
+
 @v0.route("/meeting_document/")
+@auto.doc()
+def _meeting_documents_route():
+    """Return a list of meeting documents.
+
+    GET parameters:
+        limit    - the maximum number of objects to return
+        offset   - the number of objects to skip from the beginning of the result set
+        order_by - the name of field by which the results are ordered
+    """
+    return _jsonified_resource(
+        model_class=klupung.models.MeetingDocument,
+        get_resource=_get_meeting_document_resource)
+
 @v0.route("/meeting_document/<int:meeting_document_id>/")
-def _meeting_document_route(meeting_document_id=None):
+@auto.doc()
+def _meeting_document_route(meeting_document_id):
+    """Return a meeting document by an id."""
     return _jsonified_resource(
         model_class=klupung.models.MeetingDocument,
         get_resource=_get_meeting_document_resource,
         model_id=meeting_document_id)
 
 @v0.route("/category/")
+@auto.doc()
+def _categories_route():
+    """Return a list of issue categories.
+
+    GET parameters:
+        limit    - the maximum number of objects to return
+        offset   - the number of objects to skip from the beginning of the result set
+        order_by - the name of field by which the results are ordered
+    """
+    return _jsonified_resource(
+        model_class=klupung.models.Category,
+        get_resource=_get_category_resource)
+
 @v0.route("/category/<int:category_id>")
-def _category_route(category_id=None):
+@auto.doc()
+def _category_route(category_id):
+    """Return an issue category by an id."""
     return _jsonified_resource(
         model_class=klupung.models.Category,
         get_resource=_get_category_resource,
         model_id=category_id)
 
 @v0.route("/video/")
+@auto.doc()
 def _video_route():
+    """Return a list of meeting videos.
+
+    GET parameters:
+        limit    - the maximum number of objects to return
+        offset   - the number of objects to skip from the beginning of the result set
+        order_by - the name of field by which the results are ordered
+    """
     return _jsonified_resource()
 
 @v0.route("/district/")
+@auto.doc()
 def _district_route():
+    """Return a list of districts related to an issue.
+
+    GET parameters:
+        limit    - the maximum number of objects to return
+        offset   - the number of objects to skip from the beginning of the result set
+        order_by - the name of field by which the results are ordered
+    """
     return _jsonified_resource()
 
 @v0.route("/attachment/")
+@auto.doc()
 def _attachment_route():
+    """Return a list of attachments of a meeting document.
+
+    GET parameters:
+        limit    - the maximum number of objects to return
+        offset   - the number of objects to skip from the beginning of the result set
+        order_by - the name of field by which the results are ordered
+    """
     return _jsonified_resource()
 
 @v0.errorhandler(Error)
