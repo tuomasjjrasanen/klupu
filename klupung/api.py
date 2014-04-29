@@ -41,6 +41,9 @@ class InvalidArgumentError(Error):
             "expected %s." % (arg, name, expected)
         Error.__init__(self, 400, message)
 
+_STRFMT_DATETIME = "%Y-%m-%dT%H:%M:%S.%f"
+_STRFMT_DATE = "%Y-%m-%d"
+
 _SLUG_PUNCT_RE = re.compile(r'[\t !"#$%&\'()*\-/<=>?@\[\\\]^_`{|},.]+')
 
 def _slugify(text, delim=u'-'):
@@ -151,9 +154,9 @@ def _get_agenda_item_resource(agenda_item):
         "index"                      : agenda_item.index,
         "introducer"                 : agenda_item.introducer,
         "issue"                      : _get_issue_resource(agenda_item.issue) if agenda_item.issue else {},
-        "last_modified_time"         : agenda_item.last_modified_time,
+        "last_modified_time"         : agenda_item.last_modified_time.strftime(_STRFMT_DATETIME),
         "meeting"                    :  _get_meeting_resource(agenda_item.meeting),
-        "origin_last_modified_time"  : agenda_item.origin_last_modified_time,
+        "origin_last_modified_time"  : agenda_item.origin_last_modified_time.strftime(_STRFMT_DATETIME),
         "permalink"                  : agenda_item.permalink,
         "preparer"                   : agenda_item.preparer,
         "resolution"                 : agenda_item.resolution,
@@ -214,7 +217,7 @@ def _get_policymaker_resource(policymaker):
 def _get_meeting_resource(meeting):
     return {
         "id"              : meeting.id,
-        "date"            : str(meeting.start_datetime.date()),
+        "date"            : meeting.start_datetime.strftime(_STRFMT_DATE),
         "minutes"         : True,
         "number"          : 1,
         "policymaker"     : flask.url_for("._policymaker_route",
@@ -228,12 +231,12 @@ def _get_meeting_resource(meeting):
 def _get_meeting_document_resource(meeting_document):
     return {
         "id"                 : meeting_document.id,
-        "last_modified_time" : str(meeting_document.publish_datetime),
+        "last_modified_time" : meeting_document.publish_datetime.strftime(_STRFMT_DATETIME),
         "meeting"            : _get_meeting_resource(meeting_document.meeting),
         "organisation"       : None,
         "origin_id"          : meeting_document.origin_id,
         "origin_url"         : meeting_document.origin_url,
-        "publish_time"       : str(meeting_document.publish_datetime),
+        "publish_time"       : meeting_document.publish_datetime.strftime(_STRFMT_DATETIME),
         "type"               : "minutes",
         "xml_uri"            : None,
         "resource_uri"       : flask.url_for("._meeting_document_route",
