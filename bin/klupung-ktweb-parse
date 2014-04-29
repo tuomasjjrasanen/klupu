@@ -23,6 +23,7 @@ from __future__ import absolute_import
 import argparse
 import locale
 import os
+from urlparse import urljoin
 
 import klupung
 import klupung.models
@@ -87,7 +88,9 @@ def import_agenda_item(meeting_document_data, agenda_item_data, meeting):
             agenda_item_data["number"],
             ", ".join(agenda_item_data["introducers"]),
             ", ".join(agenda_item_data["preparers"]),
-            "permalink",
+
+            urljoin(meeting_document_data["origin_url"],
+                    "htmtxt%d.htm" % agenda_item_data["number"]),
             klupung.models.AgendaItem.RESOLUTION_PASSED,
             meeting_document_data["publish_datetime"])
         klupung.db.session.add(agenda_item)
