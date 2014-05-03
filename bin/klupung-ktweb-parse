@@ -81,6 +81,7 @@ def import_agenda_item(meeting_document_data, agenda_item_data, meeting):
                 agenda_item_data["subject"],
                 category.id)
             klupung.db.session.add(issue)
+            klupung.db.session.commit()
         agenda_item = klupung.models.AgendaItem(
             agenda_item_data["subject"],
             issue.id if issue is not None else None,
