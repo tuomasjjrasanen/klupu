@@ -157,6 +157,7 @@ def _get_agenda_item_resource(agenda_item):
         "issue"                      : _get_issue_resource(agenda_item.issue) if agenda_item.issue else {},
         "last_modified_time"         : agenda_item.last_modified_time.strftime(_STRFMT_DATETIME),
         "meeting"                    :  _get_meeting_resource(agenda_item.meeting),
+        "meeting__date"              : agenda_item.meeting.start_datetime.strftime(_STRFMT_DATE),
         "origin_last_modified_time"  : agenda_item.origin_last_modified_time.strftime(_STRFMT_DATETIME),
         "permalink"                  : agenda_item.permalink,
         "preparer"                   : agenda_item.preparer,
@@ -266,7 +267,7 @@ def _agenda_items_route():
         get_resource=_get_agenda_item_resource,
         sortable_fields=["last_modified_time",
                          "origin_last_modified_time",
-                         "meeting",
+                         "meeting__date",
                          "index"])
 
 @v0.route("/agenda_item/<int:agenda_item_id>/")
