@@ -251,7 +251,7 @@ def _get_meeting_document_resource(meeting_document):
     }
 
 auto = flask.ext.autodoc.Autodoc()
-v0 = flask.Blueprint("v0", __name__, url_prefix="/api/v0")
+v0 = flask.Blueprint("v0", __name__, url_prefix="/v1")
 
 @v0.route("/")
 def _index():
