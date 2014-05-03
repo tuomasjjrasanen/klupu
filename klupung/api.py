@@ -308,6 +308,7 @@ def _policymaker_route(policymaker_id):
         get_resource=_get_policymaker_resource,
         model_id=policymaker_id)
 
+@v0.route("/issue/search/")
 @v0.route("/issue/")
 @auto.doc()
 def _issues_route():
