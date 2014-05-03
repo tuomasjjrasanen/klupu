@@ -144,6 +144,11 @@ class Category(klupung.db.Model):
                        # category.
         )
 
+    # Relationships
+    parent = klupung.db.relationship(
+        "Category",
+        )
+
     __table_args__ = (
         klupung.db.UniqueConstraint("origin_id"),
         )
