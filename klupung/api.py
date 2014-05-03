@@ -198,7 +198,7 @@ def _get_issue_resource(issue):
         "geometries"          : [],
         "id"                  : issue.id,
         "last_modified_time"  : issue.last_modified_time.strftime(_STRFMT_DATETIME),
-        "latest_decision_date": "",
+        "latest_decision_date": sorted([ai.meeting.start_datetime for ai in issue.agenda_items])[0].strftime(_STRFMT_DATE),
         "reference_text"      : "",
         "register_id"         : issue.register_id,
         "slug"                : _slugify(issue.register_id),
