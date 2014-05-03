@@ -197,7 +197,7 @@ def _get_issue_resource(issue):
         "districts"           : [],
         "geometries"          : [],
         "id"                  : issue.id,
-        "last_modified_time"  : "",
+        "last_modified_time"  : issue.last_modified_time.strftime(_STRFMT_DATETIME),
         "latest_decision_date": "",
         "reference_text"      : "",
         "register_id"         : issue.register_id,
