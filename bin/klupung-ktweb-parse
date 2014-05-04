@@ -44,12 +44,12 @@ def import_meeting(meeting_document_data):
     policymaker = klupung.models.Policymaker.query.filter_by(
         abbreviation=meeting_document_data["policymaker_abbreviation"],
         ).first()
-    meeting_start_datetime = meeting_document_data["start_datetime"]
+    meeting_date = meeting_document_data["start_datetime"].date()
     meeting = klupung.models.Meeting.query.filter_by(
         policymaker_id=policymaker.id,
-        start_datetime=meeting_start_datetime).first()
+        date=meeting_date).first()
     if meeting is None:
-        meeting = klupung.models.Meeting(meeting_start_datetime,
+        meeting = klupung.models.Meeting(meeting_date,
                                          policymaker.id)
         klupung.db.session.add(meeting)
     return meeting

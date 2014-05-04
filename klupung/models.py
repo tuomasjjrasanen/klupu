@@ -219,7 +219,7 @@ class Meeting(klupung.db.Model):
         klupung.db.Integer,
         primary_key=True,
         )
-    start_datetime = klupung.db.Column(
+    date = klupung.db.Column(
         klupung.db.DateTime,
         nullable=False,
         )
@@ -238,11 +238,11 @@ class Meeting(klupung.db.Model):
         )
 
     __table_args__ = (
-        klupung.db.UniqueConstraint("policymaker_id", "start_datetime"),
+        klupung.db.UniqueConstraint("policymaker_id", "date"),
         )
 
-    def __init__(self, start_datetime, policymaker_id):
-        self.start_datetime = start_datetime
+    def __init__(self, date, policymaker_id):
+        self.date = date
         self.policymaker_id = policymaker_id
 
 class MeetingDocument(klupung.db.Model):

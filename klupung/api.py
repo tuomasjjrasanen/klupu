@@ -157,7 +157,7 @@ def _get_agenda_item_resource(agenda_item):
         "issue"                      : _get_issue_resource(agenda_item.issue) if agenda_item.issue else {},
         "last_modified_time"         : agenda_item.last_modified_time.strftime(_STRFMT_DATETIME),
         "meeting"                    :  _get_meeting_resource(agenda_item.meeting),
-        "meeting__date"              : agenda_item.meeting.start_datetime.strftime(_STRFMT_DATE),
+        "meeting__date"              : agenda_item.meeting.date.strftime(_STRFMT_DATE),
         "origin_last_modified_time"  : agenda_item.origin_last_modified_time.strftime(_STRFMT_DATETIME),
         "permalink"                  : agenda_item.permalink,
         "preparer"                   : agenda_item.preparer,
@@ -198,7 +198,7 @@ def _get_issue_resource(issue):
         "geometries"          : [],
         "id"                  : issue.id,
         "last_modified_time"  : issue.last_modified_time.strftime(_STRFMT_DATETIME),
-        "latest_decision_date": sorted([ai.meeting.start_datetime for ai in issue.agenda_items])[0].strftime(_STRFMT_DATE),
+        "latest_decision_date": sorted([ai.meeting.date for ai in issue.agenda_items])[0].strftime(_STRFMT_DATE),
         "reference_text"      : "",
         "register_id"         : issue.register_id,
         "slug"                : _slugify(issue.register_id),
@@ -224,13 +224,13 @@ def _get_policymaker_resource(policymaker):
 def _get_meeting_resource(meeting):
     return {
         "id"              : meeting.id,
-        "date"            : meeting.start_datetime.strftime(_STRFMT_DATE),
+        "date"            : meeting.date.strftime(_STRFMT_DATE),
         "minutes"         : True,
         "number"          : 1,
         "policymaker"     : flask.url_for("._policymaker_route",
                                           policymaker_id=meeting.policymaker.id),
         "policymaker_name": meeting.policymaker.name,
-        "year"            : meeting.start_datetime.year,
+        "year"            : meeting.date.year,
         "resource_uri"    : flask.url_for("._meeting_route",
                                           meeting_id=meeting.id),
         }
