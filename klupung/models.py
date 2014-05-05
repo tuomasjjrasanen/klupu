@@ -161,6 +161,11 @@ class Category(klupung.db.Model):
         if self.parent_id is not None:
             self.level = klupung.models.Category.query.filter_by(id=parent_id).first().level + 1
 
+    def find_top_category(self):
+        if self.parent:
+            return self.parent.find_top_category()
+        return self
+
 class Issue(klupung.db.Model):
     __tablename__ = "issue"
 

@@ -187,11 +187,6 @@ def _get_agenda_item_resource(agenda_item):
         "subject"                    : agenda_item.subject,
         }
 
-def _get_top_category(category):
-    if category.parent:
-        _get_top_category(category.parent)
-    return category
-
 def _get_category_resource(category):
     parent_uri = None
     if category.parent_id is not None:
@@ -224,7 +219,7 @@ def _get_issue_resource(issue):
         "slug"                : _slugify(issue.register_id),
         "subject"             : issue.subject,
         "summary"             : issue.summary,
-        "top_category_name"   : _get_top_category(issue.category).name,
+        "top_category_name"   : issue.category.find_top_category().name,
         "resource_uri"        : flask.url_for("._issue_id_route",
                                               issue_id=issue.id),
         }
