@@ -103,13 +103,18 @@ def _get_order_by_arg(sortable_fields):
 
     return column_name, is_descending
 
-def _jsonified_resource(model_class=None, get_resource=None, model_id=None, sortable_fields=()):
+def _jsonified_resource(model_class=None, get_resource=None, model_id=None,
+                        sortable_fields=(), do_paginate=False):
     if model_id is not None:
         resource = get_resource(model_class.query.get_or_404(model_id))
         return flask.jsonify(**resource)
 
     limit = min(_get_uint_arg("limit", 20), 1000)
     offset = _get_uint_arg("offset", 0)
+
+    if do_paginate:
+        page = max(_get_uint_arg("page", 1), 1)
+        offset = limit * (page - 1)
 
     total_count = 0
     objects = []
@@ -152,14 +157,23 @@ def _jsonified_resource(model_class=None, get_resource=None, model_id=None, sort
         prev_path_args["offset"] = max(offset - limit, 0)
         prev_path = "%s?%s" % (flask.request.path, urllib.urlencode(prev_path_args))
 
-    resource = {
-        "meta": {
+    if do_paginate:
+        meta = {
+            "limit"       : limit,
+            "total_count" : total_count,
+            "page"        : page,
+            }
+    else:
+        meta = {
             "limit"       : limit,
             "next"        : next_path,
             "offset"      : offset,
             "previous"    : prev_path,
             "total_count" : total_count,
-            },
+            }
+
+    resource = {
+        "meta"   : meta,
         "objects": objects,
         }
 
@@ -324,6 +338,22 @@ def _policymaker_id_route(policymaker_id):
         model_id=policymaker_id)
 
 @v0.route("/issue/search/")
+@auto.doc()
+def _issue_search_route():
+    """Return a list of issues.
+
+    GET parameters:
+        limit    - the maximum number of objects to return
+        offset   - the number of objects to skip from the beginning of the result set
+        order_by - the name of field by which the results are ordered
+        page     - the number of the page
+    """
+    return _jsonified_resource(
+        model_class=klupung.models.Issue,
+        get_resource=_get_issue_resource,
+        sortable_fields=["latest_decision_date"],
+        do_paginate=True)
+
 @v0.route("/issue/")
 @auto.doc()
 def _issue_route():
