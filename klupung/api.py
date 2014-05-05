@@ -183,7 +183,7 @@ def _get_agenda_item_resource(agenda_item):
         "permalink"                  : agenda_item.permalink,
         "preparer"                   : agenda_item.preparer,
         "resolution"                 : agenda_item.resolution,
-        "resource_uri"               : flask.url_for("._agenda_item_route",
+        "resource_uri"               : flask.url_for("._agenda_item_id_route",
                                                      agenda_item_id=agenda_item.id),
         "subject"                    : agenda_item.subject,
         }
@@ -196,7 +196,7 @@ def _get_top_category(category):
 def _get_category_resource(category):
     parent_uri = None
     if category.parent_id is not None:
-        parent_uri = flask.url_for("._category_route",
+        parent_uri = flask.url_for("._category_id_route",
                                    category_id=category.parent_id)
 
     return {
@@ -205,13 +205,13 @@ def _get_category_resource(category):
         "name"        : category.name,
         "origin_id"   : category.origin_id,
         "parent"      : parent_uri,
-        "resource_uri": flask.url_for("._category_route",
+        "resource_uri": flask.url_for("._category_id_route",
                                       category_id=category.id),
         }
 
 def _get_issue_resource(issue):
     return {
-        "category"            : flask.url_for("._category_route",
+        "category"            : flask.url_for("._category_id_route",
                                               category_id=issue.category_id),
         "category_name"       : issue.category.name,
         "category_origin_id"  : issue.category.origin_id,
@@ -226,7 +226,7 @@ def _get_issue_resource(issue):
         "subject"             : issue.subject,
         "summary"             : issue.summary,
         "top_category_name"   : _get_top_category(issue.category).name,
-        "resource_uri"        : flask.url_for("._issue_route",
+        "resource_uri"        : flask.url_for("._issue_id_route",
                                               issue_id=issue.id),
         }
 
@@ -238,7 +238,7 @@ def _get_policymaker_resource(policymaker):
         "origin_id"   : policymaker.abbreviation,
         "slug"        : _slugify(policymaker.abbreviation),
         "summary"     : None,
-        "resource_uri": flask.url_for("._policymaker_route",
+        "resource_uri": flask.url_for("._policymaker_id_route",
                                       policymaker_id=policymaker.id),
         }
 
@@ -248,11 +248,11 @@ def _get_meeting_resource(meeting):
         "date"            : meeting.date.strftime(_STRFMT_DATE),
         "minutes"         : True,
         "number"          : 1,
-        "policymaker"     : flask.url_for("._policymaker_route",
+        "policymaker"     : flask.url_for("._policymaker_id_route",
                                           policymaker_id=meeting.policymaker.id),
         "policymaker_name": meeting.policymaker.name,
         "year"            : meeting.date.year,
-        "resource_uri"    : flask.url_for("._meeting_route",
+        "resource_uri"    : flask.url_for("._meeting_id_route",
                                           meeting_id=meeting.id),
         }
 
@@ -267,7 +267,7 @@ def _get_meeting_document_resource(meeting_document):
         "publish_time"       : meeting_document.publish_datetime.strftime(_STRFMT_DATETIME),
         "type"               : "minutes",
         "xml_uri"            : None,
-        "resource_uri"       : flask.url_for("._meeting_document_route",
+        "resource_uri"       : flask.url_for("._meeting_document_id_route",
                                              meeting_document_id=meeting_document.id)
     }
 
@@ -280,7 +280,7 @@ def _index():
 
 @v0.route("/agenda_item/")
 @auto.doc()
-def _agenda_items_route():
+def _agenda_item_route():
     """Return a list of agenda items of a meeting.
 
     GET parameters:
@@ -298,7 +298,7 @@ def _agenda_items_route():
 
 @v0.route("/agenda_item/<int:agenda_item_id>/")
 @auto.doc()
-def _agenda_item_route(agenda_item_id):
+def _agenda_item_id_route(agenda_item_id):
     """Return an agenda item of a meeting by an id."""
     return _jsonified_resource(
         model_class=klupung.models.AgendaItem,
@@ -307,7 +307,7 @@ def _agenda_item_route(agenda_item_id):
 
 @v0.route("/policymaker/")
 @auto.doc()
-def _policymakers_route():
+def _policymaker_route():
     """Return a list of policymakers.
 
     GET parameters:
@@ -322,7 +322,7 @@ def _policymakers_route():
 
 @v0.route("/policymaker/<int:policymaker_id>/")
 @auto.doc()
-def _policymaker_route(policymaker_id):
+def _policymaker_id_route(policymaker_id):
     """Return a policymaker by an id."""
     return _jsonified_resource(
         model_class=klupung.models.Policymaker,
@@ -332,7 +332,7 @@ def _policymaker_route(policymaker_id):
 @v0.route("/issue/search/")
 @v0.route("/issue/")
 @auto.doc()
-def _issues_route():
+def _issue_route():
     """Return a list of issues.
 
     GET parameters:
@@ -347,7 +347,7 @@ def _issues_route():
 
 @v0.route("/issue/<int:issue_id>/")
 @auto.doc()
-def _issue_route(issue_id):
+def _issue_id_route(issue_id):
     """Return an issue by an id."""
     return _jsonified_resource(
         model_class=klupung.models.Issue,
@@ -356,7 +356,7 @@ def _issue_route(issue_id):
 
 @v0.route("/meeting/")
 @auto.doc()
-def _meetings_route():
+def _meeting_route():
     """Return a list of meetings.
 
     GET parameters:
@@ -371,7 +371,7 @@ def _meetings_route():
 
 @v0.route("/meeting/<int:meeting_id>/")
 @auto.doc()
-def _meeting_route(meeting_id):
+def _meeting_id_route(meeting_id):
     """Return a meeting by an id."""
     return _jsonified_resource(
         model_class=klupung.models.Meeting,
@@ -380,7 +380,7 @@ def _meeting_route(meeting_id):
 
 @v0.route("/meeting_document/")
 @auto.doc()
-def _meeting_documents_route():
+def _meeting_document_route():
     """Return a list of meeting documents.
 
     GET parameters:
@@ -394,7 +394,7 @@ def _meeting_documents_route():
 
 @v0.route("/meeting_document/<int:meeting_document_id>/")
 @auto.doc()
-def _meeting_document_route(meeting_document_id):
+def _meeting_document_id_route(meeting_document_id):
     """Return a meeting document by an id."""
     return _jsonified_resource(
         model_class=klupung.models.MeetingDocument,
@@ -403,7 +403,7 @@ def _meeting_document_route(meeting_document_id):
 
 @v0.route("/category/")
 @auto.doc()
-def _categories_route():
+def _category_route():
     """Return a list of issue categories.
 
     GET parameters:
@@ -417,7 +417,7 @@ def _categories_route():
 
 @v0.route("/category/<int:category_id>")
 @auto.doc()
-def _category_route(category_id):
+def _category_id_route(category_id):
     """Return an issue category by an id."""
     return _jsonified_resource(
         model_class=klupung.models.Category,
