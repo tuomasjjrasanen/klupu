@@ -189,7 +189,7 @@ def _get_agenda_item_resource(agenda_item):
 
 def _get_top_category(category):
     if category.parent:
-        _top_category(category.parent)
+        _get_top_category(category.parent)
     return category
 
 def _get_category_resource(category):
