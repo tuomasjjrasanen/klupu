@@ -92,6 +92,17 @@ def _get_choice_arg(name, choices):
                                    expected=" or ".join([repr(s) for s in choices]))
     return arg
 
+def _get_order_by_arg(sortable_fields):
+    choices = []
+    for field in sortable_fields:
+        choices.append(field)
+        choices.append("-%s" % field)
+    order_by_arg = _get_choice_arg("order_by", choices)
+    is_descending = order_by_arg.startswith("-")
+    column_name = order_by_arg.lstrip("-")
+
+    return column_name, is_descending
+
 def _jsonified_resource(model_class=None, get_resource=None, model_id=None, sortable_fields=()):
     if model_id is not None:
         resource = get_resource(model_class.query.get_or_404(model_id))
@@ -104,19 +115,29 @@ def _jsonified_resource(model_class=None, get_resource=None, model_id=None, sort
     objects = []
 
     if model_class is not None:
-        models = model_class.query.limit(limit).offset(offset).all()
-        total_count = model_class.query.count()
-        objects = [get_resource(m) for m in models]
+        query = model_class.query
 
-    if sortable_fields:
-        choices = []
-        for field in sortable_fields:
-            choices.append(field)
-            choices.append("-%s" % field)
-        order_by_arg = _get_choice_arg("order_by", choices)
-        is_descending = order_by_arg.startswith("-")
-        field = order_by_arg.lstrip("-")
-        objects.sort(key=lambda o: o[field], reverse=is_descending)
+        total_count = model_class.query.count()
+
+        if sortable_fields:
+            column_name, is_descending = _get_order_by_arg(sortable_fields)
+
+            relationship_name, _, related_column_name = column_name.partition("__")
+            if related_column_name != '':
+                relationship = getattr(model_class, relationship_name)
+                query = query.join(relationship)
+                column = relationship.property.table.columns[related_column_name]
+            else:
+                column = getattr(model_class, column_name)
+
+            if is_descending:
+                column = column.desc()
+
+            query = query.order_by(column)
+
+        query = query.limit(limit).offset(offset)
+
+        objects = [get_resource(model) for model in query.all()]
 
     next_path = None
     prev_path = None
