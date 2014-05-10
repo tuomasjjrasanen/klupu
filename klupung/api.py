@@ -41,6 +41,13 @@ class InvalidArgumentError(Error):
             "expected %s." % (arg, name, expected)
         Error.__init__(self, 400, message)
 
+class UnknownArgumentError(Error):
+    """Raised when a client has provided an unknown query argument."""
+
+    def __init__(self, name):
+        message = "Unknown argument '%s'." % name
+        Error.__init__(self, 400, message)
+
 _STRFMT_DATETIME = "%Y-%m-%dT%H:%M:%S.%f"
 _STRFMT_DATE = "%Y-%m-%d"
 
@@ -90,6 +97,18 @@ def _get_order_by_arg(sortable_fields):
     column_name = order_by_arg.lstrip("-")
 
     return column_name, is_descending
+
+def _jsonified_query_results(query, get_resource):
+    meta = {
+        "criterion": flask.request.query_string,
+        }
+
+    resource = {
+        "meta"   : meta,
+        "objects": [get_resource(model) for model in query.all()],
+        }
+
+    return flask.jsonify(**resource)
 
 def _jsonified_resource(model_class, get_resource, primary_key):
     resource = get_resource(model_class.query.get_or_404(primary_key))
@@ -340,6 +359,48 @@ def _issue_search_route():
         _get_issue_resource,
         sortable_fields=["latest_decision_date"],
         do_paginate=True)
+
+@v0.route("/policymaker/filter/")
+def _policymaker_filter_route():
+    """Return a filtered list of policymakers.
+
+    GET parameters:
+        abbreviation.isnull - false/true to filter by abbreviation
+        slug.eq             - filter by slug
+    """
+
+    query = klupung.models.Policymaker.query
+
+    known_args = set([
+            "abbreviation.isnull",
+            "slug.eq",
+            ])
+
+    unknown_args = set(flask.request.args.keys()) - known_args
+    if unknown_args:
+        raise UnknownArgumentError(unknown_args.pop())
+
+    try:
+        abbreviation_isnull = flask.request.args["abbreviation.isnull"]
+    except KeyError:
+        pass
+    else:
+        if abbreviation_isnull == "false":
+            query = query.filter(klupung.models.Policymaker.abbreviation is not None)
+        elif abbreviation_isnull == "true":
+            query = query.filter(klupung.models.Policymaker.abbreviation is None)
+        else:
+            raise InvalidArgumentError(abbreviation_isnull, "abbreviation.isnull",
+                                       expected="true or false")
+
+    try:
+        slug = flask.request.args["slug.eq"]
+    except KeyError:
+        pass
+    else:
+        query = query.filter(klupung.models.Policymaker.slug == slug)
+
+    return _jsonified_query_results(query, _get_policymaker_resource)
 
 @v0.route("/issue/")
 @auto.doc()
