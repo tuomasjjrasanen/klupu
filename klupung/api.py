@@ -17,7 +17,6 @@
 ## Standard library imports
 import datetime
 import re
-import unicodedata
 import urllib
 
 ## 3rd party imports
@@ -44,17 +43,6 @@ class InvalidArgumentError(Error):
 
 _STRFMT_DATETIME = "%Y-%m-%dT%H:%M:%S.%f"
 _STRFMT_DATE = "%Y-%m-%d"
-
-_SLUG_PUNCT_RE = re.compile(r'[\t !"#$%&\'()*\-/<=>?@\[\\\]^_`{|},.]+')
-
-def _slugify(text, delim=u'-'):
-    """Return an unicode slug of the text"""
-    result = []
-    for word in _SLUG_PUNCT_RE.split(text.lower()):
-        word = unicodedata.normalize('NFKD', word).encode('ascii', 'ignore')
-        if word:
-            result.append(word)
-    return unicode(delim.join(result))
 
 def _get_uint_arg(name, default):
     """Return `int` value of argument `name` from the current request
@@ -230,7 +218,7 @@ def _get_issue_resource(issue):
         "latest_decision_date": sorted([ai.meeting.date for ai in issue.agenda_items])[0].strftime(_STRFMT_DATE),
         "reference_text"      : "",
         "register_id"         : issue.register_id,
-        "slug"                : _slugify(issue.register_id),
+        "slug"                : issue.slug,
         "subject"             : issue.subject,
         "summary"             : issue.summary,
         "top_category_name"   : issue.category.find_top_category().name,
@@ -244,7 +232,7 @@ def _get_policymaker_resource(policymaker):
         "abbreviation": policymaker.abbreviation,
         "name"        : policymaker.name,
         "origin_id"   : policymaker.abbreviation,
-        "slug"        : _slugify(policymaker.abbreviation),
+        "slug"        : policymaker.slug,
         "summary"     : None,
         "resource_uri": flask.url_for("._policymaker_id_route",
                                       policymaker_id=policymaker.id),

@@ -14,7 +14,21 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
+import re
+import unicodedata
+
 import klupung
+
+_SLUG_PUNCT_RE = re.compile(r'[\t !"#$%&\'()*\-/<=>?@\[\\\]^_`{|},.]+')
+
+def _slugify(text, delim=u'-'):
+    """Return an unicode slug of the text"""
+    result = []
+    for word in _SLUG_PUNCT_RE.split(text.lower()):
+        word = unicodedata.normalize('NFKD', word).encode('ascii', 'ignore')
+        if word:
+            result.append(word)
+    return unicode(delim.join(result))
 
 class AgendaItem(klupung.db.Model):
     RESOLUTIONS = (
@@ -200,6 +214,10 @@ class Issue(klupung.db.Model):
     latest_decision_date = klupung.db.Column(
         klupung.db.DateTime,
         )
+    slug = klupung.db.Column(
+        klupung.db.String,
+        nullable=False,
+        )
 
     # Relationships
     category = klupung.db.relationship(
@@ -208,6 +226,7 @@ class Issue(klupung.db.Model):
 
     __table_args__ = (
         klupung.db.UniqueConstraint("register_id"),
+        klupung.db.UniqueConstraint("slug"),
         )
 
     def __init__(self, register_id, subject, summary, category_id):
@@ -215,6 +234,7 @@ class Issue(klupung.db.Model):
         self.subject = subject
         self.summary = summary
         self.category_id = category_id
+        self.slug = _slugify(self.register_id)
 
 class Meeting(klupung.db.Model):
     __tablename__ = "meeting"
@@ -305,6 +325,10 @@ class Policymaker(klupung.db.Model):
         klupung.db.String(50),
         nullable=False,
         )
+    slug = klupung.db.Column(
+        klupung.db.String(20),
+        nullable=False,
+        )
 
     # Relationships
     meetings = klupung.db.relationship(
@@ -314,8 +338,10 @@ class Policymaker(klupung.db.Model):
     __table_args__ = (
         klupung.db.UniqueConstraint("abbreviation"),
         klupung.db.UniqueConstraint("name"),
+        klupung.db.UniqueConstraint("slug"),
         )
 
     def __init__(self, abbreviation, name):
         self.abbreviation = abbreviation
         self.name = name
+        self.slug = _slugify(self.abbreviation)
