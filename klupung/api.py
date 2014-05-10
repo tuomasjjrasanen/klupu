@@ -402,6 +402,33 @@ def _policymaker_filter_route():
 
     return _jsonified_query_results(query, _get_policymaker_resource)
 
+@v0.route("/issue/filter/")
+def _issue_filter_route():
+    """Return a filtered list of issues.
+
+    GET parameters:
+        slug.eq - filter by slug
+    """
+
+    query = klupung.models.Issue.query
+
+    known_args = set([
+            "slug.eq",
+            ])
+
+    unknown_args = set(flask.request.args.keys()) - known_args
+    if unknown_args:
+        raise UnknownArgumentError(unknown_args.pop())
+
+    try:
+        slug = flask.request.args["slug.eq"]
+    except KeyError:
+        pass
+    else:
+        query = query.filter(klupung.models.Issue.slug == slug)
+
+    return _jsonified_query_results(query, _get_issue_resource)
+
 @v0.route("/issue/")
 @auto.doc()
 def _issue_route():
