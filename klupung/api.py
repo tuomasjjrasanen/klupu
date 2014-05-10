@@ -91,12 +91,12 @@ def _get_order_by_arg(sortable_fields):
 
     return column_name, is_descending
 
-def _jsonified_resource(model_class=None, get_resource=None, model_id=None,
-                        sortable_fields=(), do_paginate=False):
-    if model_id is not None:
-        resource = get_resource(model_class.query.get_or_404(model_id))
-        return flask.jsonify(**resource)
+def _jsonified_resource(model_class, get_resource, primary_key):
+    resource = get_resource(model_class.query.get_or_404(primary_key))
+    return flask.jsonify(**resource)
 
+def _jsonified_resource_list(model_class, get_resource,
+                             sortable_fields=(), do_paginate=False):
     limit = min(_get_uint_arg("limit", 20), 1000)
     offset = _get_uint_arg("offset", 0)
 
@@ -107,30 +107,29 @@ def _jsonified_resource(model_class=None, get_resource=None, model_id=None,
     total_count = 0
     objects = []
 
-    if model_class is not None:
-        query = model_class.query
+    query = model_class.query
 
-        total_count = model_class.query.count()
+    total_count = model_class.query.count()
 
-        if sortable_fields:
-            column_name, is_descending = _get_order_by_arg(sortable_fields)
+    if sortable_fields:
+        column_name, is_descending = _get_order_by_arg(sortable_fields)
 
-            relationship_name, _, related_column_name = column_name.partition("__")
-            if related_column_name != '':
-                relationship = getattr(model_class, relationship_name)
-                query = query.join(relationship)
-                column = relationship.property.table.columns[related_column_name]
-            else:
-                column = getattr(model_class, column_name)
+        relationship_name, _, related_column_name = column_name.partition("__")
+        if related_column_name != '':
+            relationship = getattr(model_class, relationship_name)
+            query = query.join(relationship)
+            column = relationship.property.table.columns[related_column_name]
+        else:
+            column = getattr(model_class, column_name)
 
-            if is_descending:
-                column = column.desc()
+        if is_descending:
+            column = column.desc()
 
-            query = query.order_by(column)
+        query = query.order_by(column)
 
-        query = query.limit(limit).offset(offset)
+    query = query.limit(limit).offset(offset)
 
-        objects = [get_resource(model) for model in query.all()]
+    objects = [get_resource(model) for model in query.all()]
 
     next_path = None
     prev_path = None
@@ -284,9 +283,9 @@ def _agenda_item_route():
         offset   - the number of objects to skip from the beginning of the result set
         order_by - the name of field by which the results are ordered
     """
-    return _jsonified_resource(
-        model_class=klupung.models.AgendaItem,
-        get_resource=_get_agenda_item_resource,
+    return _jsonified_resource_list(
+        klupung.models.AgendaItem,
+        _get_agenda_item_resource,
         sortable_fields=["last_modified_time",
                          "origin_last_modified_time",
                          "meeting__date",
@@ -297,9 +296,9 @@ def _agenda_item_route():
 def _agenda_item_id_route(agenda_item_id):
     """Return an agenda item of a meeting by an id."""
     return _jsonified_resource(
-        model_class=klupung.models.AgendaItem,
-        get_resource=_get_agenda_item_resource,
-        model_id=agenda_item_id)
+        klupung.models.AgendaItem,
+        _get_agenda_item_resource,
+        agenda_item_id)
 
 @v0.route("/policymaker/")
 @auto.doc()
@@ -311,9 +310,9 @@ def _policymaker_route():
         offset   - the number of objects to skip from the beginning of the result set
         order_by - the name of field by which the results are ordered
     """
-    return _jsonified_resource(
-        model_class=klupung.models.Policymaker,
-        get_resource=_get_policymaker_resource,
+    return _jsonified_resource_list(
+        klupung.models.Policymaker,
+        _get_policymaker_resource,
         sortable_fields=["name"])
 
 @v0.route("/policymaker/<int:policymaker_id>/")
@@ -321,9 +320,9 @@ def _policymaker_route():
 def _policymaker_id_route(policymaker_id):
     """Return a policymaker by an id."""
     return _jsonified_resource(
-        model_class=klupung.models.Policymaker,
-        get_resource=_get_policymaker_resource,
-        model_id=policymaker_id)
+        klupung.models.Policymaker,
+        _get_policymaker_resource,
+        policymaker_id)
 
 @v0.route("/issue/search/")
 @auto.doc()
@@ -336,9 +335,9 @@ def _issue_search_route():
         order_by - the name of field by which the results are ordered
         page     - the number of the page
     """
-    return _jsonified_resource(
-        model_class=klupung.models.Issue,
-        get_resource=_get_issue_resource,
+    return _jsonified_resource_list(
+        klupung.models.Issue,
+        _get_issue_resource,
         sortable_fields=["latest_decision_date"],
         do_paginate=True)
 
@@ -352,9 +351,9 @@ def _issue_route():
         offset   - the number of objects to skip from the beginning of the result set
         order_by - the name of field by which the results are ordered
     """
-    return _jsonified_resource(
-        model_class=klupung.models.Issue,
-        get_resource=_get_issue_resource,
+    return _jsonified_resource_list(
+        klupung.models.Issue,
+        _get_issue_resource,
         sortable_fields=["last_modified_time", "latest_decision_date"])
 
 @v0.route("/issue/<int:issue_id>/")
@@ -362,9 +361,9 @@ def _issue_route():
 def _issue_id_route(issue_id):
     """Return an issue by an id."""
     return _jsonified_resource(
-        model_class=klupung.models.Issue,
-        get_resource=_get_issue_resource,
-        model_id=issue_id)
+        klupung.models.Issue,
+        _get_issue_resource,
+        issue_id)
 
 @v0.route("/meeting/")
 @auto.doc()
@@ -376,9 +375,9 @@ def _meeting_route():
         offset   - the number of objects to skip from the beginning of the result set
         order_by - the name of field by which the results are ordered
     """
-    return _jsonified_resource(
-        model_class=klupung.models.Meeting,
-        get_resource=_get_meeting_resource,
+    return _jsonified_resource_list(
+        klupung.models.Meeting,
+        _get_meeting_resource,
         sortable_fields=["date", "policymaker"])
 
 @v0.route("/meeting/<int:meeting_id>/")
@@ -386,9 +385,9 @@ def _meeting_route():
 def _meeting_id_route(meeting_id):
     """Return a meeting by an id."""
     return _jsonified_resource(
-        model_class=klupung.models.Meeting,
-        get_resource=_get_meeting_resource,
-        model_id=meeting_id)
+        klupung.models.Meeting,
+        _get_meeting_resource,
+        meeting_id)
 
 @v0.route("/meeting_document/")
 @auto.doc()
@@ -400,18 +399,18 @@ def _meeting_document_route():
         offset   - the number of objects to skip from the beginning of the result set
         order_by - the name of field by which the results are ordered
     """
-    return _jsonified_resource(
-        model_class=klupung.models.MeetingDocument,
-        get_resource=_get_meeting_document_resource)
+    return _jsonified_resource_list(
+        klupung.models.MeetingDocument,
+        _get_meeting_document_resource)
 
 @v0.route("/meeting_document/<int:meeting_document_id>/")
 @auto.doc()
 def _meeting_document_id_route(meeting_document_id):
     """Return a meeting document by an id."""
     return _jsonified_resource(
-        model_class=klupung.models.MeetingDocument,
-        get_resource=_get_meeting_document_resource,
-        model_id=meeting_document_id)
+        klupung.models.MeetingDocument,
+        _get_meeting_document_resource,
+        meeting_document_id)
 
 @v0.route("/category/")
 @auto.doc()
@@ -423,18 +422,18 @@ def _category_route():
         offset   - the number of objects to skip from the beginning of the result set
         order_by - the name of field by which the results are ordered
     """
-    return _jsonified_resource(
-        model_class=klupung.models.Category,
-        get_resource=_get_category_resource)
+    return _jsonified_resource_list(
+        klupung.models.Category,
+        _get_category_resource)
 
 @v0.route("/category/<int:category_id>")
 @auto.doc()
 def _category_id_route(category_id):
     """Return an issue category by an id."""
     return _jsonified_resource(
-        model_class=klupung.models.Category,
-        get_resource=_get_category_resource,
-        model_id=category_id)
+        klupung.models.Category,
+        _get_category_resource,
+        category_id)
 
 @v0.route("/video/")
 @auto.doc()
@@ -446,7 +445,7 @@ def _video_route():
         offset   - the number of objects to skip from the beginning of the result set
         order_by - the name of field by which the results are ordered
     """
-    return _jsonified_resource()
+    return _jsonified_resource_list()
 
 @v0.route("/district/")
 @auto.doc()
@@ -458,7 +457,7 @@ def _district_route():
         offset   - the number of objects to skip from the beginning of the result set
         order_by - the name of field by which the results are ordered
     """
-    return _jsonified_resource()
+    return _jsonified_resource_list()
 
 @v0.route("/attachment/")
 @auto.doc()
@@ -470,7 +469,7 @@ def _attachment_route():
         offset   - the number of objects to skip from the beginning of the result set
         order_by - the name of field by which the results are ordered
     """
-    return _jsonified_resource()
+    return _jsonified_resource_list()
 
 @v0.errorhandler(Error)
 def _errorhandler(error):
