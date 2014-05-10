@@ -500,6 +500,36 @@ def _meeting_document_id_route(meeting_document_id):
         _get_meeting_document_resource,
         meeting_document_id)
 
+@v0.route("/category/filter/")
+def _category_filter_route():
+    """Return a filtered list of categorys.
+
+    GET parameters:
+        level.lte - filter by level
+    """
+
+    query = klupung.models.Category.query
+
+    known_args = set([
+            "level.lte",
+            ])
+
+    unknown_args = set(flask.request.args.keys()) - known_args
+    if unknown_args:
+        raise UnknownArgumentError(unknown_args.pop())
+
+    try:
+        level = int(flask.request.args["level.lte"])
+    except KeyError:
+        pass
+    except ValueError:
+        raise InvalidArgumentError(flask.request.args["level.lte"], "level.lte",
+                                   expected="an integer value")
+    else:
+        query = query.filter(klupung.models.Category.level <= level)
+
+    return _jsonified_query_results(query, _get_category_resource)
+
 @v0.route("/category/")
 @auto.doc()
 def _category_route():
