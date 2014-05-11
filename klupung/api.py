@@ -292,6 +292,37 @@ v0 = flask.Blueprint("v0", __name__, url_prefix="/v1")
 def _index():
     return auto.html()
 
+@v0.route("/agenda_item/filter/")
+def _agenda_item_filter_route():
+    """Return a filtered list of agenda_items.
+
+    GET parameters:
+        issue__id.eq - filter by issue id
+    """
+    print("hep")
+    query = klupung.models.AgendaItem.query
+
+    known_args = set([
+            "issue__id.eq",
+            ])
+
+    unknown_args = set(flask.request.args.keys()) - known_args
+    if unknown_args:
+        raise UnknownArgumentError(unknown_args.pop())
+
+    try:
+        issue_id = int(flask.request.args["issue__id.eq"])
+    except KeyError:
+        pass
+    except ValueError:
+        raise InvalidArgumentError(flask.request.args["issue__id.eq"], "issue__id.eq",
+                                   expected="an integer value")
+    else:
+        query = query.join(klupung.models.Issue)
+        query = query.filter(klupung.models.Issue.id == issue_id)
+
+    return _jsonified_query_results(query, _get_agenda_item_resource)
+
 @v0.route("/agenda_item/")
 @auto.doc()
 def _agenda_item_route():
