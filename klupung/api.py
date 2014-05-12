@@ -301,7 +301,6 @@ def _agenda_item_filter_route():
     GET parameters:
         issue__id.eq - filter by issue id
     """
-    print("hep")
     query = klupung.models.AgendaItem.query
 
     known_args = set([
