@@ -333,14 +333,30 @@ def _agenda_item_route():
         limit    - the maximum number of objects to return
         offset   - the number of objects to skip from the beginning of the result set
         order_by - the name of field by which the results are ordered
+        meeting  - the id of the meeting whose agenda items should be returned
     """
+
+    query = klupung.models.AgendaItem.query
+
+    try:
+        meeting_id = int(flask.request.args["meeting"])
+    except KeyError:
+        pass
+    except ValueError:
+        raise InvalidArgumentError(flask.request.args["meeting"], "meeting",
+                                   expected="an integer value")
+    else:
+        query = query.join(klupung.models.Meeting)
+        query = query.filter(klupung.models.Meeting.id == meeting_id)
+
     return _jsonified_resource_list(
         klupung.models.AgendaItem,
         _get_agenda_item_resource,
         sortable_fields=["last_modified_time",
                          "origin_last_modified_time",
                          "meeting__date",
-                         "index"])
+                         "index"],
+        query=query)
 
 @v0.route("/agenda_item/<int:agenda_item_id>/")
 @auto.doc()
