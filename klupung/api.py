@@ -115,7 +115,8 @@ def _jsonified_resource(model_class, get_resource, primary_key):
     return flask.jsonify(**resource)
 
 def _jsonified_resource_list(model_class, get_resource,
-                             sortable_fields=(), do_paginate=False):
+                             sortable_fields=(), do_paginate=False,
+                             query=None):
     limit = min(_get_uint_arg("limit", 20), 1000)
     offset = _get_uint_arg("offset", 0)
 
@@ -126,9 +127,10 @@ def _jsonified_resource_list(model_class, get_resource,
     total_count = 0
     objects = []
 
-    query = model_class.query
+    if query is None:
+        query = model_class.query
 
-    total_count = model_class.query.count()
+    total_count = query.count()
 
     if sortable_fields:
         column_name, is_descending = _get_order_by_arg(sortable_fields)
@@ -490,14 +492,30 @@ def _meeting_route():
     """Return a list of meetings.
 
     GET parameters:
-        limit    - the maximum number of objects to return
-        offset   - the number of objects to skip from the beginning of the result set
-        order_by - the name of field by which the results are ordered
+        limit       - the maximum number of objects to return
+        offset      - the number of objects to skip from the beginning of the result set
+        order_by    - the name of field by which the results are ordered
+        policymaker - the id of the policymaker whose meetings should be returned
     """
+
+    query = klupung.models.Meeting.query
+
+    try:
+        policymaker_id = int(flask.request.args["policymaker"])
+    except KeyError:
+        pass
+    except ValueError:
+        raise InvalidArgumentError(flask.request.args["policymaker"], "policymaker",
+                                   expected="an integer value")
+    else:
+        query = query.join(klupung.models.Policymaker)
+        query = query.filter(klupung.models.Policymaker.id == policymaker_id)
+
     return _jsonified_resource_list(
         klupung.models.Meeting,
         _get_meeting_resource,
-        sortable_fields=["date", "policymaker"])
+        sortable_fields=["date", "policymaker"],
+        query=query)
 
 @v0.route("/meeting/<int:meeting_id>/")
 @auto.doc()
