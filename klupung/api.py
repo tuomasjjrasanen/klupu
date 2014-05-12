@@ -261,7 +261,7 @@ def _get_meeting_resource(meeting):
         "id"              : meeting.id,
         "date"            : meeting.date.strftime(_STRFMT_DATE),
         "minutes"         : True,
-        "number"          : 1,
+        "number"          : meeting.number,
         "policymaker"     : flask.url_for("._policymaker_id_route",
                                           policymaker_id=meeting.policymaker.id),
         "policymaker_name": meeting.policymaker.name,

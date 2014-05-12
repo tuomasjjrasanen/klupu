@@ -14,6 +14,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
+import datetime
 import re
 import unicodedata
 
@@ -269,6 +270,13 @@ class Meeting(klupung.db.Model):
     def __init__(self, date, policymaker_id):
         self.date = date
         self.policymaker_id = policymaker_id
+
+    @property
+    def number(self):
+        jan1 = datetime.date(self.date.year, 1, 1)
+        return klupung.models.Meeting.query.filter(
+            klupung.models.Meeting.date>=jan1,
+            klupung.models.Meeting.date<=self.date).count()
 
 class MeetingDocument(klupung.db.Model):
     __tablename__ = "meeting_document"
