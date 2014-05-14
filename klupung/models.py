@@ -353,3 +353,54 @@ class Policymaker(klupung.db.Model):
         self.abbreviation = abbreviation
         self.name = name
         self.slug = _slugify(self.abbreviation)
+
+class Content(klupung.db.Model):
+    CONTENT_TYPES = (
+        CONTENT_TYPE_RESOLUTION,
+        ) = (
+        "resolution",
+        )
+    CONTENT_INDICES = (
+        CONTENT_INDEX_RESOLUTION,
+        ) = range(len(CONTENT_TYPES))
+
+    __tablename__ = "content"
+
+    # Columns
+    id = klupung.db.Column(
+        klupung.db.Integer,
+        primary_key=True,
+        )
+    content_type = klupung.db.Column(
+        klupung.db.Enum(*CONTENT_TYPES),
+        nullable=False,
+        )
+    text = klupung.db.Column(
+        klupung.db.Text,
+        nullable=False,
+        )
+    index = klupung.db.Column(
+        klupung.db.Integer,
+        nullable=False,
+        )
+    agenda_item_id = klupung.db.Column(
+        klupung.db.Integer,
+        klupung.db.ForeignKey("agenda_item.id"),
+        )
+
+    # Relationships
+    agenda_item = klupung.db.relationship(
+        "AgendaItem",
+        backref="contents",
+        )
+
+    __table_args__ = (
+        klupung.db.CheckConstraint(index >= 0, name="check_index_positive"),
+        klupung.db.UniqueConstraint("agenda_item_id", "index"),
+        )
+
+    def __init__(self, content_type, text, index, agenda_item_id):
+        self.content_type = content_type
+        self.text = text
+        self.index = index
+        self.agenda_item_id = agenda_item_id
