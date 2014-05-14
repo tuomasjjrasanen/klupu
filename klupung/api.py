@@ -187,12 +187,18 @@ def _jsonified_resource_list(model_class, get_resource,
 
     return flask.jsonify(**resource)
 
+def _get_agenda_item_contents(agenda_item):
+    query = klupung.models.Content.query
+    contents = query.filter_by(agenda_item_id=agenda_item.id).order_by(klupung.models.Content.index).all()
+    for content in contents:
+        yield {"type": content.content_type, "text": content.text}
+
 def _get_agenda_item_resource(agenda_item):
     return {
         "attachments"                : [],
         "classification_code"        : "",
         "classification_description" : "",
-        "content"                    : [],
+        "content"                    : list(_get_agenda_item_contents(agenda_item)),
         "from_minutes"               : True,
         "id"                         : agenda_item.id,
         "index"                      : agenda_item.index,
