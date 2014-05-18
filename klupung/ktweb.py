@@ -27,6 +27,7 @@ import os.path
 import re
 import tempfile
 import time
+import traceback
 
 from codecs import open
 
@@ -123,12 +124,28 @@ def _download_clean_soup(url, encoding="utf-8", min_interval=1):
     clean_soup = _cleanup_soup(dirty_soup)
     return clean_soup
 
-def _download_page(url, encoding="utf-8", force=False, min_interval=1, download_dir=os.path.curdir):
+_DOWNLOAD_PAGE_ERROR_POLICIES = set(("raise", "ignore", "log"))
+_DOWNLOAD_PAGE_ERROR_POLICIES_STR = ' or '.join([repr(s) for s in _DOWNLOAD_PAGE_ERROR_POLICIES])
+def _download_page(url, encoding="utf-8", force=False, min_interval=1,
+                   download_dir=os.path.curdir, error_policy="raise"):
+    if error_policy not in _DOWNLOAD_PAGE_ERROR_POLICIES:
+        raise ValueError("error_policy has invalid value (%r), expected %s" %
+                         (error_policy, _DOWNLOAD_PAGE_ERROR_POLICIES_STR))
     filepath = os.path.normpath(download_dir + urlsplit(url).path)
     if force or not os.path.exists(filepath):
-        clean_soup = _download_clean_soup(url,
-                                          encoding=encoding,
-                                          min_interval=min_interval)
+        try:
+            clean_soup = _download_clean_soup(url,
+                                              encoding=encoding,
+                                              min_interval=min_interval)
+        except Exception, e:
+            if error_policy == "raise":
+                raise
+            if error_policy == "ignore":
+                return None, None
+            if error_policy == "log":
+                with open("%s.log" % filepath, "a") as error_log:
+                    traceback.print_exc(file=error_log)
+                return None, None
         _print_to_file(filepath, clean_soup)
         return filepath, clean_soup
     return filepath, None
@@ -151,7 +168,8 @@ def download_meeting_document(meeting_document_url, min_interval=1, force=False,
             continue
         agenda_item_url = urljoin(meeting_document_url,
                                   "%shtmtxt%s.htm" % (match.groups()))
-        _download_page(agenda_item_url, encoding="windows-1252", force=force, download_dir=download_dir)
+        _download_page(agenda_item_url, encoding="windows-1252", force=force,
+                       download_dir=download_dir, error_policy="log")
 
     return meeting_document_dir
 
