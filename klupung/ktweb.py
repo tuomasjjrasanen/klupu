@@ -161,13 +161,12 @@ def download_meeting_document(meeting_document_url, min_interval=1, force=False,
     _print_to_file(os.path.join(meeting_document_dir, "origin_url"), meeting_document_url)
 
     for tr in index_soup("table")[0]("tr"):
-        a = tr("a")[0]
-        href = a["href"].strip()
-        match = re.match(r"(.*)frmtxt(\d+)\.htm", href)
-        if not match or match.group(2) == "9999":
+        try:
+            agenda_item_number = int(tr("td")[0].text)
+        except ValueError:
             continue
         agenda_item_url = urljoin(meeting_document_url,
-                                  "%shtmtxt%s.htm" % (match.groups()))
+                                  "htmtxt%d.htm" % agenda_item_number)
         _download_page(agenda_item_url, encoding="windows-1252", force=force,
                        download_dir=download_dir, error_policy="log")
 
