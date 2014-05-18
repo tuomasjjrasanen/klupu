@@ -417,12 +417,29 @@ def _issue_search_route():
         offset   - the number of objects to skip from the beginning of the result set
         order_by - the name of field by which the results are ordered
         page     - the number of the page
+        text     - filter results by matching text contents
     """
+
+    query = klupung.models.Issue.query
+
+    try:
+        text = flask.request.args["text"]
+    except KeyError:
+        pass
+    else:
+        query = query.join(klupung.models.AgendaItem, klupung.models.Content)
+        query = query.filter(
+            (klupung.models.Content.text.like("%%%s%%" % text))
+            |
+            (klupung.models.AgendaItem.subject.like("%%%s%%" % text)))
+        query = query.distinct()
+
     return _jsonified_resource_list(
         klupung.models.Issue,
         _get_issue_resource,
         sortable_fields=["latest_decision_date"],
-        do_paginate=True)
+        do_paginate=True,
+        query=query)
 
 @v0.route("/policymaker/filter/")
 def _policymaker_filter_route():
