@@ -177,9 +177,10 @@ def query_meeting_document_urls(url):
 
     retval = []
     for h3 in clean_soup("h3"):
-        rel_url = h3("a")[0]["href"]
-        abs_url = urljoin(url, rel_url)
-        retval.append(abs_url)
+        if h3.text.strip().lower().startswith(u"pöytäkirja"):
+            rel_url = h3("a")[0]["href"]
+            abs_url = urljoin(url, rel_url)
+            retval.append(abs_url)
 
     return retval
 
