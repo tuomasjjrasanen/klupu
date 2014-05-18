@@ -44,7 +44,7 @@ def import_meeting(meeting_document_data):
     policymaker = klupung.models.Policymaker.query.filter_by(
         abbreviation=meeting_document_data["policymaker_abbreviation"],
         ).first()
-    meeting_date = meeting_document_data["start_datetime"].date()
+    meeting_date = meeting_document_data["start_datetime"]
     meeting = klupung.models.Meeting.query.filter_by(
         policymaker_id=policymaker.id,
         date=meeting_date).first()
