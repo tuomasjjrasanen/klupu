@@ -369,7 +369,19 @@ def _parse_cover_page(meeting_document_dirpath):
         "publish_datetime": publish_datetime,
         }
 
+def _parse_meeting_document_type(meeting_document_dirpath):
+    index_filepath = os.path.join(meeting_document_dirpath, "index.htm")
+    index_soup = _make_soup(index_filepath)
+    title = index_soup("title")[0].text.strip()
+    if title.lower().startswith(u"pöytäkirja"):
+        return "minutes"
+    if title.lower().startswith(u"esityslista"):
+        return "agenda"
+    return None
+
 def parse_meeting_document(meeting_document_dirpath, geodata=None):
+    meeting_document_type = _parse_meeting_document_type(meeting_document_dirpath)
+
     origin_url_filepath = os.path.join(meeting_document_dirpath, "origin_url")
     if os.path.exists(origin_url_filepath):
         with open(origin_url_filepath) as f:
@@ -387,6 +399,7 @@ def parse_meeting_document(meeting_document_dirpath, geodata=None):
         "policymaker_abbreviation": policymaker_abbreviation,
         "origin_url": origin_url,
         "origin_id": origin_id,
+        "type": meeting_document_type,
         }
 
     meeting_document.update(_parse_cover_page(meeting_document_dirpath))
