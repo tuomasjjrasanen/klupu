@@ -235,7 +235,10 @@ def _parse_agenda_item_subject(agenda_item_soup, number):
             return text[match.end():]
     return None
 
-def _parse_agenda_item(agenda_item_filepath):
+def _parse_agenda_item_geometries(agenda_item_soup, geodata):
+    return []
+
+def _parse_agenda_item(agenda_item_filepath, geodata):
     agenda_item_soup = _make_soup(agenda_item_filepath)
 
     agenda_item_filename = os.path.basename(agenda_item_filepath)
@@ -246,6 +249,7 @@ def _parse_agenda_item(agenda_item_filepath):
     preparers = _parse_agenda_item_preparers(agenda_item_soup)
     introducers = _parse_agenda_item_introducers(agenda_item_soup)
     resolution = _parse_agenda_item_resolution(agenda_item_soup)
+    geometries = _parse_agenda_item_geometries(agenda_item_soup, geodata)
 
     return {
         "number": number,
@@ -254,16 +258,23 @@ def _parse_agenda_item(agenda_item_filepath):
         "introducers": introducers,
         "subject": subject,
         "resolution": resolution,
+        "geometries": geometries,
         }
 
-def _parse_agenda_items(meeting_document_dirpath):
+def _parse_agenda_items(meeting_document_dirpath, geodata):
+    # Return example
+    # [ { "type": "Point", "category": "address", "name": "Siltakatu 12" },
+    #   { "type": "Polygon", "category": "plan_unit", "name": "As Oy Siltakatu" },
+    #   { "type": "LineString", "category": "plan", "name": "Siltakatu" },
+    # ]
+    #
     retval = []
 
     agenda_item_filepath_pattern = os.path.join(meeting_document_dirpath, "htmtxt*.htm")
     for agenda_item_filepath in glob.iglob(agenda_item_filepath_pattern):
         if os.path.basename(agenda_item_filepath) == _COVER_PAGE_FILENAME:
             continue
-        agenda_item = _parse_agenda_item(agenda_item_filepath)
+        agenda_item = _parse_agenda_item(agenda_item_filepath, geodata)
         retval.append(agenda_item)
 
     return retval
@@ -340,7 +351,7 @@ def _parse_cover_page(meeting_document_dirpath):
         "publish_datetime": publish_datetime,
         }
 
-def parse_meeting_document(meeting_document_dirpath):
+def parse_meeting_document(meeting_document_dirpath, geodata=None):
     origin_url_filepath = os.path.join(meeting_document_dirpath, "origin_url")
     if os.path.exists(origin_url_filepath):
         with open(origin_url_filepath) as f:
@@ -362,6 +373,6 @@ def parse_meeting_document(meeting_document_dirpath):
 
     meeting_document.update(_parse_cover_page(meeting_document_dirpath))
 
-    meeting_document["agenda_items"] = _parse_agenda_items(meeting_document_dirpath)
+    meeting_document["agenda_items"] = _parse_agenda_items(meeting_document_dirpath, geodata)
 
     return meeting_document
