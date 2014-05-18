@@ -114,6 +114,16 @@ def _jsonified_resource(model_class, get_resource, primary_key):
     resource = get_resource(model_class.query.get_or_404(primary_key))
     return flask.jsonify(**resource)
 
+def _encode_args(in_dict):
+    out_dict = {}
+    for k, v in in_dict.iteritems():
+        if isinstance(v, unicode):
+            v = v.encode('utf-8')
+        elif isinstance(v, str):
+            v.decode('utf-8')
+        out_dict[k] = v
+    return out_dict
+
 def _jsonified_resource_list(model_class, get_resource,
                              sortable_fields=(), do_paginate=False,
                              query=None):
@@ -156,12 +166,12 @@ def _jsonified_resource_list(model_class, get_resource,
     prev_path = None
 
     if limit + offset < total_count:
-        next_path_args = flask.request.args.to_dict()
+        next_path_args = _encode_args(flask.request.args.to_dict())
         next_path_args["offset"] = offset + limit
         next_path = "%s?%s" % (flask.request.path, urllib.urlencode(next_path_args))
 
     if offset > 0:
-        prev_path_args = flask.request.args.to_dict()
+        prev_path_args = _encode_args(flask.request.args.to_dict())
         prev_path_args["offset"] = max(offset - limit, 0)
         prev_path = "%s?%s" % (flask.request.path, urllib.urlencode(prev_path_args))
 
