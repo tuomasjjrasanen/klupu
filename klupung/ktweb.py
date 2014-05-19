@@ -258,11 +258,27 @@ def _parse_agenda_item_dnro(agenda_item_soup):
     return dnro
 
 def _parse_agenda_item_subject(agenda_item_soup, number):
+    number_found = False
     for p in agenda_item_soup.html.body("p"):
         text = _trimws(p.text)
-        match = re.match(r"%d " % number, text)
-        if match:
-            return text[match.end():]
+        if not number_found:
+            match = re.match(r"%d$|%d " % (number, number), text)
+            if match:
+                # The paragraph starts with the given agenda item
+                # number, the subject is nearby.
+                number_found = True
+
+                # In most cases, the subject follows the number within
+                # the same paragraph.
+                subject_candidate = text[match.end():].strip()
+                if subject_candidate:
+                    return subject_candidate
+        else:
+            # In some rare cases, the subject is the next non-whitespace
+            # paragraph.
+            subject_candidate = text.strip()
+            if subject_candidate:
+                return subject_candidate
     return None
 
 def _parse_agenda_item_geometries(agenda_item_soup, geodata):
