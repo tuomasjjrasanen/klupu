@@ -139,7 +139,16 @@ if __name__ == "__main__":
         if not klupung.ktweb.is_meeting_document_dir(dirpath):
             continue
 
-        meeting_document_data = klupung.ktweb.parse_meeting_document(dirpath)
+        try:
+            meeting_document_data = klupung.ktweb.parse_meeting_document(dirpath)
+        except:
+            # If just anything goes wrong with parsing, log it and
+            # continue to the next meeting document.
+            print("Failed to parse meeting document '%s'" % dirpath,
+                  file=sys.stderr)
+            traceback.print_exc(file=sys.stderr)
+            continue
+
         if meeting_document_data["type"] != "minutes":
             continue
 
