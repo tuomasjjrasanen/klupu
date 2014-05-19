@@ -254,6 +254,12 @@ def _parse_agenda_item_subject(agenda_item_soup, number):
     return None
 
 def _parse_agenda_item_geometries(agenda_item_soup, geodata):
+    # Return example
+    # [ { "type": "Point", "category": "address", "name": "Siltakatu 12" },
+    #   { "type": "Polygon", "category": "plan_unit", "name": "As Oy Siltakatu" },
+    #   { "type": "LineString", "category": "plan", "name": "Siltakatu" },
+    # ]
+    #
     return []
 
 def _parse_agenda_item(agenda_item_filepath, geodata):
@@ -280,12 +286,6 @@ def _parse_agenda_item(agenda_item_filepath, geodata):
         }
 
 def _parse_agenda_items(meeting_document_dirpath, geodata):
-    # Return example
-    # [ { "type": "Point", "category": "address", "name": "Siltakatu 12" },
-    #   { "type": "Polygon", "category": "plan_unit", "name": "As Oy Siltakatu" },
-    #   { "type": "LineString", "category": "plan", "name": "Siltakatu" },
-    # ]
-    #
     retval = []
 
     agenda_item_filepath_pattern = os.path.join(meeting_document_dirpath, "htmtxt*.htm")
