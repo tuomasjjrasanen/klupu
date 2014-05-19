@@ -155,7 +155,10 @@ def download_meeting_document(meeting_document_url, min_interval=1, force=False,
                                                 encoding="iso-8859-1",
                                                 force=True, # Refresh indices always.
                                                 min_interval=min_interval,
-                                                download_dir=download_dir)
+                                                download_dir=download_dir,
+                                                error_policy="log")
+    if index_filepath is index_soup is None:
+        return None
 
     meeting_document_dir = os.path.dirname(index_filepath)
     _print_to_file(os.path.join(meeting_document_dir, "origin_url"), meeting_document_url)
