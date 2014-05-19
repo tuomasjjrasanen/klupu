@@ -94,7 +94,6 @@ class AgendaItem(klupung.flask.db.Model):
         )
     origin_last_modified_time = klupung.flask.db.Column(
         klupung.flask.db.DateTime,
-        nullable=False,
         )
     permalink = klupung.flask.db.Column(
         klupung.flask.db.String(500),
