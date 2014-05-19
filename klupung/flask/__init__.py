@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
 # KlupuNG
 # Copyright (C) 2013 Koodilehto Osk <http://koodilehto.fi>.
 #
@@ -16,19 +14,21 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-import argparse
+import flask
+import flask.ext.sqlalchemy
+import flask.ext.autodoc
 
-import klupung.flask
+db = flask.ext.sqlalchemy.SQLAlchemy()
 
-arg_parser = argparse.ArgumentParser(
-    description="Stupid API server suitable only for development purposes")
+def create_app(db_uri):
+    app = flask.Flask(__name__)
+    app.config['SQLALCHEMY_DATABASE_URI'] = db_uri
 
-arg_parser.add_argument("db_uri", metavar="DB_URI",
-                        help="Database URI, e.g. 'sqlite:///klupung.db'")
-arg_parser.add_argument("--debug", default=False, action="store_true",
-                        help="enable debugging mode")
+    db.init_app(app)
 
-args = arg_parser.parse_args()
+    import klupung.flask.api
+    klupung.flask.api.auto.init_app(app)
 
-app = klupung.flask.create_app(args.db_uri)
-app.run(debug=args.debug)
+    app.register_blueprint(klupung.flask.api.v0)
+
+    return app

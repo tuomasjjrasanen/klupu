@@ -24,7 +24,7 @@ import flask
 import flask.ext.autodoc
 
 ## Local imports
-import klupung.models
+import klupung.flask.models
 
 class Error(Exception):
     """Common base class for all API-related exceptions."""
@@ -198,8 +198,8 @@ def _jsonified_resource_list(model_class, get_resource,
     return flask.jsonify(**resource)
 
 def _get_agenda_item_contents(agenda_item):
-    query = klupung.models.Content.query
-    contents = query.filter_by(agenda_item_id=agenda_item.id).order_by(klupung.models.Content.index).all()
+    query = klupung.flask.models.Content.query
+    contents = query.filter_by(agenda_item_id=agenda_item.id).order_by(klupung.flask.models.Content.index).all()
     for content in contents:
         yield {"type": content.content_type, "text": content.text}
 
@@ -317,7 +317,7 @@ def _agenda_item_filter_route():
     GET parameters:
         issue__id.eq - filter by issue id
     """
-    query = klupung.models.AgendaItem.query
+    query = klupung.flask.models.AgendaItem.query
 
     known_args = set([
             "issue__id.eq",
@@ -335,8 +335,8 @@ def _agenda_item_filter_route():
         raise InvalidArgumentError(flask.request.args["issue__id.eq"], "issue__id.eq",
                                    expected="an integer value")
     else:
-        query = query.join(klupung.models.Issue)
-        query = query.filter(klupung.models.Issue.id == issue_id)
+        query = query.join(klupung.flask.models.Issue)
+        query = query.filter(klupung.flask.models.Issue.id == issue_id)
 
     return _jsonified_query_results(query, _get_agenda_item_resource)
 
@@ -352,7 +352,7 @@ def _agenda_item_route():
         meeting  - the id of the meeting whose agenda items should be returned
     """
 
-    query = klupung.models.AgendaItem.query
+    query = klupung.flask.models.AgendaItem.query
 
     try:
         meeting_id = int(flask.request.args["meeting"])
@@ -362,11 +362,11 @@ def _agenda_item_route():
         raise InvalidArgumentError(flask.request.args["meeting"], "meeting",
                                    expected="an integer value")
     else:
-        query = query.join(klupung.models.Meeting)
-        query = query.filter(klupung.models.Meeting.id == meeting_id)
+        query = query.join(klupung.flask.models.Meeting)
+        query = query.filter(klupung.flask.models.Meeting.id == meeting_id)
 
     return _jsonified_resource_list(
-        klupung.models.AgendaItem,
+        klupung.flask.models.AgendaItem,
         _get_agenda_item_resource,
         sortable_fields=["last_modified_time",
                          "origin_last_modified_time",
@@ -379,7 +379,7 @@ def _agenda_item_route():
 def _agenda_item_id_route(agenda_item_id):
     """Return an agenda item of a meeting by an id."""
     return _jsonified_resource(
-        klupung.models.AgendaItem,
+        klupung.flask.models.AgendaItem,
         _get_agenda_item_resource,
         agenda_item_id)
 
@@ -394,7 +394,7 @@ def _policymaker_route():
         order_by - the name of field by which the results are ordered
     """
     return _jsonified_resource_list(
-        klupung.models.Policymaker,
+        klupung.flask.models.Policymaker,
         _get_policymaker_resource,
         sortable_fields=["name"])
 
@@ -403,7 +403,7 @@ def _policymaker_route():
 def _policymaker_id_route(policymaker_id):
     """Return a policymaker by an id."""
     return _jsonified_resource(
-        klupung.models.Policymaker,
+        klupung.flask.models.Policymaker,
         _get_policymaker_resource,
         policymaker_id)
 
@@ -420,22 +420,22 @@ def _issue_search_route():
         text     - filter results by matching text contents
     """
 
-    query = klupung.models.Issue.query
+    query = klupung.flask.models.Issue.query
 
     try:
         text = flask.request.args["text"]
     except KeyError:
         pass
     else:
-        query = query.join(klupung.models.AgendaItem, klupung.models.Content)
+        query = query.join(klupung.flask.models.AgendaItem, klupung.flask.models.Content)
         query = query.filter(
-            (klupung.models.Content.text.like("%%%s%%" % text))
+            (klupung.flask.models.Content.text.like("%%%s%%" % text))
             |
-            (klupung.models.AgendaItem.subject.like("%%%s%%" % text)))
+            (klupung.flask.models.AgendaItem.subject.like("%%%s%%" % text)))
         query = query.distinct()
 
     return _jsonified_resource_list(
-        klupung.models.Issue,
+        klupung.flask.models.Issue,
         _get_issue_resource,
         sortable_fields=["latest_decision_date"],
         do_paginate=True,
@@ -450,7 +450,7 @@ def _policymaker_filter_route():
         slug.eq             - filter by slug
     """
 
-    query = klupung.models.Policymaker.query
+    query = klupung.flask.models.Policymaker.query
 
     known_args = set([
             "abbreviation.isnull",
@@ -467,9 +467,9 @@ def _policymaker_filter_route():
         pass
     else:
         if abbreviation_isnull == "false":
-            query = query.filter(klupung.models.Policymaker.abbreviation is not None)
+            query = query.filter(klupung.flask.models.Policymaker.abbreviation is not None)
         elif abbreviation_isnull == "true":
-            query = query.filter(klupung.models.Policymaker.abbreviation is None)
+            query = query.filter(klupung.flask.models.Policymaker.abbreviation is None)
         else:
             raise InvalidArgumentError(abbreviation_isnull, "abbreviation.isnull",
                                        expected="true or false")
@@ -479,7 +479,7 @@ def _policymaker_filter_route():
     except KeyError:
         pass
     else:
-        query = query.filter(klupung.models.Policymaker.slug == slug)
+        query = query.filter(klupung.flask.models.Policymaker.slug == slug)
 
     return _jsonified_query_results(query, _get_policymaker_resource)
 
@@ -491,7 +491,7 @@ def _issue_filter_route():
         slug.eq - filter by slug
     """
 
-    query = klupung.models.Issue.query
+    query = klupung.flask.models.Issue.query
 
     known_args = set([
             "slug.eq",
@@ -506,7 +506,7 @@ def _issue_filter_route():
     except KeyError:
         pass
     else:
-        query = query.filter(klupung.models.Issue.slug == slug)
+        query = query.filter(klupung.flask.models.Issue.slug == slug)
 
     return _jsonified_query_results(query, _get_issue_resource)
 
@@ -521,7 +521,7 @@ def _issue_route():
         order_by - the name of field by which the results are ordered
     """
     return _jsonified_resource_list(
-        klupung.models.Issue,
+        klupung.flask.models.Issue,
         _get_issue_resource,
         sortable_fields=["last_modified_time", "latest_decision_date"])
 
@@ -530,7 +530,7 @@ def _issue_route():
 def _issue_id_route(issue_id):
     """Return an issue by an id."""
     return _jsonified_resource(
-        klupung.models.Issue,
+        klupung.flask.models.Issue,
         _get_issue_resource,
         issue_id)
 
@@ -546,7 +546,7 @@ def _meeting_route():
         policymaker - the id of the policymaker whose meetings should be returned
     """
 
-    query = klupung.models.Meeting.query
+    query = klupung.flask.models.Meeting.query
 
     try:
         policymaker_id = int(flask.request.args["policymaker"])
@@ -556,11 +556,11 @@ def _meeting_route():
         raise InvalidArgumentError(flask.request.args["policymaker"], "policymaker",
                                    expected="an integer value")
     else:
-        query = query.join(klupung.models.Policymaker)
-        query = query.filter(klupung.models.Policymaker.id == policymaker_id)
+        query = query.join(klupung.flask.models.Policymaker)
+        query = query.filter(klupung.flask.models.Policymaker.id == policymaker_id)
 
     return _jsonified_resource_list(
-        klupung.models.Meeting,
+        klupung.flask.models.Meeting,
         _get_meeting_resource,
         sortable_fields=["date", "policymaker"],
         query=query)
@@ -570,7 +570,7 @@ def _meeting_route():
 def _meeting_id_route(meeting_id):
     """Return a meeting by an id."""
     return _jsonified_resource(
-        klupung.models.Meeting,
+        klupung.flask.models.Meeting,
         _get_meeting_resource,
         meeting_id)
 
@@ -585,7 +585,7 @@ def _meeting_document_route():
         order_by - the name of field by which the results are ordered
     """
     return _jsonified_resource_list(
-        klupung.models.MeetingDocument,
+        klupung.flask.models.MeetingDocument,
         _get_meeting_document_resource)
 
 @v0.route("/meeting_document/<int:meeting_document_id>/")
@@ -593,7 +593,7 @@ def _meeting_document_route():
 def _meeting_document_id_route(meeting_document_id):
     """Return a meeting document by an id."""
     return _jsonified_resource(
-        klupung.models.MeetingDocument,
+        klupung.flask.models.MeetingDocument,
         _get_meeting_document_resource,
         meeting_document_id)
 
@@ -605,7 +605,7 @@ def _category_filter_route():
         level.lte - filter by level
     """
 
-    query = klupung.models.Category.query
+    query = klupung.flask.models.Category.query
 
     known_args = set([
             "level.lte",
@@ -623,7 +623,7 @@ def _category_filter_route():
         raise InvalidArgumentError(flask.request.args["level.lte"], "level.lte",
                                    expected="an integer value")
     else:
-        query = query.filter(klupung.models.Category.level <= level)
+        query = query.filter(klupung.flask.models.Category.level <= level)
 
     return _jsonified_query_results(query, _get_category_resource)
 
@@ -638,7 +638,7 @@ def _category_route():
         order_by - the name of field by which the results are ordered
     """
     return _jsonified_resource_list(
-        klupung.models.Category,
+        klupung.flask.models.Category,
         _get_category_resource)
 
 @v0.route("/category/<int:category_id>")
@@ -646,7 +646,7 @@ def _category_route():
 def _category_id_route(category_id):
     """Return an issue category by an id."""
     return _jsonified_resource(
-        klupung.models.Category,
+        klupung.flask.models.Category,
         _get_category_resource,
         category_id)
 

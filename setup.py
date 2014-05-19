@@ -13,7 +13,7 @@ setup(name='klupung',
       author='Koodilehto Osk',
       author_email='klupung@koodilehto.fi',
       license='AGPLv3+',
-      packages=['klupung'],
+      packages=['klupung', 'klupung.flask'],
       scripts=[
         "bin/klupung-ktweb-download",
         "bin/klupung-ktweb-dbimport",

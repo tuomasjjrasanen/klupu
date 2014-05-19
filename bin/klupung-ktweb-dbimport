@@ -25,64 +25,64 @@ import locale
 import os
 from urlparse import urljoin
 
-import klupung
-import klupung.models
+import klupung.flask
+import klupung.flask.models
 import klupung.ktweb
 
 def import_categories():
-    category = klupung.models.Category("Kaikki", "00")
-    klupung.db.session.add(category)
+    category = klupung.flask.models.Category("Kaikki", "00")
+    klupung.flask.db.session.add(category)
 
 def import_policymakers():
     abbrevs = os.listdir("paatokset")
     encoding = locale.getpreferredencoding()
     for abbrev in [unicode(a.decode(encoding)) for a in abbrevs]:
-        policymaker = klupung.models.Policymaker(abbrev, abbrev)
-        klupung.db.session.add(policymaker)
+        policymaker = klupung.flask.models.Policymaker(abbrev, abbrev)
+        klupung.flask.db.session.add(policymaker)
 
 def import_meeting(meeting_document_data):
-    policymaker = klupung.models.Policymaker.query.filter_by(
+    policymaker = klupung.flask.models.Policymaker.query.filter_by(
         abbreviation=meeting_document_data["policymaker_abbreviation"],
         ).first()
     meeting_date = meeting_document_data["start_datetime"]
-    meeting = klupung.models.Meeting.query.filter_by(
+    meeting = klupung.flask.models.Meeting.query.filter_by(
         policymaker_id=policymaker.id,
         date=meeting_date).first()
     if meeting is None:
-        meeting = klupung.models.Meeting(meeting_date,
-                                         policymaker.id)
-        klupung.db.session.add(meeting)
+        meeting = klupung.flask.models.Meeting(meeting_date,
+                                               policymaker.id)
+        klupung.flask.db.session.add(meeting)
     return meeting
 
 def import_meeting_document(meeting_document_data, meeting):
-    meeting_document = klupung.models.MeetingDocument.query.filter_by(
+    meeting_document = klupung.flask.models.MeetingDocument.query.filter_by(
         origin_id=meeting_document_data["origin_id"]).first()
     if meeting_document is None:
-        meeting_document = klupung.models.MeetingDocument(
+        meeting_document = klupung.flask.models.MeetingDocument(
             meeting_document_data["origin_url"],
             meeting.id,
             meeting_document_data["origin_id"],
             meeting_document_data["publish_datetime"])
-        klupung.db.session.add(meeting_document)
+        klupung.flask.db.session.add(meeting_document)
 
 def import_agenda_item(meeting_document_data, agenda_item_data, meeting):
-    agenda_item = klupung.models.AgendaItem.query.filter_by(
+    agenda_item = klupung.flask.models.AgendaItem.query.filter_by(
         meeting_id=meeting.id,
         index=agenda_item_data["number"]).first()
     if agenda_item is None:
-        issue = klupung.models.Issue.query.filter_by(
+        issue = klupung.flask.models.Issue.query.filter_by(
             register_id=agenda_item_data["dnro"]).first()
         if issue is None and agenda_item_data["dnro"] is not None:
-            category = klupung.models.Category.query.filter_by(
+            category = klupung.flask.models.Category.query.filter_by(
                 origin_id="00").first()
-            issue = klupung.models.Issue(
+            issue = klupung.flask.models.Issue(
                 agenda_item_data["dnro"],
                 agenda_item_data["subject"],
                 agenda_item_data["subject"],
                 category.id)
-            klupung.db.session.add(issue)
-            klupung.db.session.commit()
-        agenda_item = klupung.models.AgendaItem(
+            klupung.flask.db.session.add(issue)
+            klupung.flask.db.session.commit()
+        agenda_item = klupung.flask.models.AgendaItem(
             agenda_item_data["subject"],
             issue.id if issue is not None else None,
             meeting.id,
@@ -92,25 +92,25 @@ def import_agenda_item(meeting_document_data, agenda_item_data, meeting):
 
             urljoin(meeting_document_data["origin_url"],
                     "htmtxt%d.htm" % agenda_item_data["number"]),
-            klupung.models.AgendaItem.RESOLUTION_PASSED,
+            klupung.flask.models.AgendaItem.RESOLUTION_PASSED,
             meeting_document_data["publish_datetime"])
-        klupung.db.session.add(agenda_item)
+        klupung.flask.db.session.add(agenda_item)
     return agenda_item
 
 def import_agenda_item_contents(agenda_item, agenda_item_data):
     resolution = agenda_item_data["resolution"]
     if resolution is None:
         return None
-    content = klupung.models.Content.query.filter_by(
+    content = klupung.flask.models.Content.query.filter_by(
         agenda_item_id=agenda_item.id,
-        index=klupung.models.Content.CONTENT_INDEX_RESOLUTION).first()
+        index=klupung.flask.models.Content.CONTENT_INDEX_RESOLUTION).first()
     if content is None:
-        content = klupung.models.Content(
-            klupung.models.Content.CONTENT_TYPE_RESOLUTION,
+        content = klupung.flask.models.Content(
+            klupung.flask.models.Content.CONTENT_TYPE_RESOLUTION,
             resolution,
-            klupung.models.Content.CONTENT_INDEX_RESOLUTION,
+            klupung.flask.models.Content.CONTENT_INDEX_RESOLUTION,
             agenda_item.id)
-        klupung.db.session.add(content)
+        klupung.flask.db.session.add(content)
     return content
 
 if __name__ == "__main__":
@@ -120,15 +120,15 @@ if __name__ == "__main__":
                             help="database URI, e.g. 'sqlite:////path/to/db.sqlite3'")
     args = arg_parser.parse_args()
 
-    app = klupung.create_app(args.db_uri)
+    app = klupung.flask.create_app(args.db_uri)
 
     app.test_request_context().push()
 
-    klupung.db.create_all(app=app)
+    klupung.flask.db.create_all(app=app)
 
     import_categories()
     import_policymakers()
-    klupung.db.session.commit()
+    klupung.flask.db.session.commit()
 
     for dirpath, dirnames, _ in os.walk("paatokset"):
 
@@ -153,15 +153,15 @@ if __name__ == "__main__":
             continue
 
         meeting = import_meeting(meeting_document_data)
-        klupung.db.session.commit()
+        klupung.flask.db.session.commit()
 
         import_meeting_document(meeting_document_data, meeting)
-        klupung.db.session.commit()
+        klupung.flask.db.session.commit()
 
         for agenda_item_data in meeting_document_data["agenda_items"]:
             agenda_item = import_agenda_item(meeting_document_data, agenda_item_data, meeting)
-            klupung.db.session.commit()
+            klupung.flask.db.session.commit()
             import_agenda_item_contents(agenda_item, agenda_item_data)
-            klupung.db.session.commit()
+            klupung.flask.db.session.commit()
 
         del dirnames[:]
