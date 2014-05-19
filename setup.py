@@ -16,7 +16,7 @@ setup(name='klupung',
       packages=['klupung'],
       scripts=[
         "bin/klupung-ktweb-download",
-        "bin/klupung-ktweb-parse",
+        "bin/klupung-ktweb-dbimport",
         "bin/klupung-stupid-apiserver",
         ],
       platforms=['Linux'],
