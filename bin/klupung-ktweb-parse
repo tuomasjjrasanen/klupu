@@ -136,6 +136,9 @@ if __name__ == "__main__":
             # Ignore all but potential meeting doc dirs.
             continue
 
+        if not klupung.ktweb.is_meeting_document_dir(dirpath):
+            continue
+
         meeting_document_data = klupung.ktweb.parse_meeting_document(dirpath)
         if meeting_document_data["type"] != "minutes":
             continue
