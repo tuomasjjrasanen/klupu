@@ -176,6 +176,7 @@ def download_meeting_document(meeting_document_url, min_interval=1, force=False,
         agenda_item_url = urljoin(meeting_document_url,
                                   "htmtxt%d.htm" % agenda_item_number)
         _download_page(agenda_item_url, encoding="windows-1252", force=force,
+                       min_interval=min_interval,
                        download_dir=download_dir, error_policy="log")
 
     return meeting_document_dir
