@@ -160,6 +160,14 @@ def download_meeting_document(meeting_document_url, min_interval=1, force=False,
     meeting_document_dir = os.path.dirname(index_filepath)
     _print_to_file(os.path.join(meeting_document_dir, "origin_url"), meeting_document_url)
 
+    cover_page_url = urljoin(meeting_document_url, _COVER_PAGE_FILENAME)
+    _download_page(cover_page_url,
+                   encoding="windows-1252",
+                   force=True,
+                   min_interval=min_interval,
+                   download_dir=download_dir,
+                   error_policy="log")
+
     for tr in index_soup("table")[0]("tr"):
         try:
             agenda_item_number = int(tr("td")[0].text)
