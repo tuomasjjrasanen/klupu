@@ -362,7 +362,8 @@ def _parse_cover_page(meeting_document_dirpath):
         tds = publish_datetime_marker.parent.parent.parent.parent("td")
         texts = tds[1](text=re.compile(r"[0-9]{1,2}\.[0-9]{1,2}\.[0-9]{4}"))
         if texts:
-            publish_datetime = datetime.datetime.strptime(texts[0], "%d.%m.%Y")
+            date_text = re.search(r"[0-9]{1,2}\.[0-9]{1,2}\.[0-9]{4}", texts[0]).group()
+            publish_datetime = datetime.datetime.strptime(date_text, "%d.%m.%Y")
 
     return {
         "start_datetime": start_datetime,
