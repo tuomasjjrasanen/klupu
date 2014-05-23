@@ -413,11 +413,12 @@ def _issue_search_route():
     """Return a list of issues.
 
     GET parameters:
-        limit    - the maximum number of objects to return
-        offset   - the number of objects to skip from the beginning of the result set
-        order_by - the name of field by which the results are ordered
-        page     - the number of the page
-        text     - filter results by matching text contents
+        limit       - the maximum number of objects to return
+        offset      - the number of objects to skip from the beginning of the result set
+        order_by    - the name of field by which the results are ordered
+        page        - the number of the page
+        text        - filter results by matching text contents
+        policymaker - filter results by matching policymaker id
     """
 
     query = klupung.flask.models.Issue.query
@@ -432,6 +433,18 @@ def _issue_search_route():
             (klupung.flask.models.Content.text.like("%%%s%%" % text))
             |
             (klupung.flask.models.AgendaItem.subject.like("%%%s%%" % text)))
+        query = query.distinct()
+
+    try:
+        policymaker_ids = [int(v) for v in flask.request.args["policymaker"].split(",")]
+    except KeyError:
+        pass
+    except ValueError:
+        raise InvalidArgumentError(flask.request.args["policymaker"], "policymaker",
+                                   expected="one or more comma-separated integers")
+    else:
+        query = query.join(klupung.flask.models.AgendaItem, klupung.flask.models.Meeting)
+        query = query.filter(klupung.flask.models.Meeting.policymaker_id.in_(policymaker_ids))
         query = query.distinct()
 
     return _jsonified_resource_list(
