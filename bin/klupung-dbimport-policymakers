@@ -1,0 +1,57 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# KlupuNG
+# Copyright (C) 2014 Koodilehto Osk <http://koodilehto.fi>.
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+# Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program. If not, see <http://www.gnu.org/licenses/>.
+
+from __future__ import print_function
+from __future__ import division
+from __future__ import absolute_import
+
+import argparse
+import csv
+
+import klupung.flask
+import klupung.flask.models
+
+def import_policymakers(policymaker_csv_filepath):
+    with open(policymaker_csv_filepath) as policymaker_csv_file:
+        for abbrev, name in csv.reader(policymaker_csv_file):
+            abbrev = abbrev.decode("utf-8")
+            name = name.decode("utf-8")
+            policymaker = klupung.flask.models.Policymaker.query.filter_by(
+                abbreviation=abbrev).first()
+            if policymaker is not None:
+                policymaker.name = name
+            else:
+                policymaker = klupung.flask.models.Policymaker(abbrev, name)
+            klupung.flask.db.session.merge(policymaker)
+
+if __name__ == "__main__":
+    arg_parser = argparse.ArgumentParser(description="Populate database with policymakers.")
+
+    arg_parser.add_argument("db_uri", metavar="DB_URI",
+                            help="database URI, e.g. 'sqlite:////path/to/db.sqlite3'")
+    arg_parser.add_argument("policymaker_csv", metavar="POLICYMAKER_CSV",
+                            help="policymaker CSV file")
+    args = arg_parser.parse_args()
+
+    app = klupung.flask.create_app(args.db_uri)
+
+    app.test_request_context().push()
+
+    import_policymakers(args.policymaker_csv)
+
+    klupung.flask.db.session.commit()

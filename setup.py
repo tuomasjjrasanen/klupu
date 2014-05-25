@@ -15,6 +15,7 @@ setup(name='klupung',
       license='AGPLv3+',
       packages=['klupung', 'klupung.flask'],
       scripts=[
+        "bin/klupung-dbimport-policymakers",
         "bin/klupung-dbinit",
         "bin/klupung-ktweb-download",
         "bin/klupung-ktweb-dbimport",

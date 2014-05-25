@@ -21,7 +21,6 @@ from __future__ import division
 from __future__ import absolute_import
 
 import argparse
-import locale
 import os
 from urlparse import urljoin
 
@@ -32,13 +31,6 @@ import klupung.ktweb
 def import_categories():
     category = klupung.flask.models.Category("Kaikki", "00")
     klupung.flask.db.session.add(category)
-
-def import_policymakers():
-    abbrevs = os.listdir("paatokset")
-    encoding = locale.getpreferredencoding()
-    for abbrev in [unicode(a.decode(encoding)) for a in abbrevs]:
-        policymaker = klupung.flask.models.Policymaker(abbrev, abbrev)
-        klupung.flask.db.session.add(policymaker)
 
 def import_meeting(meeting_document_data):
     policymaker = klupung.flask.models.Policymaker.query.filter_by(
@@ -125,7 +117,6 @@ if __name__ == "__main__":
     app.test_request_context().push()
 
     import_categories()
-    import_policymakers()
     klupung.flask.db.session.commit()
 
     for dirpath, dirnames, _ in os.walk("paatokset"):
