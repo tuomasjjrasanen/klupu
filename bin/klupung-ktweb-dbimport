@@ -28,10 +28,6 @@ import klupung.flask
 import klupung.flask.models
 import klupung.ktweb
 
-def import_categories():
-    category = klupung.flask.models.Category("Kaikki", "00")
-    klupung.flask.db.session.add(category)
-
 def import_meeting(meeting_document_data):
     policymaker = klupung.flask.models.Policymaker.query.filter_by(
         abbreviation=meeting_document_data["policymaker_abbreviation"],
@@ -116,7 +112,6 @@ if __name__ == "__main__":
 
     app.test_request_context().push()
 
-    import_categories()
     klupung.flask.db.session.commit()
 
     for dirpath, dirnames, _ in os.walk("paatokset"):
