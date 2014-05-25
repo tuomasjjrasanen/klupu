@@ -124,8 +124,6 @@ if __name__ == "__main__":
 
     app.test_request_context().push()
 
-    klupung.flask.db.create_all(app=app)
-
     import_categories()
     import_policymakers()
     klupung.flask.db.session.commit()
