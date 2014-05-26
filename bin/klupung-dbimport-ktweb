@@ -22,6 +22,7 @@ from __future__ import absolute_import
 
 import argparse
 import os
+import os.path
 from urlparse import urljoin
 
 import klupung.flask
@@ -102,10 +103,17 @@ def import_agenda_item_contents(agenda_item, agenda_item_data):
     return content
 
 if __name__ == "__main__":
-    arg_parser = argparse.ArgumentParser(description="Populate database.")
+    arg_parser = argparse.ArgumentParser(
+        description="Populate database (tables meeting, meeting_document, "
+        "issue and agenda_item) from DIR containing KTWeb meeting documents. "
+        "Tables policymaker and category must be populated by other means "
+        "since that data cannot be scraped from the documents.")
 
     arg_parser.add_argument("db_uri", metavar="DB_URI",
-                            help="database URI, e.g. 'sqlite:////path/to/db.sqlite3'")
+                            help="database URI,"
+                            "e.g. 'sqlite:////path/to/db.sqlite3'")
+    arg_parser.add_argument("ktweb_dir", metavar="DIR",
+                            help="KTWeb root directory")
     args = arg_parser.parse_args()
 
     app = klupung.flask.create_app(args.db_uri)
@@ -114,7 +122,9 @@ if __name__ == "__main__":
 
     klupung.flask.db.session.commit()
 
-    for dirpath, dirnames, _ in os.walk("paatokset"):
+    paatokset_dir = os.path.join(args.ktweb_dir, "paatokset")
+
+    for dirpath, dirnames, _ in os.walk(paatokset_dir):
 
         if len(dirpath.split("/")) != 4:
             # Ignore all but potential meeting doc dirs.
