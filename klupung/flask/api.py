@@ -269,7 +269,7 @@ def _get_policymaker_resource(policymaker):
         "name"        : policymaker.name,
         "origin_id"   : policymaker.abbreviation,
         "slug"        : policymaker.slug,
-        "summary"     : None,
+        "summary"     : policymaker.summary,
         "resource_uri": flask.url_for("._policymaker_id_route",
                                       policymaker_id=policymaker.id),
         }
