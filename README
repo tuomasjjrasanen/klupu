@@ -2,10 +2,11 @@
  KlupuNG
 =========
 
-`OpenAhjo API <http://dev.hel.fi/apis/openahjo>`_ -compatible
-implementation for decision material published with KTweb.
+Klupu Next Generation is `OpenAhjo API
+<http://dev.hel.fi/apis/openahjo>`_ -compatible implementation for
+decision material published with KTweb.
 
-Copyright © 2013 `Koodilehto Osk <http://koodilehto.fi>`_
+Copyright © 2014 `Koodilehto Osk <http://koodilehto.fi>`_
 
 This program is free software: you can redistribute it and/or modify it
 under the terms of the GNU Affero General Public License as published by
@@ -35,6 +36,7 @@ Recommended tools
 * `pip <http://www.pip-installer.org/>`_
 * `virtualenv <http://www.virtualenv.org>`_
 * `Docutils <http://docutils.sourceforge.net/>`_
+* `Gunicorn <http://gunicorn.org/>`_
 
 Installation
 ============
@@ -42,12 +44,39 @@ Installation
 With pip::
 
  pip install -r requirements.txt
+ python setup.py sdist
+ pip install dist/klupung-0.1.0.tar.gz
 
-Without pip, install packages listed in ``requirements.txt`` manually.
+Without pip, install packages listed in ``requirements.txt`` manually
+and then install klupung by running ``python setup.py install``.
 
 Setup and running
 =================
 
+Download KTWeb meeting documents::
+
+  klupung-download-ktweb deployment/jkl/ktweb_urls.txt ktweb-jkl
+
+Initialize the database and create tables (in this example we are using sqlite3)::
+
+  klupung-dbinit sqlite:///jkl.db
+
+Populate the database with data which cannot be scraped from the meeting documents::
+
+  klupung-dbimport-categories sqlite:///jkl.db deployment/jkl/categories.csv
+  klupung-dbimport-policymakers sqlite:///jkl.db deployment/jkl/policymakers.csv
+
+Import previously downloaded meeting documents::
+
+  klupung-dbimport-ktweb sqlite:///jkl.db ktweb-jkl
+
 Run in development mode::
 
-  ./apiserver
+  klupung-stupid-apiserver sqlite:///jkl.db
+
+Run in production mode::
+
+  gunicorn --env KLUPUNG_DB_URI='sqlite:///jkl.db' klupung.flask.wsgi:app
+
+Please refer to `the documentation of gunicorn
+<http://docs.gunicorn.org>`_ for further information.
