@@ -28,15 +28,17 @@ import klupung.flask.models
 
 def import_policymakers(policymaker_csv_filepath):
     with open(policymaker_csv_filepath) as policymaker_csv_file:
-        for abbrev, name in csv.reader(policymaker_csv_file):
+        for abbrev, name, summary in csv.reader(policymaker_csv_file):
             abbrev = abbrev.decode("utf-8")
             name = name.decode("utf-8")
+            summary = summary.decode("utf-8")
             policymaker = klupung.flask.models.Policymaker.query.filter_by(
                 abbreviation=abbrev).first()
             if policymaker is not None:
                 policymaker.name = name
+                policymaker.summary = summary
             else:
-                policymaker = klupung.flask.models.Policymaker(abbrev, name)
+                policymaker = klupung.flask.models.Policymaker(abbrev, name, summary)
             klupung.flask.db.session.merge(policymaker)
 
 if __name__ == "__main__":

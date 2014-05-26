@@ -336,6 +336,10 @@ class Policymaker(klupung.flask.db.Model):
         klupung.flask.db.String(20),
         nullable=False,
         )
+    summary = klupung.flask.db.Column(
+        klupung.flask.db.Text,
+        nullable=True,
+        )
 
     # Relationships
     meetings = klupung.flask.db.relationship(
@@ -348,10 +352,11 @@ class Policymaker(klupung.flask.db.Model):
         klupung.flask.db.UniqueConstraint("slug"),
         )
 
-    def __init__(self, abbreviation, name):
+    def __init__(self, abbreviation, name, summary):
         self.abbreviation = abbreviation
         self.name = name
         self.slug = _slugify(self.abbreviation)
+        self.summary = summary
 
 class Content(klupung.flask.db.Model):
     CONTENT_TYPES = (
