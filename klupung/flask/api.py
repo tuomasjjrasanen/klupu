@@ -204,6 +204,9 @@ def _get_agenda_item_contents(agenda_item):
         yield {"type": content.content_type, "text": content.text}
 
 def _get_agenda_item_resource(agenda_item):
+    origin_last_modified_time = agenda_item.last_modified_time.strftime(_STRFMT_DATETIME)
+    if agenda_item.origin_last_modified_time:
+        origin_last_modified_time = agenda_item.origin_last_modified_time.strftime(_STRFMT_DATETIME)
     return {
         "attachments"                : [],
         "classification_code"        : "",
@@ -216,7 +219,7 @@ def _get_agenda_item_resource(agenda_item):
         "issue"                      : _get_issue_resource(agenda_item.issue) if agenda_item.issue else {},
         "last_modified_time"         : agenda_item.last_modified_time.strftime(_STRFMT_DATETIME),
         "meeting"                    :  _get_meeting_resource(agenda_item.meeting),
-        "origin_last_modified_time"  : agenda_item.origin_last_modified_time.strftime(_STRFMT_DATETIME),
+        "origin_last_modified_time"  : origin_last_modified_time,
         "permalink"                  : agenda_item.permalink,
         "preparer"                   : agenda_item.preparer,
         "resolution"                 : agenda_item.resolution,
