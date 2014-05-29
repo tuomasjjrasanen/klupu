@@ -126,10 +126,6 @@ if __name__ == "__main__":
 
     for dirpath, dirnames, _ in os.walk(paatokset_dir):
 
-        if len(dirpath.split("/")) != 4:
-            # Ignore all but potential meeting doc dirs.
-            continue
-
         if not klupung.ktweb.is_meeting_document_dir(dirpath):
             continue
 
