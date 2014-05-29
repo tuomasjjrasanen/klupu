@@ -143,6 +143,11 @@ def _download_page(url, encoding="utf-8", force=False, min_interval=1,
             if error_policy == "ignore":
                 return None, None
             if error_policy == "log":
+                try:
+                    os.makedirs(os.path.dirname(filepath))
+                except OSError, e:
+                    if e.errno != errno.EEXIST:
+                        raise e
                 with open("%s.log" % filepath, "a") as error_log:
                     traceback.print_exc(file=error_log)
                 return None, None
