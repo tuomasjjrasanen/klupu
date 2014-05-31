@@ -57,7 +57,7 @@ def import_meeting_document(meeting_document_data, meeting):
         meeting_document.publish_datetime = meeting_document_data["publish_datetime"]
     klupung.flask.db.session.merge(meeting_document)
 
-def import_issue(agenda_item_data):
+def import_issue(agenda_item_data, meeting):
     dnro = agenda_item_data["dnro"]
     if dnro is None:
         return None
@@ -66,9 +66,14 @@ def import_issue(agenda_item_data):
     if issue is None:
         category = klupung.flask.models.Category.query.filter_by(
             origin_id="00").first()
-        issue = klupung.flask.models.Issue(dnro, subject, subject, category.id)
-        klupung.flask.db.session.add(issue)
+        issue = klupung.flask.models.Issue(dnro, subject, subject, category.id,
+                                           meeting.date)
+    elif meeting.date > issue.latest_decision_date:
+        issue.subject = subject
+        issue.summary = subject
+        issue.latest_decision_date = meeting.date
 
+    klupung.flask.db.session.merge(issue)
     return issue
 
 def import_agenda_item(meeting_document_data, agenda_item_data, meeting, issue):
@@ -173,7 +178,7 @@ if __name__ == "__main__":
         klupung.flask.db.session.commit()
 
         for agenda_item_data in meeting_document_data["agenda_items"]:
-            issue = import_issue(agenda_item_data)
+            issue = import_issue(agenda_item_data, meeting)
             klupung.flask.db.session.commit()
             agenda_item = import_agenda_item(meeting_document_data, agenda_item_data, meeting, issue)
             klupung.flask.db.session.commit()
