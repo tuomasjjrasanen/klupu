@@ -213,6 +213,7 @@ class Issue(klupung.flask.db.Model):
         )
     latest_decision_date = klupung.flask.db.Column(
         klupung.flask.db.DateTime,
+        nullable=False,
         )
     slug = klupung.flask.db.Column(
         klupung.flask.db.String,
@@ -229,12 +230,13 @@ class Issue(klupung.flask.db.Model):
         klupung.flask.db.UniqueConstraint("slug"),
         )
 
-    def __init__(self, register_id, subject, summary, category_id):
+    def __init__(self, register_id, subject, summary, category_id, latest_decision_date):
         self.register_id = register_id
         self.subject = subject
         self.summary = summary
         self.category_id = category_id
         self.slug = _slugify(self.register_id)
+        self.latest_decision_date = latest_decision_date
 
 class Meeting(klupung.flask.db.Model):
     __tablename__ = "meeting"
