@@ -52,54 +52,78 @@ def import_meeting_document(meeting_document_data, meeting):
             meeting.id,
             meeting_document_data["origin_id"],
             meeting_document_data["publish_datetime"])
-        klupung.flask.db.session.add(meeting_document)
+    else:
+        meeting_document.origin_url = meeting_document_data["origin_url"]
+        meeting_document.publish_datetime = meeting_document_data["publish_datetime"]
+    klupung.flask.db.session.merge(meeting_document)
 
-def import_agenda_item(meeting_document_data, agenda_item_data, meeting):
+def import_issue(agenda_item_data):
+    dnro = agenda_item_data["dnro"]
+    if dnro is None:
+        return None
+    issue = klupung.flask.models.Issue.query.filter_by(register_id=dnro).first()
+    subject = agenda_item_data["subject"]
+    if issue is None:
+        category = klupung.flask.models.Category.query.filter_by(
+            origin_id="00").first()
+        issue = klupung.flask.models.Issue(dnro, subject, subject, category.id)
+        klupung.flask.db.session.add(issue)
+
+    return issue
+
+def import_agenda_item(meeting_document_data, agenda_item_data, meeting, issue):
+    index = agenda_item_data["number"]
     agenda_item = klupung.flask.models.AgendaItem.query.filter_by(
         meeting_id=meeting.id,
-        index=agenda_item_data["number"]).first()
+        index=index).first()
+    subject = agenda_item_data["subject"]
+    introducers = ", ".join(agenda_item_data["introducers"])
+    preparers = ", ".join(agenda_item_data["preparers"])
+    permalink = urljoin(meeting_document_data["origin_url"],
+                        "htmtxt%d.htm" % index)
+    origin_last_modified_time = meeting_document_data["publish_datetime"]
     if agenda_item is None:
-        issue = klupung.flask.models.Issue.query.filter_by(
-            register_id=agenda_item_data["dnro"]).first()
-        if issue is None and agenda_item_data["dnro"] is not None:
-            category = klupung.flask.models.Category.query.filter_by(
-                origin_id="00").first()
-            issue = klupung.flask.models.Issue(
-                agenda_item_data["dnro"],
-                agenda_item_data["subject"],
-                agenda_item_data["subject"],
-                category.id)
-            klupung.flask.db.session.add(issue)
-            klupung.flask.db.session.commit()
         agenda_item = klupung.flask.models.AgendaItem(
-            agenda_item_data["subject"],
+            subject,
             issue.id if issue is not None else None,
             meeting.id,
-            agenda_item_data["number"],
-            ", ".join(agenda_item_data["introducers"]),
-            ", ".join(agenda_item_data["preparers"]),
-
-            urljoin(meeting_document_data["origin_url"],
-                    "htmtxt%d.htm" % agenda_item_data["number"]),
+            index,
+            introducers,
+            preparers,
+            permalink,
             klupung.flask.models.AgendaItem.RESOLUTION_PASSED,
-            meeting_document_data["publish_datetime"])
-        klupung.flask.db.session.add(agenda_item)
+            origin_last_modified_time)
+    else:
+        agenda_item.subject = subject
+        agenda_item.introducers = introducers
+        agenda_item.preparers = preparers
+        agenda_item.permalink = permalink
+        agenda_item.origin_last_modified_time = origin_last_modified_time
+
+    klupung.flask.db.session.merge(agenda_item)
     return agenda_item
 
 def import_agenda_item_contents(agenda_item, agenda_item_data):
     resolution = agenda_item_data["resolution"]
-    if resolution is None:
-        return None
     content = klupung.flask.models.Content.query.filter_by(
         agenda_item_id=agenda_item.id,
         index=klupung.flask.models.Content.CONTENT_INDEX_RESOLUTION).first()
     if content is None:
-        content = klupung.flask.models.Content(
-            klupung.flask.models.Content.CONTENT_TYPE_RESOLUTION,
-            resolution,
-            klupung.flask.models.Content.CONTENT_INDEX_RESOLUTION,
-            agenda_item.id)
-        klupung.flask.db.session.add(content)
+        if resolution is not None:
+            content = klupung.flask.models.Content(
+                klupung.flask.models.Content.CONTENT_TYPE_RESOLUTION,
+                resolution,
+                klupung.flask.models.Content.CONTENT_INDEX_RESOLUTION,
+                agenda_item.id)
+        else:
+            return None
+    else:
+        if resolution is None:
+            klupung.flask.db.session.delete(content)
+            return None
+        else:
+            content.resolution = resolution
+    klupung.flask.db.session.merge(content)
     return content
 
 if __name__ == "__main__":
@@ -149,7 +173,9 @@ if __name__ == "__main__":
         klupung.flask.db.session.commit()
 
         for agenda_item_data in meeting_document_data["agenda_items"]:
-            agenda_item = import_agenda_item(meeting_document_data, agenda_item_data, meeting)
+            issue = import_issue(agenda_item_data)
+            klupung.flask.db.session.commit()
+            agenda_item = import_agenda_item(meeting_document_data, agenda_item_data, meeting, issue)
             klupung.flask.db.session.commit()
             import_agenda_item_contents(agenda_item, agenda_item_data)
             klupung.flask.db.session.commit()
