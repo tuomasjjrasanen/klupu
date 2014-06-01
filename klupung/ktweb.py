@@ -25,6 +25,7 @@ import glob
 import os
 import os.path
 import re
+import sys
 import tempfile
 import time
 import traceback
@@ -138,6 +139,7 @@ def _download_page(url, encoding="utf-8", force=False, min_interval=1,
                                               encoding=encoding,
                                               min_interval=min_interval)
         except Exception, e:
+            exc_info = sys.exc_info()
             if error_policy == "raise":
                 raise
             if error_policy == "ignore":
@@ -149,7 +151,7 @@ def _download_page(url, encoding="utf-8", force=False, min_interval=1,
                     if e.errno != errno.EEXIST:
                         raise e
                 with open("%s.log" % filepath, "a") as error_log:
-                    traceback.print_exc(file=error_log)
+                    traceback.print_exception(*exc_info, file=error_log)
                 return None, None
         _print_to_file(filepath, clean_soup)
         return filepath, clean_soup
