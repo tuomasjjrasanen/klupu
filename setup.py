@@ -17,6 +17,7 @@ setup(name='klupung',
       scripts=[
         "bin/klupung-dbimport-categories",
         "bin/klupung-dbimport-ktweb",
+        "bin/klupung-dbimport-ktweb-geometries",
         "bin/klupung-dbimport-policymakers",
         "bin/klupung-dbinit",
         "bin/klupung-download-ktweb",

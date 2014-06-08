@@ -1,0 +1,67 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# KlupuNG
+# Copyright (C) 2014 Koodilehto Osk <http://koodilehto.fi>.
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+# Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program. If not, see <http://www.gnu.org/licenses/>.
+
+from __future__ import print_function
+from __future__ import division
+from __future__ import absolute_import
+
+import argparse
+import errno
+import json
+import os.path
+import urlparse
+
+import klupung.flask
+import klupung.flask.models
+
+if __name__ == "__main__":
+    arg_parser = argparse.ArgumentParser(description="Populate database with agenda item geometries.")
+
+    arg_parser.add_argument("db_uri", metavar="DB_URI",
+                            help="database URI, e.g. 'sqlite:////path/to/db.sqlite3'")
+    arg_parser.add_argument("ktweb_dir", metavar="DIR",
+                            help="KTWeb root directory")
+    args = arg_parser.parse_args()
+
+    app = klupung.flask.create_app(args.db_uri)
+
+    app.test_request_context().push()
+
+    for agenda_item in klupung.flask.models.AgendaItem.query:
+        permalink_parts = urlparse.urlsplit(agenda_item.permalink)
+        geometries_filepath = os.path.join(args.ktweb_dir,
+                                           permalink_parts.path[1:] + ".geometries.json")
+
+        try:
+            with open(geometries_filepath)  as geometries_file:
+                geometries = json.load(geometries_file)
+        except IOError, e:
+            if e.errno != errno.ENOENT:
+                raise e
+            continue
+
+        unique_geometries = {g["name"]: g for g in geometries}.values()
+        for geometry in unique_geometries:
+            ai_geometry = klupung.flask.models.AgendaItemGeometry(agenda_item.id,
+                                                                  geometry["category"],
+                                                                  geometry["type"],
+                                                                  geometry["name"],
+                                                                  geometry["coordinates"])
+            klupung.flask.db.session.add(ai_geometry)
+
+    klupung.flask.db.session.commit()
