@@ -24,6 +24,8 @@ import argparse
 import os
 import os.path
 from urlparse import urljoin
+import sys
+import traceback
 
 import klupung.flask
 import klupung.flask.models
