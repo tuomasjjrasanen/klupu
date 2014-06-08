@@ -127,7 +127,7 @@ def import_agenda_item_resolution(agenda_item, agenda_item_data):
             klupung.flask.db.session.delete(content)
             return None
         else:
-            content.resolution = resolution
+            content.text = resolution
     klupung.flask.db.session.merge(content)
     return content
 
