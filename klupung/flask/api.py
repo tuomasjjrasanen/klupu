@@ -245,13 +245,22 @@ def _get_category_resource(category):
         }
 
 def _get_issue_resource(issue):
+    geometries = []
+    for agenda_item in issue.agenda_items:
+        for geometry in agenda_item.geometries:
+            geometries.append({
+                    "name": geometry.name,
+                    "type": geometry.type,
+                    "category": geometry.category,
+                    "coordinates": geometry.coordinates,
+                    })
     return {
         "category"            : flask.url_for("._category_id_route",
                                               category_id=issue.category_id),
         "category_name"       : issue.category.name,
         "category_origin_id"  : issue.category.origin_id,
         "districts"           : [],
-        "geometries"          : [],
+        "geometries"          : geometries,
         "id"                  : issue.id,
         "last_modified_time"  : issue.last_modified_time.strftime(_STRFMT_DATETIME),
         "latest_decision_date": issue.latest_decision_date.strftime(_STRFMT_DATETIME),
