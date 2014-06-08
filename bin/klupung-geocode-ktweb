@@ -1,0 +1,55 @@
+#!/bin/bash
+# KlupuNG
+# Copyright (C) 2014 Koodilehto Osk <http://koodilehto.fi>.
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+# Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program. If not, see <http://www.gnu.org/licenses/>.
+
+set -eu
+
+on_exit()
+{
+    local exitval=$?
+
+    if [ -n "${tmpfile}" ]; then
+        rm -f "${tmpfile}"
+    fi
+
+    return $exitval
+}
+
+geocoder_url='http://jkl.paatokset.fi/hsgeocoder/document/html/'
+ktweb_dir=$1
+ktweb_city=$2
+
+tmpfile=
+
+trap on_exit EXIT
+
+tmpfile=$(mktemp)
+
+find "${ktweb_dir}" -type f -name 'htmtxt*.htm' >"${tmpfile}"
+
+while read agenda_item_path; do
+    geometry_path="${agenda_item_path}.geometries.json"
+    if [ -f "${geometry_path}" ]; then
+        continue
+    fi
+    curl \
+        --silent \
+        --show-error \
+        --fail \
+        --request POST "${geocoder_url}/${ktweb_city}" \
+        --data-binary "@${agenda_item_path}" \
+        --output "${geometry_path}"
+done <"${tmpfile}"
