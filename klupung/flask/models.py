@@ -410,3 +410,70 @@ class Content(klupung.flask.db.Model):
         self.text = text
         self.index = index
         self.agenda_item_id = agenda_item_id
+
+class AgendaItemGeometry(klupung.flask.db.Model):
+    __tablename__ = "agenda_item_geometry"
+
+    CATEGORIES = (
+        CATEGORY_ADDRESS,
+        CATEGORY_PLAN,
+        CATEGORY_PLAN_UNIT,
+        ) = (
+        "address",
+        "plan",
+        "plan_unit",
+        )
+
+    TYPES = (
+        TYPE_LINESTRING,
+        TYPE_POINT,
+        TYPE_POLYGON,
+        ) = (
+        "LineString",
+        "Point",
+        "Polygon",
+        )
+
+    # Columns
+    id = klupung.flask.db.Column(
+        klupung.flask.db.Integer,
+        primary_key=True,
+        )
+    agenda_item_id = klupung.flask.db.Column(
+        klupung.flask.db.Integer,
+        klupung.flask.db.ForeignKey("agenda_item.id"),
+        nullable=False,
+        )
+    category = klupung.flask.db.Column(
+        klupung.flask.db.Enum(*CATEGORIES),
+        nullable=False,
+        )
+    type = klupung.flask.db.Column(
+        klupung.flask.db.Enum(*TYPES),
+        nullable=False,
+        )
+    name = klupung.flask.db.Column(
+        klupung.flask.db.Text,
+        nullable=False,
+        )
+    coordinates = klupung.flask.db.Column(
+        klupung.flask.db.PickleType,
+        nullable=False,
+        )
+
+    # Relationships
+    agenda_item = klupung.flask.db.relationship(
+        "AgendaItem",
+        backref="geometries",
+        )
+
+    __table_args__ = (
+        klupung.flask.db.UniqueConstraint("agenda_item_id", "name"),
+        )
+
+    def __init__(self, agenda_item_id, category, type, name, coordinates):
+        self.agenda_item_id = agenda_item_id
+        self.category = category
+        self.type = type
+        self.name = name
+        self.coordinates = coordinates
