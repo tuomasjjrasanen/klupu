@@ -220,11 +220,14 @@ def _trimws(text):
     return _RE_WS.sub(" ", text).strip()
 
 def _parse_agenda_item_proposal(agenda_item_soup):
-    proposal = None
     for p in agenda_item_soup.html.body("p", {"class": "Ehdotus"}):
-        proposal = _trimws(p.next_sibling.text)
+        for p2 in p.find_next_siblings("p"):
+            proposal = _trimws(p2.text)
+            if not proposal:
+                continue
+            return proposal
         break
-    return proposal
+    return None
 
 def _parse_agenda_item_resolution(agenda_item_soup):
     resolution = None
