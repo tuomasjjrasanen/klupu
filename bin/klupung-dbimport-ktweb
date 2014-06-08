@@ -108,7 +108,7 @@ def import_agenda_item(meeting_document_data, agenda_item_data, meeting, issue):
     klupung.flask.db.session.merge(agenda_item)
     return agenda_item
 
-def import_agenda_item_contents(agenda_item, agenda_item_data):
+def import_agenda_item_resolution(agenda_item, agenda_item_data):
     resolution = agenda_item_data["resolution"]
     content = klupung.flask.models.Content.query.filter_by(
         agenda_item_id=agenda_item.id,
@@ -128,6 +128,29 @@ def import_agenda_item_contents(agenda_item, agenda_item_data):
             return None
         else:
             content.resolution = resolution
+    klupung.flask.db.session.merge(content)
+    return content
+
+def import_agenda_item_draft_resolution(agenda_item, agenda_item_data):
+    text = agenda_item_data["proposal"]
+    content = klupung.flask.models.Content.query.filter_by(
+        agenda_item_id=agenda_item.id,
+        index=klupung.flask.models.Content.CONTENT_INDEX_DRAFT_RESOLUTION).first()
+    if content is None:
+        if text is not None:
+            content = klupung.flask.models.Content(
+                klupung.flask.models.Content.CONTENT_TYPE_DRAFT_RESOLUTION,
+                text,
+                klupung.flask.models.Content.CONTENT_INDEX_DRAFT_RESOLUTION,
+                agenda_item.id)
+        else:
+            return None
+    else:
+        if text is None:
+            klupung.flask.db.session.delete(content)
+            return None
+        else:
+            content.text = text
     klupung.flask.db.session.merge(content)
     return content
 
@@ -182,7 +205,9 @@ if __name__ == "__main__":
             klupung.flask.db.session.commit()
             agenda_item = import_agenda_item(meeting_document_data, agenda_item_data, meeting, issue)
             klupung.flask.db.session.commit()
-            import_agenda_item_contents(agenda_item, agenda_item_data)
+            import_agenda_item_resolution(agenda_item, agenda_item_data)
+            klupung.flask.db.session.commit()
+            import_agenda_item_draft_resolution(agenda_item, agenda_item_data)
             klupung.flask.db.session.commit()
 
         del dirnames[:]

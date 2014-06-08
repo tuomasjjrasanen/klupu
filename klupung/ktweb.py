@@ -219,6 +219,13 @@ _RE_WS = re.compile(r"[\s\xa0\xad]+")
 def _trimws(text):
     return _RE_WS.sub(" ", text).strip()
 
+def _parse_agenda_item_proposal(agenda_item_soup):
+    proposal = None
+    for p in agenda_item_soup.html.body("p", {"class": "Ehdotus"}):
+        proposal = _trimws(p.next_sibling.text)
+        break
+    return proposal
+
 def _parse_agenda_item_resolution(agenda_item_soup):
     resolution = None
     for p in agenda_item_soup.html.body("p"):
@@ -299,6 +306,7 @@ def _parse_agenda_item(agenda_item_filepath):
     preparers = _parse_agenda_item_preparers(agenda_item_soup)
     introducers = _parse_agenda_item_introducers(agenda_item_soup)
     resolution = _parse_agenda_item_resolution(agenda_item_soup)
+    proposal = _parse_agenda_item_proposal(agenda_item_soup)
 
     return {
         "number": number,
@@ -307,6 +315,7 @@ def _parse_agenda_item(agenda_item_filepath):
         "introducers": introducers,
         "subject": subject,
         "resolution": resolution,
+        "proposal": proposal,
         }
 
 def _parse_agenda_items(meeting_document_dirpath):

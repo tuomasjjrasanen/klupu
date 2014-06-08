@@ -363,11 +363,14 @@ class Policymaker(klupung.flask.db.Model):
 class Content(klupung.flask.db.Model):
     CONTENT_TYPES = (
         CONTENT_TYPE_RESOLUTION,
+        CONTENT_TYPE_DRAFT_RESOLUTION,
         ) = (
         "resolution",
+        "draft resolution",
         )
     CONTENT_INDICES = (
         CONTENT_INDEX_RESOLUTION,
+        CONTENT_INDEX_DRAFT_RESOLUTION,
         ) = range(len(CONTENT_TYPES))
 
     __tablename__ = "content"
