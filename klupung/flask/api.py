@@ -436,6 +436,15 @@ def _issue_search_route():
     query = klupung.flask.models.Issue.query
 
     try:
+        bbox = flask.request.args["bbox"]
+    except KeyError:
+        pass
+    else:
+        query = query.join(klupung.flask.models.AgendaItem, klupung.flask.models.AgendaItemGeometry)
+        query = query.filter(klupung.flask.models.AgendaItemGeometry.type.like("Point"))
+        query = query.distinct()
+
+    try:
         text = flask.request.args["text"]
     except KeyError:
         pass
