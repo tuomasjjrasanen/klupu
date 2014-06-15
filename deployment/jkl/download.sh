@@ -13,7 +13,7 @@ download_dir=$1
 this_script_path=$(readlink -e "$0")
 this_script_dir=$(dirname "${this_script_path}")
 
-klupung-download-ktweb "${this_script_dir}/ktweb_urls.txt" "${download_dir}"
+klupung-download-ktweb --min-request-interval 0.2 "${this_script_dir}/ktweb_urls.txt" "${download_dir}"
 
 # pela seems to be a mistyped name of pelajk, move all stuff to pelajk
 # and get rid of pela since it is not an official abbreviation and hence
