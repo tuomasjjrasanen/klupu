@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 set -eu
 
@@ -15,7 +15,7 @@ while [ $# -gt 0 ]; do
             shift
             echo "Usage: $0"
             echo
-            echo "Import documents to database."
+            echo "Stop server."
             echo
             echo "Options:"
             echo "    -h, --help                   print help and exit"
@@ -34,23 +34,22 @@ while [ $# -gt 0 ]; do
             ;;
     esac
 done
-
+        
 if [ $# -ne 0 ]; then
     usage_error "invalid number of arguments ($#), expected 0"
 fi
 
-G_this_script_path=$(readlink -e "$0")
-G_this_script_dir=$(dirname "${G_this_script_path}")
-
-G_dbpath=$(readlink -f klupung.db)
-G_dburi="sqlite:///${G_dbpath}"
-
-if [ -f "${G_dbpath}" ]; then
-    mv --backup=numbered "${G_dbpath}" "${G_dbpath}.old"
+if [ -f klupung.pid ]; then
+    klupung_pid=$(cat klupung.pid)
+    kill -0 "${klupung_pid}" || exit 0
+    kill "${klupung_pid}"
+    kill_time=$(date +%s)
+    while kill -0 "${klupung_pid}"; do
+        time_now=$(date +%s)
+        if [ $((time_now - kill_time)) -ge 5 ]; then
+            break
+        fi
+        sleep 0.5
+    done
+    kill -9 "${klupung_pid}"
 fi
-
-klupung-dbinit "${G_dburi}"
-klupung-dbimport-policymakers "${G_dburi}" "${G_this_script_dir}/policymakers.csv"
-klupung-dbimport-categories "${G_dburi}" "${G_this_script_dir}/categories.csv"
-klupung-dbimport-ktweb "${G_dburi}" .
-klupung-dbimport-ktweb-geometries "${G_dburi}" .

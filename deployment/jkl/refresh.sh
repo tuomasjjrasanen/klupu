@@ -15,7 +15,7 @@ while [ $# -gt 0 ]; do
             shift
             echo "Usage: $0"
             echo
-            echo "Import documents to database."
+            echo "Refresh database."
             echo
             echo "Options:"
             echo "    -h, --help                   print help and exit"
@@ -34,7 +34,7 @@ while [ $# -gt 0 ]; do
             ;;
     esac
 done
-
+        
 if [ $# -ne 0 ]; then
     usage_error "invalid number of arguments ($#), expected 0"
 fi
@@ -42,15 +42,7 @@ fi
 G_this_script_path=$(readlink -e "$0")
 G_this_script_dir=$(dirname "${G_this_script_path}")
 
-G_dbpath=$(readlink -f klupung.db)
-G_dburi="sqlite:///${G_dbpath}"
-
-if [ -f "${G_dbpath}" ]; then
-    mv --backup=numbered "${G_dbpath}" "${G_dbpath}.old"
-fi
-
-klupung-dbinit "${G_dburi}"
-klupung-dbimport-policymakers "${G_dburi}" "${G_this_script_dir}/policymakers.csv"
-klupung-dbimport-categories "${G_dburi}" "${G_this_script_dir}/categories.csv"
-klupung-dbimport-ktweb "${G_dburi}" .
-klupung-dbimport-ktweb-geometries "${G_dburi}" .
+"{G_this_script_dir}/download.sh"
+"{G_this_script_dir}/stop.sh"
+"{G_this_script_dir}/dbimport.sh"
+"{G_this_script_dir}/start.sh"

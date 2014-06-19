@@ -1,0 +1,5 @@
+JKL_DB_URI='sqlite:////home/klupung/klupung.db'
+JKL_ADDRESS=''
+JKL_PORT=''
+JKL_VIRTUALENV=''
+JKL_WORKDIR=''
