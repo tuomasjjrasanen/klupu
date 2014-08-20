@@ -215,24 +215,39 @@ def download_policymaker(policymaker_url, min_interval=1, force=False, download_
 _RE_PERSON = re.compile(ur"([A-ZÖÄÅ][a-zöäå]*(?:-[A-ZÖÄÅ][a-zöäå]*)*(?: [A-ZÖÄÅ][a-zöäå]*(?:-[A-ZÖÄÅ][a-zöäå]*)*)+)")
 _RE_DNRO = re.compile(r"Dnro (\d+[\s\xa0\xad]?/\d+)")
 _RE_WS = re.compile(r"[\s\xa0\xad]+")
+_RE_RESOLUTION = re.compile(ur"^[\s\xa0\xad]*Päätös[\s\xa0\xad]+(.*)", re.DOTALL)
 
 def _trimws(text):
     return _RE_WS.sub(" ", text).strip()
 
 def _parse_agenda_item_proposal(agenda_item_soup):
-    for p in agenda_item_soup.html.body("p", {"class": "Ehdotus"}):
-        for p2 in p.find_next_siblings("p"):
-            proposal = _trimws(p2.text)
-            if not proposal:
-                continue
+    try:
+        # Consinder only the last proposal. The document can contain
+        # multiple proposals if the same issue has been discussed in
+        # multiple meetings. The latest is always the last.
+        proposal_p = agenda_item_soup.html.body("p", {"class": "Ehdotus"})[-1]
+    except IndexError:
+        # Proposal paragraph was not found.
+        return None
+
+    proposal = None
+
+    for p in proposal_p.find_next_siblings("p"):
+        resolution_match = _RE_RESOLUTION.match(p.text)
+        if resolution_match:
             return proposal
-        break
-    return None
+        text = _trimws(p.text)
+        if proposal is None:
+            proposal = text
+        else:
+            proposal += " %s" % text
+
+    return proposal
 
 def _parse_agenda_item_resolution(agenda_item_soup):
     resolution = None
     for p in agenda_item_soup.html.body("p"):
-        match = re.match(ur"^[\s\xa0\xad]*Päätös[\s\xa0\xad]+(.*)", p.text, re.DOTALL)
+        match = _RE_RESOLUTION.match(p.text)
         if match:
             resolution = _trimws(match.group(1))
     return resolution
