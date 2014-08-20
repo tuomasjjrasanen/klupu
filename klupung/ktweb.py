@@ -220,37 +220,32 @@ _RE_RESOLUTION = re.compile(ur"^[\s\xa0\xad]*Päätös[\s\xa0\xad]+(.*)", re.DOT
 def _trimws(text):
     return _RE_WS.sub(" ", text).strip()
 
-def _parse_agenda_item_proposal(agenda_item_soup):
-    try:
-        # Consinder only the last proposal. The document can contain
-        # multiple proposals if the same issue has been discussed in
-        # multiple meetings. The latest is always the last.
-        proposal_p = agenda_item_soup.html.body("p", {"class": "Ehdotus"})[-1]
-    except IndexError:
-        # Proposal paragraph was not found.
-        return None
+def _parse_agenda_item_resolution(agenda_item_soup):
+    resolutions = [(None, None)]
 
     proposal = None
 
-    for p in proposal_p.find_next_siblings("p"):
+    for p in agenda_item_soup.html.body("p"):
         resolution_match = _RE_RESOLUTION.match(p.text)
         if resolution_match:
-            return proposal
+            resolution = "<p>%s</p>" % _trimws(resolution_match.group(1))
+            resolutions.append((proposal, resolution))
+            proposal = None
+            continue
 
-        if proposal is None:
-            proposal = ""
+        if "Ehdotus" in p.attrs.get("class", []):
+            if proposal is None:
+                proposal = ""
+            continue
 
-        proposal += "<p>%s</p>" % _trimws(p.text)
+        text = _trimws(p.text)
+        if text:
+            proposal += "<p>%s</p>" % text
 
-    return proposal
-
-def _parse_agenda_item_resolution(agenda_item_soup):
-    resolution = None
-    for p in agenda_item_soup.html.body("p"):
-        match = _RE_RESOLUTION.match(p.text)
-        if match:
-            resolution = "<p>%s</p>" % _trimws(match.group(1))
-    return resolution
+    # Consider only the last decision. The document can contain multiple
+    # proposals if the same issue has been discussed in multiple
+    # meetings. The latest is always the last.
+    return resolutions[-1]
 
 def _parse_agenda_item_preparers(agenda_item_soup):
     preparers = []
@@ -323,8 +318,7 @@ def _parse_agenda_item(agenda_item_filepath):
     dnro = _parse_agenda_item_dnro(agenda_item_soup)
     preparers = _parse_agenda_item_preparers(agenda_item_soup)
     introducers = _parse_agenda_item_introducers(agenda_item_soup)
-    resolution = _parse_agenda_item_resolution(agenda_item_soup)
-    proposal = _parse_agenda_item_proposal(agenda_item_soup)
+    proposal, resolution = _parse_agenda_item_resolution(agenda_item_soup)
 
     return {
         "number": number,
