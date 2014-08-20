@@ -236,11 +236,11 @@ def _parse_agenda_item_proposal(agenda_item_soup):
         resolution_match = _RE_RESOLUTION.match(p.text)
         if resolution_match:
             return proposal
-        text = _trimws(p.text)
+
         if proposal is None:
-            proposal = text
-        else:
-            proposal += " %s" % text
+            proposal = ""
+
+        proposal += "<p>%s</p>" % _trimws(p.text)
 
     return proposal
 
@@ -249,7 +249,7 @@ def _parse_agenda_item_resolution(agenda_item_soup):
     for p in agenda_item_soup.html.body("p"):
         match = _RE_RESOLUTION.match(p.text)
         if match:
-            resolution = _trimws(match.group(1))
+            resolution = "<p>%s</p>" % _trimws(match.group(1))
     return resolution
 
 def _parse_agenda_item_preparers(agenda_item_soup):
