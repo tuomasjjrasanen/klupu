@@ -57,7 +57,7 @@ if __name__ == "__main__":
 
         unique_geometries = {g["name"]: g for g in geometries}.values()
         for geometry in unique_geometries:
-            ai_geometry = klupung.flask.models.AgendaItemGeometry(agenda_item.id,
+            ai_geometry = klupung.flask.models.AgendaItemGeometry(agenda_item,
                                                                   geometry["category"],
                                                                   geometry["type"],
                                                                   geometry["name"],

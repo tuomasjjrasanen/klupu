@@ -105,13 +105,14 @@ class AgendaItem(klupung.flask.db.Model):
         )
 
     # Relationships
-    issue = klupung.flask.db.relationship(
-        "Issue",
-        backref="agenda_items",
+    contents = klupung.flask.db.relationship(
+        "Content",
+        backref="agenda_item",
         )
-    meeting = klupung.flask.db.relationship(
-        "Meeting",
-        backref="agenda_items",
+    # Relationships
+    geometries = klupung.flask.db.relationship(
+        "AgendaItemGeometry",
+        backref="agenda_item",
         )
 
     __table_args__ = (
@@ -119,11 +120,11 @@ class AgendaItem(klupung.flask.db.Model):
         klupung.flask.db.UniqueConstraint("meeting_id", "index"),
         )
 
-    def __init__(self, subject, issue_id, meeting_id, index, introducer,
+    def __init__(self, subject, issue, meeting, index, introducer,
                  preparer, permalink, resolution, origin_last_modified_time):
         self.subject = subject
-        self.issue_id = issue_id
-        self.meeting_id = meeting_id
+        self.issue = issue
+        self.meeting = meeting
         self.index = index
         self.introducer = introducer
         self.preparer = preparer
@@ -159,21 +160,27 @@ class Category(klupung.flask.db.Model):
         )
 
     # Relationships
+    issues = klupung.flask.db.relationship(
+        "Issue",
+        backref="category",
+        )
+
     parent = klupung.flask.db.relationship(
         "Category",
+        uselist=False,
         )
 
     __table_args__ = (
         klupung.flask.db.UniqueConstraint("origin_id"),
         )
 
-    def __init__(self,  name, origin_id, parent_id=None):
+    def __init__(self,  name, origin_id, parent=None):
         self.name = name
         self.origin_id = origin_id
-        self.parent_id = parent_id
+        self.parent = parent
         self.level = 0
-        if self.parent_id is not None:
-            self.level = klupung.flask.models.Category.query.filter_by(id=parent_id).first().level + 1
+        if self.parent is not None:
+            self.level = klupung.flask.models.Category.query.filter_by(parent=parent).first().level + 1
 
     def find_top_category(self):
         if self.parent:
@@ -221,8 +228,9 @@ class Issue(klupung.flask.db.Model):
         )
 
     # Relationships
-    category = klupung.flask.db.relationship(
-        "Category",
+    agenda_items = klupung.flask.db.relationship(
+        "AgendaItem",
+        backref="issue",
         )
 
     __table_args__ = (
@@ -230,11 +238,11 @@ class Issue(klupung.flask.db.Model):
         klupung.flask.db.UniqueConstraint("slug"),
         )
 
-    def __init__(self, register_id, subject, summary, category_id, latest_decision_date):
+    def __init__(self, register_id, subject, summary, category, latest_decision_date):
         self.register_id = register_id
         self.subject = subject
         self.summary = summary
-        self.category_id = category_id
+        self.category = category
         self.slug = _slugify(self.register_id)
         self.latest_decision_date = latest_decision_date
 
@@ -259,18 +267,20 @@ class Meeting(klupung.flask.db.Model):
     # Relationships
     meeting_documents = klupung.flask.db.relationship(
         "MeetingDocument",
+        backref="meeting",
         )
-    policymaker = klupung.flask.db.relationship(
-        "Policymaker",
+    agenda_items = klupung.flask.db.relationship(
+        "AgendaItem",
+        backref="meeting",
         )
 
     __table_args__ = (
         klupung.flask.db.UniqueConstraint("policymaker_id", "date"),
         )
 
-    def __init__(self, date, policymaker_id):
+    def __init__(self, date, policymaker):
         self.date = date
-        self.policymaker_id = policymaker_id
+        self.policymaker = policymaker
 
     @property
     def number(self):
@@ -303,18 +313,13 @@ class MeetingDocument(klupung.flask.db.Model):
         klupung.flask.db.DateTime,
         )
 
-    # Relationships
-    meeting = klupung.flask.db.relationship(
-        "Meeting",
-        )
-
     __table_args__ = (
         klupung.flask.db.UniqueConstraint("origin_id"),
         )
 
-    def __init__(self, origin_url, meeting_id, origin_id, publish_datetime):
+    def __init__(self, origin_url, meeting, origin_id, publish_datetime):
         self.origin_url = origin_url
-        self.meeting_id = meeting_id
+        self.meeting = meeting
         self.origin_id = origin_id
         self.publish_datetime = publish_datetime
 
@@ -346,6 +351,7 @@ class Policymaker(klupung.flask.db.Model):
     # Relationships
     meetings = klupung.flask.db.relationship(
         "Meeting",
+        backref="policymaker",
         )
 
     __table_args__ = (
@@ -397,22 +403,16 @@ class Content(klupung.flask.db.Model):
         klupung.flask.db.ForeignKey("agenda_item.id"),
         )
 
-    # Relationships
-    agenda_item = klupung.flask.db.relationship(
-        "AgendaItem",
-        backref="contents",
-        )
-
     __table_args__ = (
         klupung.flask.db.CheckConstraint(index >= 0, name="check_index_positive"),
         klupung.flask.db.UniqueConstraint("agenda_item_id", "index"),
         )
 
-    def __init__(self, content_type, text, index, agenda_item_id):
+    def __init__(self, content_type, text, index, agenda_item):
         self.content_type = content_type
         self.text = text
         self.index = index
-        self.agenda_item_id = agenda_item_id
+        self.agenda_item = agenda_item
 
 class AgendaItemGeometry(klupung.flask.db.Model):
     __tablename__ = "agenda_item_geometry"
@@ -464,18 +464,12 @@ class AgendaItemGeometry(klupung.flask.db.Model):
         nullable=False,
         )
 
-    # Relationships
-    agenda_item = klupung.flask.db.relationship(
-        "AgendaItem",
-        backref="geometries",
-        )
-
     __table_args__ = (
         klupung.flask.db.UniqueConstraint("agenda_item_id", "name"),
         )
 
-    def __init__(self, agenda_item_id, category, type, name, coordinates):
-        self.agenda_item_id = agenda_item_id
+    def __init__(self, agenda_item, category, type, name, coordinates):
+        self.agenda_item = agenda_item
         self.category = category
         self.type = type
         self.name = name
