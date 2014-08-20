@@ -9,6 +9,8 @@ usage_error()
     return 1
 }
 
+G_download_archive=false
+
 while [ $# -gt 0 ]; do
     case $1 in
         -h|--help)
@@ -21,6 +23,10 @@ while [ $# -gt 0 ]; do
             echo "    -h, --help                   print help and exit"
             echo
             exit 0
+            ;;
+        --download-archive)
+            shift
+            G_download_archive=true
             ;;
         --)
             shift
@@ -41,6 +47,12 @@ fi
 
 G_this_script_path=$(readlink -e "$0")
 G_this_script_dir=$(dirname "${G_this_script_path}")
+
+if ${G_download_archive}; then
+    klupung-download-ktweb \
+        --min-request-interval 0.2 \
+        "${G_this_script_dir}/archive_ktweb_urls.txt" .
+fi
 
 klupung-download-ktweb \
     --min-request-interval 0.2 \
