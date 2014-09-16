@@ -2,8 +2,6 @@
  KlupuNG deployment for Jyväskylä
 ==================================
 
-1. Install klupung as described in /README.rst.
+1. ``./bootstrap``
 
-2. ``pip install -r jkl_requirements.txt``
-
-3. ./refresh
+2. ``./refresh``
