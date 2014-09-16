@@ -238,9 +238,10 @@ def _parse_agenda_item_resolution(agenda_item_soup):
                 proposal = ""
             continue
 
-        text = _trimws(p.text)
-        if text:
-            proposal += "<p>%s</p>" % text
+        if proposal is not None:
+            text = _trimws(p.text)
+            if text:
+                proposal += "<p>%s</p>" % text
 
     # Consider only the last decision. The document can contain multiple
     # proposals if the same issue has been discussed in multiple
