@@ -53,30 +53,4 @@ and then install klupung by running ``python setup.py install``.
 Setup and running
 =================
 
-Download KTWeb meeting documents::
-
-  klupung-download-ktweb deployment/jkl/ktweb_urls.txt ktweb-jkl
-
-Initialize the database and create tables (in this example we are using sqlite3)::
-
-  klupung-dbinit sqlite:///jkl.db
-
-Populate the database with data which cannot be scraped from the meeting documents::
-
-  klupung-dbimport-categories sqlite:///jkl.db deployment/jkl/categories.csv
-  klupung-dbimport-policymakers sqlite:///jkl.db deployment/jkl/policymakers.csv
-
-Import previously downloaded meeting documents::
-
-  klupung-dbimport-ktweb sqlite:///jkl.db ktweb-jkl
-
-Run in development mode::
-
-  klupung-stupid-apiserver sqlite:///jkl.db
-
-Run in production mode::
-
-  gunicorn --env KLUPUNG_DB_URI='sqlite:///jkl.db' klupung.flask.wsgi:app
-
-Please refer to `the documentation of gunicorn
-<http://docs.gunicorn.org>`_ for further information.
+See deployment/jkl/README.rst for a real-world deployment example.
