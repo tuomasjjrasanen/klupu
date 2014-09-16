@@ -41,14 +41,12 @@ fi
 
 if [ -f klupung.pid ]; then
     klupung_pid=$(cat klupung.pid)
-    kill -0 "${klupung_pid}" || exit 0
     kill "${klupung_pid}"
     kill_time=$(date +%s)
-    while kill -0 "${klupung_pid}"; do
+    while true; do
+        kill -0 "${klupung_pid}" 2>/dev/null || exit 0
         time_now=$(date +%s)
-        if [ $((time_now - kill_time)) -ge 5 ]; then
-            break
-        fi
+        [ $((time_now - kill_time)) -ge 5 ] && break
         sleep 0.5
     done
     kill -9 "${klupung_pid}"
