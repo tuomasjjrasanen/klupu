@@ -46,18 +46,18 @@ G_this_script_dir=$(dirname "${G_this_script_path}")
 # just keep going because we might have just downloaded at least some
 # new documents.
 echo "Downloading new documents..."
-"${G_this_script_dir}/download.sh" || true
+"${G_this_script_dir}/download" || true
 
 echo "Stopping klupung..."
-"${G_this_script_dir}/stop.sh" || {
+"${G_this_script_dir}/stop" || {
     # Stop failure is fatal, but try to start the service before dying.
     echo "Starting klupung..."
-    "${G_this_script_dir}/start.sh"
+    "${G_this_script_dir}/start"
     exit 1
 }
 
 echo "Importing documents into db..."
-"${G_this_script_dir}/dbimport.sh" || true
+"${G_this_script_dir}/dbimport" || true
 
 echo "Starting klupung..."
-"${G_this_script_dir}/start.sh"
+"${G_this_script_dir}/start"
