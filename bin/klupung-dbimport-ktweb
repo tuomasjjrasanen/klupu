@@ -171,6 +171,11 @@ if __name__ == "__main__":
         if not klupung.ktweb.is_meeting_document_dir(dirpath):
             continue
 
+        result = klupung.flask.models.MeetingDocument.query.filter_by(
+            origin_id=klupung.ktweb.parse_meeting_document_origin_id(dirpath))
+        if result.count():
+            continue
+
         try:
             meeting_document_data = klupung.ktweb.parse_meeting_document(dirpath)
         except:
