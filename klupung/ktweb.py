@@ -426,6 +426,9 @@ def _parse_meeting_document_type(meeting_document_dirpath):
         return "agenda"
     return None
 
+def parse_meeting_document_origin_id(meeting_document_dirpath):
+    return "/".join(meeting_document_dirpath.split(os.path.sep)[-3:])
+
 def parse_meeting_document(meeting_document_dirpath):
     meeting_document_type = _parse_meeting_document_type(meeting_document_dirpath)
 
@@ -440,7 +443,7 @@ def parse_meeting_document(meeting_document_dirpath):
     policymaker_absdirpath = os.path.abspath(policymaker_dirpath)
     policymaker_abbreviation = os.path.basename(policymaker_absdirpath)
 
-    origin_id = "/".join(meeting_document_dirpath.split(os.path.sep)[-3:])
+    origin_id = parse_meeting_document_origin_id(meeting_document_dirpath)
 
     meeting_document = {
         "policymaker_abbreviation": policymaker_abbreviation,
