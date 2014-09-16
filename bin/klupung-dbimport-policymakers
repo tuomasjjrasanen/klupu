@@ -39,7 +39,7 @@ def import_policymakers(policymaker_csv_filepath):
                 policymaker.summary = summary
             else:
                 policymaker = klupung.flask.models.Policymaker(abbrev, name, summary)
-            klupung.flask.db.session.merge(policymaker)
+                klupung.flask.db.session.add(policymaker)
 
 if __name__ == "__main__":
     arg_parser = argparse.ArgumentParser(description="Populate database with policymakers.")

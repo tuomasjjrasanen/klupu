@@ -37,7 +37,7 @@ def import_categories(category_csv_filepath):
                 category.name = name
             else:
                 category = klupung.flask.models.Category(name, origin_id)
-            klupung.flask.db.session.merge(category)
+                klupung.flask.db.session.add(category)
 
 if __name__ == "__main__":
     arg_parser = argparse.ArgumentParser(description="Populate database with categories.")
