@@ -45,11 +45,10 @@ G_this_script_dir=$(dirname "${G_this_script_path}")
 G_dbpath=$(readlink -f klupung.db)
 G_dburi="sqlite:///${G_dbpath}"
 
-if [ -f "${G_dbpath}" ]; then
-    mv --backup=numbered "${G_dbpath}" "${G_dbpath}.old"
+if [ ! -f "${G_dbpath}" ]; then
+    klupung-dbinit "${G_dburi}"
 fi
 
-klupung-dbinit "${G_dburi}"
 klupung-dbimport-policymakers "${G_dburi}" "${G_this_script_dir}/policymakers.csv"
 klupung-dbimport-categories "${G_dburi}" "${G_this_script_dir}/categories.csv"
 klupung-dbimport-ktweb "${G_dburi}" .
