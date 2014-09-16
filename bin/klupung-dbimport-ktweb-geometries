@@ -42,6 +42,14 @@ if __name__ == "__main__":
 
     app.test_request_context().push()
 
+    # XXX: delete all geometries to cause full refresh every time. Not
+    # efficient nor beautiful, but practical: otherwise we would need to
+    # handle unique constraint errors, but still provide way to update
+    # geometries. As long as we are not jusing real GIS, this is the
+    # simplest way to achieve db-updatability. Currently this whole
+    # geometry importing functionality is fast as well.
+    klupung.flask.models.AgendaItemGeometry.query.delete()
+
     for agenda_item in klupung.flask.models.AgendaItem.query:
         permalink_parts = urlparse.urlsplit(agenda_item.permalink)
         geometries_filepath = os.path.join(args.ktweb_dir,
