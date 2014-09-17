@@ -4,4 +4,4 @@
 
 1. ``./bootstrap``
 
-2. ``./refresh``
+2. ``./run localhost 8080``
