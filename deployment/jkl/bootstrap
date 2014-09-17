@@ -1,10 +1,20 @@
 #!/bin/sh
 
-virtualenv klupung-env
-. klupung-env/bin/activate
-wd=$(pwd)
-cd ../..
-pip install -r requirements.txt
-python setup.py install
-cd "${wd}"
+set -eu
+
+virtualenv klupung-virtualenv
+
+# Modify path to prefer executables of the new virtualenv.
+export PATH=$(readlink -e klupung-virtualenv/bin):$PATH
+
+this_script_path=$(readlink -e "$0")
+this_script_dir=$(dirname "${this_script_path}")
+cd "${this_script_dir}"
+
+(
+    cd ../../
+    pip install -r requirements.txt
+    python setup.py install
+)
+
 pip install -r jkl_requirements.txt
