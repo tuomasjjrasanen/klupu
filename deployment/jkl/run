@@ -1,0 +1,165 @@
+#!/bin/bash
+
+set -eu
+
+usage_error()
+{
+    echo "error: $1" >&2
+    echo "Try '$0 --help' for more information". >&2
+    return 1
+}
+
+path_to_uri()
+{
+    db_path=$1
+    canonical_db_path=$(readlink -f "${db_path}")
+    echo "sqlite:///${canonical_db_path}"
+}
+
+start()
+{
+    address=$1
+    port=$2
+
+    db_uri=$(path_to_uri klupung.db)
+
+    gunicorn \
+        --env "KLUPUNG_DB_URI=${db_uri}" \
+        --workers 2 \
+        --bind "${address}:${port}" \
+        --daemon \
+        --error-logfile error.log \
+        --access-logfile access.log \
+        --pid klupung.pid \
+        klupung.flask.wsgi:app
+}
+
+stop()
+{
+    if [ -f klupung.pid ]; then
+        klupung_pid=$(cat klupung.pid)
+        kill "${klupung_pid}"
+        kill_time=$(date +%s)
+        while true; do
+            kill -0 "${klupung_pid}" 2>/dev/null || return 0
+            time_now=$(date +%s)
+            [ $((time_now - kill_time)) -ge 5 ] && break
+            sleep 0.5
+        done
+        kill -9 "${klupung_pid}"
+    fi
+}
+
+download()
+{
+    if ${download_archive}; then
+        klupung-download-ktweb \
+            --min-request-interval 0.2 \
+            "${this_script_dir}/archive_ktweb_urls.txt" .
+    fi
+
+    klupung-download-ktweb \
+        --min-request-interval 0.2 \
+        "${this_script_dir}/current_ktweb_urls.txt" .
+
+    if [ -d paatokset/pela/ ]; then
+        # pela seems to be a mistyped name of pelajk, move all stuff to
+        # pelajk and get rid of pela since it is not an official
+        # abbreviation and hence missing from the DB (and policymakers.csv)
+        rsync -aP paatokset/pela/ paatokset/pelajk/
+        rm -rf paatokset/pela/
+    fi
+
+    if [ -d paatokset/tarkjkl/ ]; then
+        # Some of the meeting documents of tarkltk in Spring 2013 are
+        # archived under tarkjkl alias, which is not an official
+        # abbreviation, hence all tarkjkl-stuff is moved under tarkltk
+        rsync -aP paatokset/tarkjkl/ paatokset/tarkltk/
+        rm -rf paatokset/tarkjkl/
+    fi
+
+    klupung-geocode-ktweb paatokset Jyväskylä
+}
+
+dbimport()
+{
+    db_uri=$(path_to_uri klupung.db)
+
+    if [ ! -f klupung.db ]; then
+        klupung-dbinit "${db_uri}"
+    fi
+
+    klupung-dbimport-policymakers "${db_uri}" \
+        "${this_script_dir}/policymakers.csv"
+    klupung-dbimport-categories "${db_uri}" \
+        "${this_script_dir}/categories.csv"
+    klupung-dbimport-ktweb "${db_uri}" .
+    klupung-dbimport-ktweb-geometries "${db_uri}" .
+}
+
+download_archive=false
+
+while [ $# -gt 0 ]; do
+    case $1 in
+        -h|--help)
+            shift
+            echo "Usage: $0 ADDRESS PORT"
+            echo
+            echo "Refresh database."
+            echo
+            echo "Options:"
+            echo "    --download-archived          download archived meeting documents too"
+            echo "    -h, --help                   print help and exit"
+            echo
+            exit 0
+            ;;
+        --download-archive)
+            shift
+            download_archive=true
+            ;;
+        --)
+            shift
+            break
+            ;;
+        -*)
+            usage_error "invalid argument '$1'"
+            ;;
+        *)
+            break
+            ;;
+    esac
+done
+
+if [ $# -ne 2 ]; then
+    usage_error "invalid number of arguments ($#), expected 2"
+fi
+
+address=$1
+shift
+port=$1
+shift
+
+export PATH=$(readlink -e klupung-virtualenv/bin):$PATH
+
+this_script_path=$(readlink -e "$0")
+this_script_dir=$(dirname "${this_script_path}")
+
+# Download failure is not fatal. jyvaskyla.fi might be down for example,
+# just keep going because we might have just downloaded at least some
+# new documents.
+echo "Downloading new documents..."
+download || true
+
+echo "Stopping klupung..."
+stop || {
+    # Stop failure is fatal, but try to start the service before dying.
+    echo "Starting klupung..."
+    start "${address}" "${port}"
+    exit 1
+}
+
+echo "Importing documents into db..."
+dbimport
+
+echo "Starting klupung..."
+start "${address}" "${port}"
